@@ -1,0 +1,16 @@
+{
+  "name": "journey-viewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @journey-viewer/web dev",
+    "build": "pnpm -r --if-present build",
+    "build:app": "pnpm --filter @journey-viewer/web build",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

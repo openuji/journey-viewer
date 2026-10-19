@@ -1,0 +1,251 @@
+{
+  "capturedOn": "2026-10-19",
+  "description": "Migration evidence only. Screen records identify the original PNG assets; they are not viewer runtime configuration.",
+  "source": {
+    "repository": "journey-graph",
+    "commit": "6d9deaf0b57ba59fc22d232ca25bc999e1ce365e",
+    "document": "apps/graph-studio/src/assets/ujg/3touchpoints.v6.ujg.yaml",
+    "documentSha256": "a49df83c8ec226af9a9319dbfdf2daf453a22964af6357996c2014cbb4bc8b3b",
+    "exporter": "packages/journey-path/src/data/jsonld.ts",
+    "exporterSha256": "18ae39d7cf34267c4e088fc7c3a745826d1751e4eb0749a54fb9b0edd901bf14",
+    "parser": "packages/journey-path/src/data/parser.ts",
+    "parserSha256": "edfab5946bc55ab35ef91cd13999f3097a26726820d98d9679389377b54db358"
+  },
+  "export": {
+    "file": "solid-oidc.ujg.jsonld",
+    "documentIri": "urn:ujg:solid-oidc",
+    "sha256": "45c2fc9979f285dfb55711186933c7253ebd8e3f144292d07a89c120083b602a"
+  },
+  "counts": {
+    "journeys": 10,
+    "states": 47,
+    "transitions": 120,
+    "screens": 37
+  },
+  "rootJourneyRef": "urn:ujg:solid-oidc:app-auth-journey",
+  "initialStateRef": "urn:ujg:solid-oidc:app-sign-in-required",
+  "screens": [
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-sign-in-required-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-sign-in-required",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-sign-in-required.png",
+      "sha256": "a2061fb59dcf13fd47651e52da7ed51649fad9bbe66245010ef30ed79dd6e11d"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-auth-callback-processing-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-auth-callback-processing",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-auth-callback-processing.png",
+      "sha256": "384be6af42a75f5589a8ca30ded029aaacbfc490ec119af556f6a94533b477e7"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-logged-in-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-logged-in",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-logged-in.png",
+      "sha256": "2cfc4a0cec33082d17b1c48e46cb085db32223158de8d12f7d576661291e34ae"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-access-denied-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-access-denied",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-access-denied.png",
+      "sha256": "0470cfc83b21a13ec67bb552f5670aa1ba8b669109bad6a5074eb0a5a254d941"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-login-cancelled-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-login-cancelled",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-login-cancelled.png",
+      "sha256": "9b62bd26488866b17010f7df4a134046a9103af57daedeb2a7b41b7c855c8acb"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-login-error-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-login-error",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-login-error.png",
+      "sha256": "0f4e4c2559234da333f4f29f2301989b547034e7fb2c0e732fcd67acddfb2a56"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-limited-mode-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-limited-mode",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-limited-mode.png",
+      "sha256": "72cff7e53963f24b179fbdf30ccb8f84671374641a93d2d8b6f150d7a5837a98"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-unauthenticated-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-unauthenticated",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-unauthenticated.png",
+      "sha256": "fda0077d1c6043bc40a36bffc27c419877b575ae4072d5983ee61a2fbd4b491d"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:app-support-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-support",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/app-support.png",
+      "sha256": "a853291eb3999d09daec1f9ca839eb0b3524acbe3ae62c7c66b4ccfb8f8bd375"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-account-selection-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-account-selection",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-account-selection.png",
+      "sha256": "39ead8dfb5a222caca2b8a1a0d06c97d65256f3b9d9a63e0d3614c678bc9a91c"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-login-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-login",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-login.png",
+      "sha256": "8d23914ad5968708d7ee5c1e5e77f3d7d520d454b4985930809b80ec27d05366"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-login-error-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-login-error",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-login-error.png",
+      "sha256": "d672089def28c004784ac9012dadbfcce9e21a88a603ae1b9d0f2d29ed6e9d13"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-account-recovery-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-account-recovery",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-account-recovery.png",
+      "sha256": "0d8a18626f50157e095f0a4f7eaa2f539f6303147257b3a9cc258abe1435dd7c"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-support-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-support",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-support.png",
+      "sha256": "fc412222ebd8dcba14f9114f78b7e8241b53d534cf277256c831f81587d703aa"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-try-later-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-try-later",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-try-later.png",
+      "sha256": "56c385bedf509e1e50dc38e352d8e1f3943c60ab3db3a56128d3929fe03e4c52"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-request-invalid-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-request-invalid",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-request-invalid.png",
+      "sha256": "cf655195fd01342e84ec20c5330178b19113c46c7456bd4997db2c3e93113aeb"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:idp-provider-unavailable-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-provider-unavailable",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/idp-provider-unavailable.png",
+      "sha256": "84a14663b1a2becee190876653a80c296231d86c0b64fb82b744e05aa528cec6"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-method-choice-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-method-choice",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-method-choice.png",
+      "sha256": "f5d4c63709ad7b1727b98f18d3c7d5af108feb73785da202e4f50db4861808e6"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-enter-authenticator-code-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-enter-authenticator-code.png",
+      "sha256": "fd998a42ea41a791c3185956747063ac39d05ed74dbfd330e675abe5e14eebcf"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-enter-sms-code-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-sms-code",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-enter-sms-code.png",
+      "sha256": "65cfc4125c084d2a512fefee2554492778b65c718e6ad6cbd4a6d32eda8752fa"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-enter-email-code-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-email-code",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-enter-email-code.png",
+      "sha256": "18c7ace0d3e7b837f33decb35a7070e20cf99d877ec1dd4f12346ac1e166714d"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-recovery-code-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-recovery-code",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-recovery-code.png",
+      "sha256": "25a46224da0e480aa6f3295fb83b43523d6508049077badfa54d6658aa219e34"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-error-visible-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-error-visible",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-error-visible.png",
+      "sha256": "c80bd77ba4b8c08296b682f6a21a0cd68ade2d43742a0314eb350270b624c48d"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-channel-unavailable-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-channel-unavailable.png",
+      "sha256": "cd155254ab63a537dacca7f068f5dd5395bb6cbd27503f54c9b242df22c66265"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-authenticator-code-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-authenticator-code-presented",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-authenticator-code.png",
+      "sha256": "73e5b8fca58f06e9599c3500ddb579de1aa0dab3403d0c63be3f56a32177eea8"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-sms-message-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-sms-message-presented",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-sms-message.png",
+      "sha256": "ba5d9a571b13b713ff2b58b3aaf55b4ee44a96358c770aefce121025ada55378"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-email-message-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-email-message-presented",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-email-message.png",
+      "sha256": "975d456ab5948a45e4aab63e14d10e0db719878414be7422ff861c891953861f"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-push-approval-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-push-approval-presented",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-push-approval.png",
+      "sha256": "82fed815f1bba0a52b4b6dc6d2c3192a75754dfc6a841bdc905efad02ecdbd57"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:mfa-security-key-prompt-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/mfa-security-key-prompt.png",
+      "sha256": "908bc3f4e128f0322824a8fe6ef05dea20a83d5e377f9d9e584deeb4f834a968"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:identity-consent-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:identity-consent",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/identity-consent.png",
+      "sha256": "e966d036e57aa3004bcf245513af2b09a099056bbeb730fd24d25cef115a4666"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:identity-consent-denied-visible-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:identity-consent-denied-visible",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/identity-consent-denied-visible.png",
+      "sha256": "18510d32bbdf8394cf6ff2df13f65ec81d262d1fda5f3024a534cdf537e74833"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:resource-consent-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/resource-consent.png",
+      "sha256": "84af0de56327fd1e915ae21b2d34ab9ccc8a44f6945c68d8fab07d377bf5d657"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:resource-consent-details-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-details",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/resource-consent-details.png",
+      "sha256": "365b15a86d6f10f2633907e5b70ffbdd97acdfd89b18085f0b7dbf41b2fa3e3c"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:resource-consent-denied-visible-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-denied-visible",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/resource-consent-denied-visible.png",
+      "sha256": "06c9904f3010fb53b77d7089bc3f661256894b9f13a4e08165139f2279aa41bc"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:resource-consent-error-visible-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-error-visible",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/resource-consent-error-visible.png",
+      "sha256": "b7304c17c894a9ea4e3368bab46ecd7dd5eb69b192fc6a96d74fe78e5f32a160"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:pod-try-later-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:pod-try-later",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/pod-try-later.png",
+      "sha256": "ec9e9c932fbb7ad8524035b718b6ce229639753b91a0e7c8f850ff6d5fbbb154"
+    },
+    {
+      "surfaceRef": "urn:ujg:solid-oidc:pod-support-surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:pod-support",
+      "sourceAsset": "apps/graph-studio/public/mockups/solid-oidc/pod-support.png",
+      "sha256": "4779c9270aacac9978591638b4efca82f233859484e6f3d5a6a1417d5009f89c"
+    }
+  ]
+}

@@ -1,0 +1,2381 @@
+{
+  "@context": [
+    "https://ujg.specs.openuji.org/ed/ns/core.context.jsonld",
+    "https://ujg.specs.openuji.org/ed/ns/graph.context.jsonld",
+    "https://ujg.specs.openuji.org/ed/ns/surface.context.jsonld"
+  ],
+  "@id": "urn:ujg:solid-oidc",
+  "@type": "UJGDocument",
+  "nodes": [
+    {
+      "@id": "urn:ujg:solid-oidc:app",
+      "@type": "Touchpoint",
+      "label": "App touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:app-auth-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp",
+      "@type": "Touchpoint",
+      "label": "Identity provider touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:idp-auth-journey",
+        "urn:ujg:solid-oidc:mfa-challenge-journey",
+        "urn:ujg:solid-oidc:identity-consent-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-authorization",
+      "@type": "Touchpoint",
+      "label": "Pod/resource authorization touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:resource-consent-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-app",
+      "@type": "Touchpoint",
+      "label": "Authenticator app touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:authenticator-code-journey",
+        "urn:ujg:solid-oidc:authenticator-push-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:sms-channel",
+      "@type": "Touchpoint",
+      "label": "SMS channel touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:sms-verification-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:email-provider",
+      "@type": "Touchpoint",
+      "label": "Email provider touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:email-verification-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authenticator",
+      "@type": "Touchpoint",
+      "label": "Platform authenticator touchpoint",
+      "journeyRefs": [
+        "urn:ujg:solid-oidc:platform-authentication-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-auth-journey",
+      "@type": "Journey",
+      "label": "App auth journey",
+      "defaultEntryRef": "urn:ujg:solid-oidc:app-auth-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:app-auth-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:app-sign-in-required",
+        "urn:ujg:solid-oidc:idp-auth-flow",
+        "urn:ujg:solid-oidc:app-auth-callback-processing",
+        "urn:ujg:solid-oidc:app-logged-in",
+        "urn:ujg:solid-oidc:app-access-denied",
+        "urn:ujg:solid-oidc:app-login-cancelled",
+        "urn:ujg:solid-oidc:app-login-error",
+        "urn:ujg:solid-oidc:app-limited-mode",
+        "urn:ujg:solid-oidc:app-unauthenticated",
+        "urn:ujg:solid-oidc:app-support"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:app-starts-idp-account-selection",
+        "urn:ujg:solid-oidc:app-starts-idp-auth",
+        "urn:ujg:solid-oidc:app-starts-idp-step-up-auth",
+        "urn:ujg:solid-oidc:app-starts-identity-consent-only",
+        "urn:ujg:solid-oidc:app-starts-resource-consent-only",
+        "urn:ujg:solid-oidc:app-starts-existing-idp-session-auth",
+        "urn:ujg:solid-oidc:app-finishes-login",
+        "urn:ujg:solid-oidc:app-callback-processing-fails",
+        "urn:ujg:solid-oidc:app-access-denied-try-another-account",
+        "urn:ujg:solid-oidc:app-access-denied-continue-without-access",
+        "urn:ujg:solid-oidc:app-login-cancelled-resume-sign-in",
+        "urn:ujg:solid-oidc:app-login-cancelled-return-to-app",
+        "urn:ujg:solid-oidc:app-login-error-try-again",
+        "urn:ujg:solid-oidc:app-login-error-contact-support",
+        "urn:ujg:solid-oidc:app-continues-after-idp-success",
+        "urn:ujg:solid-oidc:app-continues-after-idp-denied",
+        "urn:ujg:solid-oidc:app-continues-after-idp-cancelled",
+        "urn:ujg:solid-oidc:app-continues-after-idp-failed"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-auth-entry",
+      "@type": "JourneyEntry",
+      "label": "Start app auth",
+      "stateRef": "urn:ujg:solid-oidc:app-sign-in-required"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-sign-in-required",
+      "label": "Sign-in required",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-sign-in-required-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-sign-in-required"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-flow",
+      "label": "Authenticate with identity provider",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:idp-auth-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-auth-callback-processing",
+      "label": "Completing sign-in",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-auth-callback-processing-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-auth-callback-processing"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-logged-in",
+      "label": "Logged in",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-logged-in-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-logged-in"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-access-denied",
+      "label": "Access denied",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-access-denied-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-access-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-cancelled",
+      "label": "Login cancelled",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-cancelled-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-login-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-error",
+      "label": "Login error",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-error-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-login-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-limited-mode",
+      "label": "Limited mode",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-limited-mode-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-limited-mode"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-unauthenticated",
+      "label": "Unauthenticated app",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-unauthenticated-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-unauthenticated"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-support",
+      "label": "App support",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-support-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:app-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-idp-account-selection",
+      "@type": "Transition",
+      "label": "Choose account",
+      "tags": [
+        "primary",
+        "account-selection",
+        "oidc-prompt-select-account"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-idp-auth",
+      "@type": "Transition",
+      "label": "Start sign-in",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow",
+      "toEntryRef": "urn:ujg:solid-oidc:idp-login-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-idp-step-up-auth",
+      "@type": "Transition",
+      "label": "Continue with step-up authentication",
+      "tags": [
+        "primary",
+        "step-up"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow",
+      "toEntryRef": "urn:ujg:solid-oidc:idp-mfa-challenge-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-identity-consent-only",
+      "@type": "Transition",
+      "label": "Continue to identity consent",
+      "tags": [
+        "primary",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow",
+      "toEntryRef": "urn:ujg:solid-oidc:idp-identity-consent-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-resource-consent-only",
+      "@type": "Transition",
+      "label": "Continue to resource consent",
+      "tags": [
+        "primary",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow",
+      "toEntryRef": "urn:ujg:solid-oidc:idp-resource-consent-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-starts-existing-idp-session-auth",
+      "@type": "Transition",
+      "label": "Existing IdP session returns to app",
+      "tags": [
+        "shortcut",
+        "existing-idp-session",
+        "no-visible-idp-surface"
+      ],
+      "from": "urn:ujg:solid-oidc:app-sign-in-required",
+      "to": "urn:ujg:solid-oidc:app-auth-callback-processing"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-finishes-login",
+      "@type": "Transition",
+      "label": "Finish sign-in",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:app-auth-callback-processing",
+      "to": "urn:ujg:solid-oidc:app-logged-in"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-callback-processing-fails",
+      "@type": "Transition",
+      "label": "Callback processing failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:app-auth-callback-processing",
+      "to": "urn:ujg:solid-oidc:app-login-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-access-denied-try-another-account",
+      "@type": "Transition",
+      "label": "Try another account",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-access-denied",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-access-denied-continue-without-access",
+      "@type": "Transition",
+      "label": "Continue without access",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-access-denied",
+      "to": "urn:ujg:solid-oidc:app-limited-mode"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-cancelled-resume-sign-in",
+      "@type": "Transition",
+      "label": "Resume sign-in",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-login-cancelled",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-cancelled-return-to-app",
+      "@type": "Transition",
+      "label": "Return to app",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-login-cancelled",
+      "to": "urn:ujg:solid-oidc:app-unauthenticated"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-error-try-again",
+      "@type": "Transition",
+      "label": "Try again",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-login-error",
+      "to": "urn:ujg:solid-oidc:idp-auth-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-login-error-contact-support",
+      "@type": "Transition",
+      "label": "Contact support",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:app-login-error",
+      "to": "urn:ujg:solid-oidc:app-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-continues-after-idp-success",
+      "@type": "Transition",
+      "label": "Continue after IdP success",
+      "tags": [
+        "primary",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-auth-flow",
+      "to": "urn:ujg:solid-oidc:app-auth-callback-processing",
+      "fromExitRef": "urn:ujg:solid-oidc:idp-auth-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-continues-after-idp-denied",
+      "@type": "Transition",
+      "label": "Continue after denied consent",
+      "tags": [
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-auth-flow",
+      "to": "urn:ujg:solid-oidc:app-access-denied",
+      "fromExitRef": "urn:ujg:solid-oidc:idp-auth-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-continues-after-idp-cancelled",
+      "@type": "Transition",
+      "label": "Continue after cancelled login",
+      "tags": [
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-auth-flow",
+      "to": "urn:ujg:solid-oidc:app-login-cancelled",
+      "fromExitRef": "urn:ujg:solid-oidc:idp-auth-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:app-continues-after-idp-failed",
+      "@type": "Transition",
+      "label": "Continue after failed login",
+      "tags": [
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-auth-flow",
+      "to": "urn:ujg:solid-oidc:app-login-error",
+      "fromExitRef": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-journey",
+      "@type": "Journey",
+      "label": "IdP auth journey",
+      "defaultEntryRef": "urn:ujg:solid-oidc:idp-account-selection-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:idp-login-entry",
+        "urn:ujg:solid-oidc:idp-account-selection-entry",
+        "urn:ujg:solid-oidc:idp-mfa-challenge-entry",
+        "urn:ujg:solid-oidc:idp-identity-consent-entry",
+        "urn:ujg:solid-oidc:idp-resource-consent-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:idp-account-selection",
+        "urn:ujg:solid-oidc:idp-login",
+        "urn:ujg:solid-oidc:idp-login-error",
+        "urn:ujg:solid-oidc:idp-account-recovery",
+        "urn:ujg:solid-oidc:idp-support",
+        "urn:ujg:solid-oidc:idp-try-later",
+        "urn:ujg:solid-oidc:idp-mfa-challenge",
+        "urn:ujg:solid-oidc:idp-identity-consent-flow",
+        "urn:ujg:solid-oidc:idp-resource-consent-flow",
+        "urn:ujg:solid-oidc:idp-request-invalid",
+        "urn:ujg:solid-oidc:idp-provider-unavailable",
+        "urn:ujg:solid-oidc:idp-after-mfa"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:idp-account-selection-to-login",
+        "urn:ujg:solid-oidc:idp-account-selection-to-mfa",
+        "urn:ujg:solid-oidc:idp-account-selection-to-identity-consent",
+        "urn:ujg:solid-oidc:idp-account-selection-to-resource-consent",
+        "urn:ujg:solid-oidc:idp-account-selection-to-success",
+        "urn:ujg:solid-oidc:idp-account-selection-cancelled",
+        "urn:ujg:solid-oidc:idp-login-to-error",
+        "urn:ujg:solid-oidc:idp-login-to-account-selection",
+        "urn:ujg:solid-oidc:idp-login-to-mfa-method-choice",
+        "urn:ujg:solid-oidc:idp-login-to-authenticator-code",
+        "urn:ujg:solid-oidc:idp-login-to-sms-code",
+        "urn:ujg:solid-oidc:idp-login-to-email-code",
+        "urn:ujg:solid-oidc:idp-login-to-push-approval",
+        "urn:ujg:solid-oidc:idp-login-to-security-key",
+        "urn:ujg:solid-oidc:idp-login-to-identity-consent",
+        "urn:ujg:solid-oidc:idp-login-to-resource-consent",
+        "urn:ujg:solid-oidc:idp-login-to-success",
+        "urn:ujg:solid-oidc:idp-login-cancelled",
+        "urn:ujg:solid-oidc:idp-login-error-to-login",
+        "urn:ujg:solid-oidc:idp-login-error-use-account-recovery",
+        "urn:ujg:solid-oidc:idp-login-error-contact-idp-support",
+        "urn:ujg:solid-oidc:idp-login-error-to-failed",
+        "urn:ujg:solid-oidc:idp-account-recovery-to-login",
+        "urn:ujg:solid-oidc:idp-account-recovery-to-failed",
+        "urn:ujg:solid-oidc:idp-support-to-failed",
+        "urn:ujg:solid-oidc:idp-try-later-to-failed",
+        "urn:ujg:solid-oidc:idp-request-invalid-to-failed",
+        "urn:ujg:solid-oidc:idp-provider-unavailable-try-later",
+        "urn:ujg:solid-oidc:idp-provider-unavailable-contact-support",
+        "urn:ujg:solid-oidc:idp-provider-unavailable-to-failed",
+        "urn:ujg:solid-oidc:idp-mfa-success-to-identity-consent",
+        "urn:ujg:solid-oidc:idp-mfa-success-to-resource-consent",
+        "urn:ujg:solid-oidc:idp-mfa-success-to-after-mfa",
+        "urn:ujg:solid-oidc:idp-mfa-cancelled-to-idp-cancelled",
+        "urn:ujg:solid-oidc:idp-mfa-error-to-idp-failed",
+        "urn:ujg:solid-oidc:identity-consent-success-to-resource-consent",
+        "urn:ujg:solid-oidc:identity-consent-denied-to-idp-denied",
+        "urn:ujg:solid-oidc:identity-consent-cancelled-to-idp-cancelled",
+        "urn:ujg:solid-oidc:resource-consent-success-to-idp-success",
+        "urn:ujg:solid-oidc:resource-consent-denied-to-idp-denied",
+        "urn:ujg:solid-oidc:resource-consent-cancelled-to-idp-cancelled",
+        "urn:ujg:solid-oidc:resource-consent-error-to-idp-failed"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:idp-auth-success",
+        "urn:ujg:solid-oidc:idp-auth-denied",
+        "urn:ujg:solid-oidc:idp-auth-cancelled",
+        "urn:ujg:solid-oidc:idp-auth-failed"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at login",
+      "stateRef": "urn:ujg:solid-oidc:idp-login"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at account selection",
+      "stateRef": "urn:ujg:solid-oidc:idp-account-selection"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-challenge-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at MFA challenge",
+      "stateRef": "urn:ujg:solid-oidc:idp-mfa-challenge"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-identity-consent-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at identity consent",
+      "stateRef": "urn:ujg:solid-oidc:idp-identity-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-resource-consent-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at resource consent",
+      "stateRef": "urn:ujg:solid-oidc:idp-resource-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection",
+      "label": "Select account",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-account-selection"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login",
+      "label": "Login",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-login"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error",
+      "label": "Login error",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-login-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-recovery",
+      "label": "Account recovery",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-recovery-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-account-recovery"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-support",
+      "label": "IdP support",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-support-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-try-later",
+      "label": "Try again later",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-try-later-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-try-later"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "label": "MFA challenge",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:mfa-challenge-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-identity-consent-flow",
+      "label": "Identity consent",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:identity-consent-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "label": "Resource consent",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:resource-consent-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-request-invalid",
+      "label": "Invalid request",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-request-invalid-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-request-invalid"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-provider-unavailable",
+      "label": "Provider unavailable",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-provider-unavailable-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:idp-provider-unavailable"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-after-mfa",
+      "label": "MFA completed",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-to-login",
+      "@type": "Transition",
+      "label": "Selected account needs login",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-login"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-to-mfa",
+      "@type": "Transition",
+      "label": "Selected account needs MFA",
+      "tags": [
+        "primary",
+        "step-up"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-method-choice-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-to-identity-consent",
+      "@type": "Transition",
+      "label": "Selected account needs identity consent",
+      "tags": [
+        "primary",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-identity-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-to-resource-consent",
+      "@type": "Transition",
+      "label": "Selected account needs resource consent",
+      "tags": [
+        "primary",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-resource-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-to-success",
+      "@type": "Transition",
+      "label": "Selected account already approved",
+      "tags": [
+        "shortcut"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-auth-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-selection-cancelled",
+      "@type": "Transition",
+      "label": "Cancel account selection",
+      "tags": [
+        "cancel"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-selection",
+      "to": "urn:ujg:solid-oidc:idp-auth-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-error",
+      "@type": "Transition",
+      "label": "Show login error",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-login-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-account-selection",
+      "@type": "Transition",
+      "label": "Choose another account",
+      "tags": [
+        "primary",
+        "optional-path"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-account-selection"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-mfa-method-choice",
+      "@type": "Transition",
+      "label": "Require MFA method choice",
+      "tags": [
+        "primary",
+        "step-up"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-method-choice-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-authenticator-code",
+      "@type": "Transition",
+      "label": "Use authenticator app code",
+      "tags": [
+        "primary",
+        "step-up",
+        "authenticator-app"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-authenticator-code-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-sms-code",
+      "@type": "Transition",
+      "label": "Use SMS code",
+      "tags": [
+        "primary",
+        "step-up",
+        "sms"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-sms-message-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-email-code",
+      "@type": "Transition",
+      "label": "Use email code",
+      "tags": [
+        "primary",
+        "step-up",
+        "email"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-email-message-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-push-approval",
+      "@type": "Transition",
+      "label": "Use authenticator push approval",
+      "tags": [
+        "primary",
+        "step-up",
+        "push",
+        "authenticator-app"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-push-approval-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-security-key",
+      "@type": "Transition",
+      "label": "Use security key or platform authenticator",
+      "tags": [
+        "primary",
+        "step-up",
+        "security-key",
+        "platform-authenticator"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "toEntryRef": "urn:ujg:solid-oidc:mfa-security-key-entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-identity-consent",
+      "@type": "Transition",
+      "label": "Continue to identity consent",
+      "tags": [
+        "primary",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-identity-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-resource-consent",
+      "@type": "Transition",
+      "label": "Continue to resource consent",
+      "tags": [
+        "primary",
+        "resource-consent",
+        "shortcut"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-resource-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-to-success",
+      "@type": "Transition",
+      "label": "Complete without visible consent",
+      "tags": [
+        "shortcut"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-auth-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-cancelled",
+      "@type": "Transition",
+      "label": "Cancel login",
+      "tags": [
+        "cancel"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login",
+      "to": "urn:ujg:solid-oidc:idp-auth-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error-to-login",
+      "@type": "Transition",
+      "label": "Retry login",
+      "tags": [
+        "validation",
+        "retry-local"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login-error",
+      "to": "urn:ujg:solid-oidc:idp-login"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error-use-account-recovery",
+      "@type": "Transition",
+      "label": "Use account recovery",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login-error",
+      "to": "urn:ujg:solid-oidc:idp-account-recovery"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error-contact-idp-support",
+      "@type": "Transition",
+      "label": "Contact IdP support",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login-error",
+      "to": "urn:ujg:solid-oidc:idp-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-login-error-to-failed",
+      "@type": "Transition",
+      "label": "Login cannot continue",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-login-error",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-recovery-to-login",
+      "@type": "Transition",
+      "label": "Back to login",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-recovery",
+      "to": "urn:ujg:solid-oidc:idp-login"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-account-recovery-to-failed",
+      "@type": "Transition",
+      "label": "End recovery as failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-account-recovery",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-support-to-failed",
+      "@type": "Transition",
+      "label": "End auth from support",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-support",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-try-later-to-failed",
+      "@type": "Transition",
+      "label": "End auth as failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-try-later",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-request-invalid-to-failed",
+      "@type": "Transition",
+      "label": "End as failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-request-invalid",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-provider-unavailable-try-later",
+      "@type": "Transition",
+      "label": "Try again later",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-provider-unavailable",
+      "to": "urn:ujg:solid-oidc:idp-try-later"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-provider-unavailable-contact-support",
+      "@type": "Transition",
+      "label": "Contact IdP support",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-provider-unavailable",
+      "to": "urn:ujg:solid-oidc:idp-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-provider-unavailable-to-failed",
+      "@type": "Transition",
+      "label": "End as failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-provider-unavailable",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-success-to-identity-consent",
+      "@type": "Transition",
+      "label": "Continue to identity consent after MFA",
+      "tags": [
+        "primary",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-after-mfa",
+      "to": "urn:ujg:solid-oidc:idp-identity-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-success-to-resource-consent",
+      "@type": "Transition",
+      "label": "Continue to resource consent after MFA",
+      "tags": [
+        "primary",
+        "resource-consent",
+        "shortcut"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-after-mfa",
+      "to": "urn:ujg:solid-oidc:idp-resource-consent-flow"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-success-to-after-mfa",
+      "@type": "Transition",
+      "label": "MFA completed; select continuation",
+      "from": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "to": "urn:ujg:solid-oidc:idp-after-mfa",
+      "fromExitRef": "urn:ujg:solid-oidc:mfa-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-cancelled-to-idp-cancelled",
+      "@type": "Transition",
+      "label": "End IdP auth as cancelled",
+      "tags": [
+        "cancel"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "to": "urn:ujg:solid-oidc:idp-auth-cancelled",
+      "fromExitRef": "urn:ujg:solid-oidc:mfa-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-mfa-error-to-idp-failed",
+      "@type": "Transition",
+      "label": "End IdP auth as failed",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-mfa-challenge",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed",
+      "fromExitRef": "urn:ujg:solid-oidc:mfa-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-success-to-resource-consent",
+      "@type": "Transition",
+      "label": "Continue to resource consent",
+      "tags": [
+        "primary",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-identity-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "fromExitRef": "urn:ujg:solid-oidc:identity-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denied-to-idp-denied",
+      "@type": "Transition",
+      "label": "End IdP auth as denied",
+      "tags": [
+        "denied",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-identity-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-denied",
+      "fromExitRef": "urn:ujg:solid-oidc:identity-consent-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-cancelled-to-idp-cancelled",
+      "@type": "Transition",
+      "label": "End IdP auth as cancelled",
+      "tags": [
+        "cancel",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-identity-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-cancelled",
+      "fromExitRef": "urn:ujg:solid-oidc:identity-consent-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-success-to-idp-success",
+      "@type": "Transition",
+      "label": "Complete IdP auth after resource consent",
+      "tags": [
+        "primary",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-success",
+      "fromExitRef": "urn:ujg:solid-oidc:resource-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denied-to-idp-denied",
+      "@type": "Transition",
+      "label": "End IdP auth as denied",
+      "tags": [
+        "denied",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-denied",
+      "fromExitRef": "urn:ujg:solid-oidc:resource-consent-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-cancelled-to-idp-cancelled",
+      "@type": "Transition",
+      "label": "End IdP auth as cancelled",
+      "tags": [
+        "cancel",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-cancelled",
+      "fromExitRef": "urn:ujg:solid-oidc:resource-consent-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-to-idp-failed",
+      "@type": "Transition",
+      "label": "End IdP auth as failed",
+      "tags": [
+        "terminal-error",
+        "outcome"
+      ],
+      "from": "urn:ujg:solid-oidc:idp-resource-consent-flow",
+      "to": "urn:ujg:solid-oidc:idp-auth-failed",
+      "fromExitRef": "urn:ujg:solid-oidc:resource-consent-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-success",
+      "@type": "JourneyExit",
+      "label": "IdP auth success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-denied",
+      "@type": "JourneyExit",
+      "label": "IdP auth denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-cancelled",
+      "@type": "JourneyExit",
+      "label": "IdP auth cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:idp-auth-failed",
+      "@type": "JourneyExit",
+      "label": "IdP auth failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-challenge-journey",
+      "@type": "Journey",
+      "label": "MFA challenge journey",
+      "defaultEntryRef": "urn:ujg:solid-oidc:mfa-method-choice-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:mfa-method-choice-entry",
+        "urn:ujg:solid-oidc:mfa-authenticator-code-entry",
+        "urn:ujg:solid-oidc:mfa-sms-message-entry",
+        "urn:ujg:solid-oidc:mfa-email-message-entry",
+        "urn:ujg:solid-oidc:mfa-push-approval-entry",
+        "urn:ujg:solid-oidc:mfa-security-key-entry",
+        "urn:ujg:solid-oidc:mfa-recovery-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-method-choice",
+        "urn:ujg:solid-oidc:mfa-authenticator-code",
+        "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+        "urn:ujg:solid-oidc:mfa-sms-message",
+        "urn:ujg:solid-oidc:mfa-enter-sms-code",
+        "urn:ujg:solid-oidc:mfa-email-message",
+        "urn:ujg:solid-oidc:mfa-enter-email-code",
+        "urn:ujg:solid-oidc:mfa-push-approval",
+        "urn:ujg:solid-oidc:mfa-security-key-prompt",
+        "urn:ujg:solid-oidc:mfa-recovery-code",
+        "urn:ujg:solid-oidc:mfa-error-visible",
+        "urn:ujg:solid-oidc:mfa-channel-unavailable"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-method-choice-to-authenticator-code",
+        "urn:ujg:solid-oidc:mfa-method-choice-to-sms-message",
+        "urn:ujg:solid-oidc:mfa-method-choice-to-email-message",
+        "urn:ujg:solid-oidc:mfa-method-choice-to-push-approval",
+        "urn:ujg:solid-oidc:mfa-method-choice-to-security-key",
+        "urn:ujg:solid-oidc:mfa-method-choice-to-recovery",
+        "urn:ujg:solid-oidc:mfa-method-choice-cancelled",
+        "urn:ujg:solid-oidc:mfa-enter-authenticator-code-to-success",
+        "urn:ujg:solid-oidc:mfa-enter-authenticator-code-to-error-visible",
+        "urn:ujg:solid-oidc:mfa-enter-sms-code-to-success",
+        "urn:ujg:solid-oidc:mfa-enter-sms-code-to-error-visible",
+        "urn:ujg:solid-oidc:mfa-enter-email-code-to-success",
+        "urn:ujg:solid-oidc:mfa-enter-email-code-to-error-visible",
+        "urn:ujg:solid-oidc:mfa-recovery-code-to-success",
+        "urn:ujg:solid-oidc:mfa-recovery-code-to-error-visible",
+        "urn:ujg:solid-oidc:mfa-error-visible-to-method-choice",
+        "urn:ujg:solid-oidc:mfa-error-visible-to-recovery-code",
+        "urn:ujg:solid-oidc:mfa-error-visible-to-error-exit",
+        "urn:ujg:solid-oidc:mfa-channel-unavailable-to-method-choice",
+        "urn:ujg:solid-oidc:mfa-channel-unavailable-to-error-exit",
+        "urn:ujg:solid-oidc:mfa-authenticator-code-to-idp-entry-boundary",
+        "urn:ujg:solid-oidc:mfa-sms-message-to-idp-entry-boundary",
+        "urn:ujg:solid-oidc:mfa-sms-message-unavailable-boundary",
+        "urn:ujg:solid-oidc:mfa-email-message-to-idp-entry-boundary",
+        "urn:ujg:solid-oidc:mfa-email-message-unavailable-boundary",
+        "urn:ujg:solid-oidc:mfa-push-approval-to-success-boundary",
+        "urn:ujg:solid-oidc:mfa-push-approval-to-error-visible-boundary",
+        "urn:ujg:solid-oidc:mfa-security-key-to-success-boundary",
+        "urn:ujg:solid-oidc:mfa-security-key-to-error-visible-boundary",
+        "urn:ujg:solid-oidc:mfa-security-key-cancelled-boundary"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:mfa-success",
+        "urn:ujg:solid-oidc:mfa-cancelled",
+        "urn:ujg:solid-oidc:mfa-error"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at MFA method choice",
+      "stateRef": "urn:ujg:solid-oidc:mfa-method-choice"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at authenticator code",
+      "stateRef": "urn:ujg:solid-oidc:mfa-authenticator-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at SMS message",
+      "stateRef": "urn:ujg:solid-oidc:mfa-sms-message"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at email message",
+      "stateRef": "urn:ujg:solid-oidc:mfa-email-message"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at push approval",
+      "stateRef": "urn:ujg:solid-oidc:mfa-push-approval"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at security key prompt",
+      "stateRef": "urn:ujg:solid-oidc:mfa-security-key-prompt"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-recovery-entry",
+      "@type": "JourneyEntry",
+      "label": "Start at recovery code",
+      "stateRef": "urn:ujg:solid-oidc:mfa-recovery-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice",
+      "label": "Choose MFA method",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-method-choice"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code",
+      "label": "Authenticator app code",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:authenticator-code-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+      "label": "Enter authenticator code",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-authenticator-code-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-authenticator-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message",
+      "label": "SMS message",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:sms-verification-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-sms-code",
+      "label": "Enter SMS code",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-sms-code-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-sms-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message",
+      "label": "Email message",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:email-verification-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-email-code",
+      "label": "Enter email code",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-email-code-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-enter-email-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval",
+      "label": "Push approval",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:authenticator-push-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-prompt",
+      "label": "Security key prompt",
+      "@type": "CompositeState",
+      "subjourneyRefs": [
+        "urn:ujg:solid-oidc:platform-authentication-journey"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-recovery-code",
+      "label": "Recovery code",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-recovery-code-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-recovery-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error-visible",
+      "label": "MFA error",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error-visible-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "label": "MFA channel unavailable",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-channel-unavailable-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-channel-unavailable"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-authenticator-code",
+      "@type": "Transition",
+      "label": "Choose authenticator app code",
+      "tags": [
+        "primary",
+        "authenticator-app"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-authenticator-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-sms-message",
+      "@type": "Transition",
+      "label": "Choose SMS code",
+      "tags": [
+        "primary",
+        "sms"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-sms-message"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-email-message",
+      "@type": "Transition",
+      "label": "Choose email code",
+      "tags": [
+        "primary",
+        "email"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-email-message"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-push-approval",
+      "@type": "Transition",
+      "label": "Choose push approval",
+      "tags": [
+        "primary",
+        "push",
+        "authenticator-app"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-push-approval"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-security-key",
+      "@type": "Transition",
+      "label": "Choose security key",
+      "tags": [
+        "primary",
+        "security-key",
+        "platform-authenticator"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-security-key-prompt"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-to-recovery",
+      "@type": "Transition",
+      "label": "Use recovery code",
+      "tags": [
+        "primary",
+        "recovery-local"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-recovery-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-method-choice-cancelled",
+      "@type": "Transition",
+      "label": "Cancel MFA",
+      "tags": [
+        "cancel"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-method-choice",
+      "to": "urn:ujg:solid-oidc:mfa-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-authenticator-code-to-success",
+      "@type": "Transition",
+      "label": "Code accepted",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+      "to": "urn:ujg:solid-oidc:mfa-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-authenticator-code-to-error-visible",
+      "@type": "Transition",
+      "label": "Code rejected",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-sms-code-to-success",
+      "@type": "Transition",
+      "label": "Code accepted",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-sms-code",
+      "to": "urn:ujg:solid-oidc:mfa-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-sms-code-to-error-visible",
+      "@type": "Transition",
+      "label": "Code rejected",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-sms-code",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-email-code-to-success",
+      "@type": "Transition",
+      "label": "Code accepted",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-email-code",
+      "to": "urn:ujg:solid-oidc:mfa-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-enter-email-code-to-error-visible",
+      "@type": "Transition",
+      "label": "Code rejected",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-enter-email-code",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-recovery-code-to-success",
+      "@type": "Transition",
+      "label": "Recovery code accepted",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-recovery-code",
+      "to": "urn:ujg:solid-oidc:mfa-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-recovery-code-to-error-visible",
+      "@type": "Transition",
+      "label": "Recovery code rejected",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-recovery-code",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error-visible-to-method-choice",
+      "@type": "Transition",
+      "label": "Choose another MFA method",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-error-visible",
+      "to": "urn:ujg:solid-oidc:mfa-method-choice"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error-visible-to-recovery-code",
+      "@type": "Transition",
+      "label": "Use recovery code",
+      "tags": [
+        "optional-recovery",
+        "recovery-local"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-error-visible",
+      "to": "urn:ujg:solid-oidc:mfa-recovery-code"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error-visible-to-error-exit",
+      "@type": "Transition",
+      "label": "MFA cannot continue",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-error-visible",
+      "to": "urn:ujg:solid-oidc:mfa-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-channel-unavailable-to-method-choice",
+      "@type": "Transition",
+      "label": "Choose another MFA method",
+      "tags": [
+        "optional-recovery"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "to": "urn:ujg:solid-oidc:mfa-method-choice"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-channel-unavailable-to-error-exit",
+      "@type": "Transition",
+      "label": "MFA cannot continue",
+      "tags": [
+        "terminal-error"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "to": "urn:ujg:solid-oidc:mfa-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code-to-idp-entry-boundary",
+      "@type": "Transition",
+      "label": "Enter code in IdP",
+      "from": "urn:ujg:solid-oidc:mfa-authenticator-code",
+      "to": "urn:ujg:solid-oidc:mfa-enter-authenticator-code",
+      "fromExitRef": "urn:ujg:solid-oidc:authenticator-code-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-to-idp-entry-boundary",
+      "@type": "Transition",
+      "label": "Enter SMS code in IdP",
+      "from": "urn:ujg:solid-oidc:mfa-sms-message",
+      "to": "urn:ujg:solid-oidc:mfa-enter-sms-code",
+      "fromExitRef": "urn:ujg:solid-oidc:sms-verification-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-unavailable-boundary",
+      "@type": "Transition",
+      "label": "SMS unavailable",
+      "from": "urn:ujg:solid-oidc:mfa-sms-message",
+      "to": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "fromExitRef": "urn:ujg:solid-oidc:sms-verification-journey-unavailable-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-to-idp-entry-boundary",
+      "@type": "Transition",
+      "label": "Enter email code in IdP",
+      "from": "urn:ujg:solid-oidc:mfa-email-message",
+      "to": "urn:ujg:solid-oidc:mfa-enter-email-code",
+      "fromExitRef": "urn:ujg:solid-oidc:email-verification-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-unavailable-boundary",
+      "@type": "Transition",
+      "label": "Email unavailable",
+      "from": "urn:ujg:solid-oidc:mfa-email-message",
+      "to": "urn:ujg:solid-oidc:mfa-channel-unavailable",
+      "fromExitRef": "urn:ujg:solid-oidc:email-verification-journey-unavailable-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-to-success-boundary",
+      "@type": "Transition",
+      "label": "Push approved",
+      "from": "urn:ujg:solid-oidc:mfa-push-approval",
+      "to": "urn:ujg:solid-oidc:mfa-success",
+      "fromExitRef": "urn:ujg:solid-oidc:authenticator-push-journey-approved-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-to-error-visible-boundary",
+      "@type": "Transition",
+      "label": "Push denied or timed out",
+      "from": "urn:ujg:solid-oidc:mfa-push-approval",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible",
+      "fromExitRef": "urn:ujg:solid-oidc:authenticator-push-journey-denied-or-timeout-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-to-success-boundary",
+      "@type": "Transition",
+      "label": "Security key accepted",
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt",
+      "to": "urn:ujg:solid-oidc:mfa-success",
+      "fromExitRef": "urn:ujg:solid-oidc:platform-authentication-journey-accepted-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-to-error-visible-boundary",
+      "@type": "Transition",
+      "label": "Security key failed",
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt",
+      "to": "urn:ujg:solid-oidc:mfa-error-visible",
+      "fromExitRef": "urn:ujg:solid-oidc:platform-authentication-journey-failed-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-cancelled-boundary",
+      "@type": "Transition",
+      "label": "Security key cancelled",
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt",
+      "to": "urn:ujg:solid-oidc:mfa-cancelled",
+      "fromExitRef": "urn:ujg:solid-oidc:platform-authentication-journey-cancelled-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-success",
+      "@type": "JourneyExit",
+      "label": "MFA succeeded"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-cancelled",
+      "@type": "JourneyExit",
+      "label": "MFA cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-error",
+      "@type": "JourneyExit",
+      "label": "MFA error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-code-journey",
+      "@type": "Journey",
+      "label": "Authenticator app code",
+      "defaultEntryRef": "urn:ujg:solid-oidc:authenticator-code-journey-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:authenticator-code-journey-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-authenticator-code-presented"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-authenticator-code-to-idp-entry"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:authenticator-code-journey-code-ready-exit"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-code-journey-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin authenticator app code",
+      "stateRef": "urn:ujg:solid-oidc:mfa-authenticator-code-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code-presented",
+      "label": "Authenticator app code",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-authenticator-code-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-authenticator-code-to-idp-entry",
+      "@type": "Transition",
+      "label": "Enter code in IdP",
+      "tags": [
+        "primary",
+        "cross-touchpoint-return"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-authenticator-code-presented",
+      "to": "urn:ujg:solid-oidc:authenticator-code-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-code-journey-code-ready-exit",
+      "@type": "JourneyExit",
+      "label": "Code ready for entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:sms-verification-journey",
+      "@type": "Journey",
+      "label": "SMS verification message",
+      "defaultEntryRef": "urn:ujg:solid-oidc:sms-verification-journey-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:sms-verification-journey-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-sms-message-presented"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-sms-message-to-idp-entry",
+        "urn:ujg:solid-oidc:mfa-sms-message-unavailable"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:sms-verification-journey-code-ready-exit",
+        "urn:ujg:solid-oidc:sms-verification-journey-unavailable-exit"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:sms-verification-journey-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin sms verification message",
+      "stateRef": "urn:ujg:solid-oidc:mfa-sms-message-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-presented",
+      "label": "SMS message",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-sms-message-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-to-idp-entry",
+      "@type": "Transition",
+      "label": "Enter SMS code in IdP",
+      "tags": [
+        "primary",
+        "cross-touchpoint-return"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-sms-message-presented",
+      "to": "urn:ujg:solid-oidc:sms-verification-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-sms-message-unavailable",
+      "@type": "Transition",
+      "label": "SMS unavailable",
+      "tags": [
+        "channel-unavailable"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-sms-message-presented",
+      "to": "urn:ujg:solid-oidc:sms-verification-journey-unavailable-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:sms-verification-journey-code-ready-exit",
+      "@type": "JourneyExit",
+      "label": "SMS code ready for entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:sms-verification-journey-unavailable-exit",
+      "@type": "JourneyExit",
+      "label": "SMS unavailable"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:email-verification-journey",
+      "@type": "Journey",
+      "label": "Email verification message",
+      "defaultEntryRef": "urn:ujg:solid-oidc:email-verification-journey-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:email-verification-journey-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-email-message-presented"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-email-message-to-idp-entry",
+        "urn:ujg:solid-oidc:mfa-email-message-unavailable"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:email-verification-journey-code-ready-exit",
+        "urn:ujg:solid-oidc:email-verification-journey-unavailable-exit"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:email-verification-journey-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin email verification message",
+      "stateRef": "urn:ujg:solid-oidc:mfa-email-message-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-presented",
+      "label": "Email message",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-email-message-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-to-idp-entry",
+      "@type": "Transition",
+      "label": "Enter email code in IdP",
+      "tags": [
+        "primary",
+        "cross-touchpoint-return"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-email-message-presented",
+      "to": "urn:ujg:solid-oidc:email-verification-journey-code-ready-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-email-message-unavailable",
+      "@type": "Transition",
+      "label": "Email unavailable",
+      "tags": [
+        "channel-unavailable"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-email-message-presented",
+      "to": "urn:ujg:solid-oidc:email-verification-journey-unavailable-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:email-verification-journey-code-ready-exit",
+      "@type": "JourneyExit",
+      "label": "Email code ready for entry"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:email-verification-journey-unavailable-exit",
+      "@type": "JourneyExit",
+      "label": "Email unavailable"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-push-journey",
+      "@type": "Journey",
+      "label": "Authenticator push approval",
+      "defaultEntryRef": "urn:ujg:solid-oidc:authenticator-push-journey-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:authenticator-push-journey-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-push-approval-presented"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-push-approval-to-success",
+        "urn:ujg:solid-oidc:mfa-push-approval-to-error-visible"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:authenticator-push-journey-approved-exit",
+        "urn:ujg:solid-oidc:authenticator-push-journey-denied-or-timeout-exit"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-push-journey-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin authenticator push approval",
+      "stateRef": "urn:ujg:solid-oidc:mfa-push-approval-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-presented",
+      "label": "Push approval",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-push-approval-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-to-success",
+      "@type": "Transition",
+      "label": "Push approved",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-push-approval-presented",
+      "to": "urn:ujg:solid-oidc:authenticator-push-journey-approved-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-push-approval-to-error-visible",
+      "@type": "Transition",
+      "label": "Push denied or timed out",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-push-approval-presented",
+      "to": "urn:ujg:solid-oidc:authenticator-push-journey-denied-or-timeout-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-push-journey-approved-exit",
+      "@type": "JourneyExit",
+      "label": "Push approved"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:authenticator-push-journey-denied-or-timeout-exit",
+      "@type": "JourneyExit",
+      "label": "Push denied or timed out"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authentication-journey",
+      "@type": "Journey",
+      "label": "Platform authentication",
+      "defaultEntryRef": "urn:ujg:solid-oidc:platform-authentication-journey-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:platform-authentication-journey-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:mfa-security-key-prompt-presented"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:mfa-security-key-to-success",
+        "urn:ujg:solid-oidc:mfa-security-key-to-error-visible",
+        "urn:ujg:solid-oidc:mfa-security-key-cancelled"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:platform-authentication-journey-accepted-exit",
+        "urn:ujg:solid-oidc:platform-authentication-journey-failed-exit",
+        "urn:ujg:solid-oidc:platform-authentication-journey-cancelled-exit"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authentication-journey-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin platform authentication",
+      "stateRef": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented",
+      "label": "Security key prompt",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-prompt-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-to-success",
+      "@type": "Transition",
+      "label": "Security key accepted",
+      "tags": [
+        "primary"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented",
+      "to": "urn:ujg:solid-oidc:platform-authentication-journey-accepted-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-to-error-visible",
+      "@type": "Transition",
+      "label": "Security key failed",
+      "tags": [
+        "validation"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented",
+      "to": "urn:ujg:solid-oidc:platform-authentication-journey-failed-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:mfa-security-key-cancelled",
+      "@type": "Transition",
+      "label": "Security key cancelled",
+      "tags": [
+        "cancel"
+      ],
+      "from": "urn:ujg:solid-oidc:mfa-security-key-prompt-presented",
+      "to": "urn:ujg:solid-oidc:platform-authentication-journey-cancelled-exit"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authentication-journey-accepted-exit",
+      "@type": "JourneyExit",
+      "label": "Security key accepted"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authentication-journey-failed-exit",
+      "@type": "JourneyExit",
+      "label": "Security key failed"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:platform-authentication-journey-cancelled-exit",
+      "@type": "JourneyExit",
+      "label": "Security key cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-journey",
+      "@type": "Journey",
+      "label": "Identity consent journey",
+      "defaultEntryRef": "urn:ujg:solid-oidc:identity-consent-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:identity-consent-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:identity-consent",
+        "urn:ujg:solid-oidc:identity-consent-denied-visible"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:identity-consent-allowed",
+        "urn:ujg:solid-oidc:identity-consent-already-granted",
+        "urn:ujg:solid-oidc:identity-consent-denial-action",
+        "urn:ujg:solid-oidc:identity-consent-cancel-action",
+        "urn:ujg:solid-oidc:identity-consent-denied-visible-to-denied"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:identity-consent-success",
+        "urn:ujg:solid-oidc:identity-consent-denied",
+        "urn:ujg:solid-oidc:identity-consent-cancelled"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-entry",
+      "@type": "JourneyEntry",
+      "label": "Start identity consent",
+      "stateRef": "urn:ujg:solid-oidc:identity-consent"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent",
+      "label": "Identity consent",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:identity-consent"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denied-visible",
+      "label": "Identity consent denied",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denied-visible-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:identity-consent-denied-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-allowed",
+      "@type": "Transition",
+      "label": "Allow identity access",
+      "tags": [
+        "primary",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:identity-consent",
+      "to": "urn:ujg:solid-oidc:identity-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-already-granted",
+      "@type": "Transition",
+      "label": "Identity consent already granted",
+      "tags": [
+        "shortcut",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:identity-consent",
+      "to": "urn:ujg:solid-oidc:identity-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denial-action",
+      "@type": "Transition",
+      "label": "Deny identity access",
+      "tags": [
+        "denied",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:identity-consent",
+      "to": "urn:ujg:solid-oidc:identity-consent-denied-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-cancel-action",
+      "@type": "Transition",
+      "label": "Cancel identity consent",
+      "tags": [
+        "cancel",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:identity-consent",
+      "to": "urn:ujg:solid-oidc:identity-consent-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denied-visible-to-denied",
+      "@type": "Transition",
+      "label": "Back to app",
+      "tags": [
+        "denied",
+        "identity-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:identity-consent-denied-visible",
+      "to": "urn:ujg:solid-oidc:identity-consent-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-success",
+      "@type": "JourneyExit",
+      "label": "Identity consent succeeded"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-denied",
+      "@type": "JourneyExit",
+      "label": "Identity consent denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:identity-consent-cancelled",
+      "@type": "JourneyExit",
+      "label": "Identity consent cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-journey",
+      "@type": "Journey",
+      "label": "Resource consent journey",
+      "defaultEntryRef": "urn:ujg:solid-oidc:resource-consent-entry",
+      "entryRefs": [
+        "urn:ujg:solid-oidc:resource-consent-entry"
+      ],
+      "stateRefs": [
+        "urn:ujg:solid-oidc:resource-consent",
+        "urn:ujg:solid-oidc:resource-consent-details",
+        "urn:ujg:solid-oidc:resource-consent-denied-visible",
+        "urn:ujg:solid-oidc:resource-consent-error-visible",
+        "urn:ujg:solid-oidc:pod-try-later",
+        "urn:ujg:solid-oidc:pod-support"
+      ],
+      "transitionRefs": [
+        "urn:ujg:solid-oidc:resource-consent-to-details",
+        "urn:ujg:solid-oidc:resource-consent-allowed",
+        "urn:ujg:solid-oidc:resource-consent-already-granted",
+        "urn:ujg:solid-oidc:resource-consent-denial-action",
+        "urn:ujg:solid-oidc:resource-consent-cancel-action",
+        "urn:ujg:solid-oidc:resource-consent-error-shown",
+        "urn:ujg:solid-oidc:resource-consent-details-to-resource-consent",
+        "urn:ujg:solid-oidc:resource-consent-details-allowed",
+        "urn:ujg:solid-oidc:resource-consent-details-denied",
+        "urn:ujg:solid-oidc:resource-consent-denied-visible-to-denied",
+        "urn:ujg:solid-oidc:resource-consent-error-visible-try-later",
+        "urn:ujg:solid-oidc:resource-consent-error-visible-contact-pod-support",
+        "urn:ujg:solid-oidc:resource-consent-error-visible-to-error",
+        "urn:ujg:solid-oidc:pod-try-later-to-resource-consent-error",
+        "urn:ujg:solid-oidc:pod-support-to-resource-consent-error"
+      ],
+      "exitRefs": [
+        "urn:ujg:solid-oidc:resource-consent-success",
+        "urn:ujg:solid-oidc:resource-consent-denied",
+        "urn:ujg:solid-oidc:resource-consent-cancelled",
+        "urn:ujg:solid-oidc:resource-consent-error"
+      ]
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-entry",
+      "@type": "JourneyEntry",
+      "label": "Start resource consent",
+      "stateRef": "urn:ujg:solid-oidc:resource-consent"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent",
+      "label": "Resource consent",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-details",
+      "label": "Resource consent details",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-details-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-details"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denied-visible",
+      "label": "Resource consent denied",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denied-visible-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-denied-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-visible",
+      "label": "Resource consent error",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-visible-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:resource-consent-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-try-later",
+      "label": "Try Pod authorization later",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-try-later-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:pod-try-later"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-support",
+      "label": "Pod support",
+      "@type": "State"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-support-surface",
+      "@type": "Surface",
+      "graphNodeRef": "urn:ujg:solid-oidc:pod-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-to-details",
+      "@type": "Transition",
+      "label": "View resource access details",
+      "tags": [
+        "primary",
+        "inspect",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-details"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-allowed",
+      "@type": "Transition",
+      "label": "Allow resource access",
+      "tags": [
+        "primary",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-already-granted",
+      "@type": "Transition",
+      "label": "Resource consent already granted",
+      "tags": [
+        "shortcut",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denial-action",
+      "@type": "Transition",
+      "label": "Deny resource access",
+      "tags": [
+        "denied",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-denied-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-cancel-action",
+      "@type": "Transition",
+      "label": "Cancel resource consent",
+      "tags": [
+        "cancel",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-shown",
+      "@type": "Transition",
+      "label": "Resource consent cannot continue",
+      "tags": [
+        "terminal-error",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent",
+      "to": "urn:ujg:solid-oidc:resource-consent-error-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-details-to-resource-consent",
+      "@type": "Transition",
+      "label": "Back to resource consent",
+      "tags": [
+        "primary",
+        "local-back",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-details",
+      "to": "urn:ujg:solid-oidc:resource-consent"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-details-allowed",
+      "@type": "Transition",
+      "label": "Allow resource access from details",
+      "tags": [
+        "primary",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-details",
+      "to": "urn:ujg:solid-oidc:resource-consent-success"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-details-denied",
+      "@type": "Transition",
+      "label": "Deny resource access from details",
+      "tags": [
+        "denied",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-details",
+      "to": "urn:ujg:solid-oidc:resource-consent-denied-visible"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denied-visible-to-denied",
+      "@type": "Transition",
+      "label": "Back to app",
+      "tags": [
+        "denied",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-denied-visible",
+      "to": "urn:ujg:solid-oidc:resource-consent-denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-visible-try-later",
+      "@type": "Transition",
+      "label": "Try resource authorization later",
+      "tags": [
+        "optional-recovery",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-error-visible",
+      "to": "urn:ujg:solid-oidc:pod-try-later"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-visible-contact-pod-support",
+      "@type": "Transition",
+      "label": "Contact Pod support",
+      "tags": [
+        "optional-recovery",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-error-visible",
+      "to": "urn:ujg:solid-oidc:pod-support"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error-visible-to-error",
+      "@type": "Transition",
+      "label": "Resource consent failed",
+      "tags": [
+        "terminal-error",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:resource-consent-error-visible",
+      "to": "urn:ujg:solid-oidc:resource-consent-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-try-later-to-resource-consent-error",
+      "@type": "Transition",
+      "label": "End resource authorization as failed",
+      "tags": [
+        "terminal-error",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:pod-try-later",
+      "to": "urn:ujg:solid-oidc:resource-consent-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:pod-support-to-resource-consent-error",
+      "@type": "Transition",
+      "label": "End resource authorization as failed",
+      "tags": [
+        "terminal-error",
+        "resource-consent"
+      ],
+      "from": "urn:ujg:solid-oidc:pod-support",
+      "to": "urn:ujg:solid-oidc:resource-consent-error"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-success",
+      "@type": "JourneyExit",
+      "label": "Resource consent succeeded"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-denied",
+      "@type": "JourneyExit",
+      "label": "Resource consent denied"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-cancelled",
+      "@type": "JourneyExit",
+      "label": "Resource consent cancelled"
+    },
+    {
+      "@id": "urn:ujg:solid-oidc:resource-consent-error",
+      "@type": "JourneyExit",
+      "label": "Resource consent error"
+    }
+  ]
+}
