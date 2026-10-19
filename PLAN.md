@@ -2,17 +2,16 @@
 
 ## Current checkpoint
 
-- Current stage: **2 — UJG data access (complete)**.
-- Next stage: **3 — Independent linting**. Do not start it in the stage-2 request.
-- Stage-2 deliverable: readonly canonical document types and pure queries for
-  node lookup, journey membership, entries/exits, child journeys, and touchpoints.
-  Syntax parsing remains native `JSON.parse`.
-- Stage-2 acceptance: minimal fixtures and OIDC work; frozen inputs remain
-  unchanged; no validation, findings, inferred topology, or alternate graph
-  representation.
-- Expected changes for stage 2: `packages/ujg-jsonld` (types, queries, built
-  exports, tests, and documentation), root test orchestration/lockfile, README,
-  and this checkpoint. The web app and captured example remain unchanged.
+- Current stage: **3 — Independent linting (complete)**.
+- Next stage: **4 — Design-system foundation**. Do not start it in the stage-3 request.
+- Stage-3 deliverable: a pure `lint(value, rules)` runner, finding types, and
+  separately exported document-shape, identity, and reference-target checks.
+- Stage-3 acceptance: rules handle malformed parsed data independently, injected
+  lists control checking, and findings never modify data. Rule order establishes
+  no prerequisites. Parsing and reporting remain caller concerns.
+- Expected changes for stage 3: `packages/lint` (runner/types, separate UJG rule
+  export, tests, build, and documentation), lockfile, README, and this checkpoint.
+  The data-query package, web app, and captured example remain unchanged.
 
 ## Fixed architectural constraints
 
@@ -144,11 +143,45 @@ architecture. A failing acceptance gate keeps the current stage open.
   baseline remain unchanged. No parser wrapper, validator, findings, inferred
   topology, index/store class, or alternate graph representation was added.
 
+## Stage-3 evidence
+
+- Added `@journey-viewer/lint`, with no runtime or workspace dependencies. Its
+  main export is a pure synchronous `lint(value, rules)` function plus readonly
+  `Finding`/`Rule` types. The runner only concatenates supplied rule outputs;
+  it has no default rules, exception conversion, short-circuiting, or reporting.
+- Findings carry rule identity, an original-input property/index path, and a
+  message. Severity and blocking decisions are caller policy. No validated
+  document or alternative graph representation is produced.
+- The separate `/ujg` export supplies three independent rules: `documentShape`,
+  `uniqueNodeIds`, and `referenceTargets`. They inspect raw parsed data directly
+  and safely skip inapplicable/malformed slots without calling another rule or
+  depending on a previous result. Reference checks use exact source node IDs and
+  supported target classes, including ambiguous and missing targets.
+- `pnpm test`: 17 new runner/rule tests, the 13 unchanged data-query tests, and
+  the 3 unchanged OIDC baseline tests all passed (33 total). Tests cover custom
+  injection, empty lists, error propagation, malformed roots/nodes/refs, locations,
+  known target classes, duplicate identities, reordered rules, unknown payloads,
+  and deterministic results on frozen OIDC data. All three UJG rules return no
+  findings for the captured OIDC export, without altering it.
+- Compile-only checks passed for readonly findings/locations/results/rule lists,
+  required explicit rule injection, and generic input compatibility.
+- `pnpm build`: all three packages/app workspaces built, including ESM and
+  declarations for the new package. The existing web bundle is unchanged.
+- The lockfile only adds the lint workspace's existing TypeScript catalog
+  dependency; it introduces no new dependency versions or schema/RDF library.
+- The data-query package, web source, OIDC capture, and original source repository
+  remain unchanged. No parsing, rendering, I/O, registry, repair, or input
+  mutation was added to the lint runner/rules.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
-- All stages after 2 remain unstarted. Lint rules, design-system contracts, viewer
-  state, extensions, routing, and deployment are not implemented. Syntax parsing
-  remains the caller's native `JSON.parse`; typed queries do not establish the
-  validity of arbitrary parsed input. Stage 3 will add independently injected
-  checking rules without changing that boundary.
+- All stages after 3 remain unstarted. Design-system contracts, viewer state,
+  extensions, routing, reporting UI, and deployment are not implemented. Syntax
+  parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
+- The initial rules check compact field shapes, node identity uniqueness, and
+  target existence/classes. IRI grammar, context meaning, ownership, transition
+  locality, boundary mappings, forbidden properties, and outgoing-target
+  exclusivity need additional independently supplied rules when required. This
+  checkpoint does not introduce a full SHACL/conformance engine or infer overall
+  validity from an empty list of findings. Imports are not resolved or fetched.
