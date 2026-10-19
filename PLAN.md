@@ -3,7 +3,8 @@
 ## Current checkpoint
 
 - Current stage: **3 — Independent linting (complete)**.
-- Next stage: **4 — Design-system foundation**. Do not start it in the stage-3 request.
+- Next stage: **4 — Design-system foundation**. Its refined scope and acceptance
+  gates are recorded below; implementation has not started.
 - Stage-3 deliverable: a pure `lint(value, rules)` runner, finding types, and
   separately exported document-shape, identity, and reference-target checks.
 - Stage-3 acceptance: rules handle malformed parsed data independently, injected
@@ -36,6 +37,10 @@
 8. The viewer uses UJG queries and design-system components. Parsing and rendering
    never depend on lint. The design system has no UJG or viewer dependency.
    Packages never import application code.
+9. DTCG tokens own shared design values. Tailwind utilities and component styles
+   consume their generated output. Shared controls, typography, and surfaces have
+   one primitive owner; composed components reuse that implementation. This
+   ownership rule applies to the design system, viewer, and application.
 
 ## Scope and defaults
 
@@ -62,7 +67,7 @@ packages or changing the existing site.
 | 1. Repository and baseline | Standalone pnpm workspace, minimal web app, build configuration, plan, behavior capture, and committed OIDC JSON-LD. | Fresh install and app build; recorded 10/47/120/37 baseline; source repository unchanged. |
 | 2. UJG data access | Readonly canonical types and pure queries for node lookup, journey membership, entries, exits, child journeys, and touchpoints. Native JSON parsing. | Minimal fixtures and OIDC work; frozen inputs unchanged; no validation, findings, inferred topology, or alternate graph representation. |
 | 3. Independent linting | `lint(value, rules)` with separately exported document-shape and reference rules; rule selection outside the runner. | Rules handle malformed structures independently; injected lists change checks; findings never modify data. Rule order establishes no prerequisites. |
-| 4. Design-system foundation | Tokens and hierarchy primitives, component data contracts, deterministic fixture generation, separate fixture checks, internal Storybook. | Components render generated fixtures without UJG imports or viewer context; generation does not check; contracts and independent package/CSS builds pass. |
+| 4. Design-system foundation | DTCG-driven tokens, scoped themes, shared reusable primitives, mobile-first hierarchy compositions, readonly contracts, deterministic fixtures, separate checks, internal Storybook. | Shared styles have one primitive owner and are reused; token generation, theming, responsive behavior, contracts, fixture checks, package/CSS and Storybook builds pass the detailed gates below. |
 | 5. Static hierarchy | Viewer package renders journeys, states, entries, exits, and nested composition directly from UJG queries; add required presentational components. | OIDC structure matches the baseline; multiple roots/children and recursive references are handled explicitly; no persistent hierarchy model or interaction store. |
 | 6. Selection and inspection | Immutable selection/expansion transitions and inspector, connected through explicit data and callbacks. | Interactions work with frozen-input transition tests; viewer instances are independent; document replacement resets interaction state. |
 | 7. Navigation controls | Overview/focus switching, search, touchpoint filtering, entry/exit navigation; derive highlights, breadcrumbs, summaries. | Existing behavior and nested boundaries are preserved; no derived-data synchronization or mutable cache. |
@@ -70,6 +75,111 @@ packages or changing the existing site.
 | 9. Build-time extensions | Readonly descriptors for inspector panels, annotations, and rendering overrides; parser/view selection stays explicit in the app. | Small custom panel and annotation work without changing built-ins; removal restores defaults; no registration, lifecycle, or shared runtime state. |
 | 10. Standalone application | Journey Viewer brand, landing page, catalog, routes, local-file loading, finding presentation; compose reading/parsing/checking/rendering explicitly. | OIDC and local files open; syntax failures/findings displayed separately; blocking policy only in app; no upload/persistence. Routes: `/`, `/examples/solid-oidc`, `/viewer`. |
 | 11. Distribution and Cloudflare | Finish independent ESM/declaration/CSS exports and app-local Cloudflare config; separate package/app builds, Storybook, and deploy commands. | External-consumer smoke check; Cloudflare dry run and deep-link refresh; no development fixtures/Storybook in deployment; no package publication. |
+
+## Stage-4 refinement
+
+This is a planning checkpoint, not implementation evidence. Keep the architectural
+boundaries from stages 1-3. Implement stage 4 in the following order and complete
+its gates before beginning the viewer.
+
+### 1. DTCG tokens and generated styles
+
+- Author foundation and semantic light/dark tokens in DTCG 2025.10 JSON. Capture
+  the existing hierarchy appearance first, including its currently separate
+  palette. Include spacing, sizing, fonts, typography, colors, radii, borders,
+  and effects actually needed by the initial components.
+- DTCG files are the editable source. Deterministic build-time translation emits
+  namespaced CSS variables and a Tailwind theme bridge. CSS modules and utility
+  classes use the same values. Keep translation local to the package and support
+  the token types used here; introduce no runtime token model or theme registry.
+- Check token shapes and references separately from generation. Document the
+  supported DTCG authoring subset. Invalid or unsupported inputs must not silently
+  produce partial CSS. Generated outputs contain no hand-maintained token values.
+- Select themes at an explicit container boundary using a theme attribute. Light
+  and dark themes can coexist and nest. Additional themes provide the same semantic
+  keys and may vary colors, fonts, and spacing. Theme selection belongs to callers.
+- The compiled component stylesheet provides the required component styling
+  without requiring consumers to run Tailwind. Global document resets are opt-in.
+
+### 2. Shared primitive catalog and ownership
+
+Establish and document these primitives before writing hierarchy compositions:
+
+| Primitive | Owns | Reuse requirement |
+| --- | --- | --- |
+| `Button` | Native button semantics, shared sizing, typography, tones, disabled/hover/active/focus states, and hit areas. | All button controls compose this implementation. Variants cover real visual differences; callers supply content and layout. |
+| `IconButton` | Accessible icon-only button contract and icon layout. | A thin composition of `Button`; inherits its interaction, sizing, and focus styling. |
+| `Heading` | Heading typography and native heading levels. | Visual size is independent of semantic level; journey and section titles reuse it. |
+| `Text` | Shared body, label, caption, and code typography roles. | Compositions select a documented role instead of recreating font declarations. |
+| `Badge` | Non-interactive compact labels/counts and their shared presentation. | Interactive chips use `Button`; badge markup does not acquire button behavior. |
+| `Surface` | Shared background, border, radius, and elevation variants. | Cards and panels compose it instead of restating their common surface styles. |
+
+- Each primitive owns its readonly contract, implementation, styles, stories, and
+  public export. Use direct functions and components, with a small explicit set of
+  variants. Keep contracts next to their owners; add no component factory,
+  universal rendering configuration, or style registry.
+- Initial hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`,
+  and `StateRow`. They own arrangement and journey-specific decoration, and receive
+  explicit presentation data, callbacks, and children. They reuse the primitive
+  catalog and do not perform graph queries or recursive hierarchy construction.
+- Component-specific CSS may define layout, composition, and distinct decoration.
+  Shared button behavior, typography roles, and surface styling remain with their
+  primitive owners. A new shared visual treatment extends the appropriate owner.
+- Add later primitives when a concrete stage needs them. Use CSS layout/utilities
+  directly where an extra component would only wrap a div.
+
+### 3. Colocation and mobile-first behavior
+
+Use `src/components/Component/Component.tsx`, `Component.module.css`, and
+`Component.stories.tsx`. Preserve the existing singular `.module.css` convention.
+Colocate `Component.fixtures.ts` and `Component.checks.ts` where relevant.
+
+- Base styles serve mobile. Named minimum-width breakpoints enhance the layout.
+  Start with the existing hierarchy thresholds as shared DTCG dimensions:
+  `md = 53.75rem` and `lg = 68.75rem` (860px/1100px with a 16px initial font size).
+  Reset unused Tailwind default breakpoints and use this same generated set in
+  modules and utilities. Add a breakpoint only when a concrete layout needs it.
+- Breakpoint values are build-time constants shared by all themes. Components
+  introduce no private viewport thresholds or JavaScript breakpoint state.
+- Long content wraps; controls work without hover and keep visible keyboard focus.
+  Provide mobile hit areas while preserving the existing compact desktop layout.
+
+### 4. Fixtures, Storybook, and build boundaries
+
+- Fixture generation is a pure operation returning readonly component data only.
+  Separate checks inspect it against the owner component's contract. Neither
+  generation nor rendering invokes checking. Use explicit component fixture
+  functions rather than a fixture registry or a generated hierarchy model.
+- Storybook lives inside the design-system package and renders components directly.
+  Include a primitive catalog, hierarchy composition stories, token documentation,
+  theme comparisons, and long-content/mobile cases. Story controls own any demo
+  interaction snapshots; production components use explicit props and callbacks.
+- Expected changes: add `packages/design-system` (tokens, build/check scripts,
+  styles, colocated components/fixtures/checks, tests, and `.storybook`), root
+  commands/catalog/lockfile, README, and this plan. Existing data/lint packages,
+  web app, OIDC capture, and source repository remain unchanged in this stage.
+- Provide separate token checking/generation, fixture checking, package/CSS build,
+  Storybook development/build commands. Fixtures, checks, stories, and Storybook
+  dependencies stay outside production exports/output.
+
+### Acceptance gates and required evidence
+
+| Gate | Evidence required to close stage 4 |
+| --- | --- |
+| Token ownership | Changing a source token changes both utility output and component styling. Repeated generation is identical. Separate checks catch malformed values and broken references. |
+| Primitive reuse | Stories document every primitive and supported variant. Source review confirms a single native button implementation, reused by `IconButton` and other controls, and shared owners for heading/text/surface styles. Compositions contain no copied primitive interaction or typography recipes. |
+| Theming | Browser stories demonstrate light/dark side by side and nested boundaries. An additional development theme varies color, font, and spacing through token configuration without editing component logic. |
+| Responsive behavior | Browser checks at 320px and immediately below/at/above both named thresholds show wrapping, usable controls, and no page overflow. Modules and utilities use the same breakpoints. |
+| Component boundaries | Every primitive and hierarchy composition renders from readonly presentation props without UJG/viewer/application imports, shared stores, or graph context. |
+| Fixture separation | Deterministic generators accept frozen inputs without mutation. Separate checks accept valid fixtures and reject deliberately malformed fixtures. Generation and rendering never import checks. |
+| Accessibility | Controls expose accessible names, native keyboard behavior, visible focus, and usable mobile hit areas. Heading semantics are independent of their visual sizes. |
+| Build isolation | Independent ESM/declaration/CSS and Storybook builds pass. A browser story renders the built components with compiled CSS and no consumer Tailwind processing. Production output excludes stories, fixtures, checks, and Storybook. |
+| Regression | All existing tests and app builds pass. The original repository and captured OIDC baseline remain unchanged. Record commands and browser evidence here before the scoped implementation commit. |
+
+References for implementation: [DTCG 2025.10 format](https://www.designtokens.org/tr/2025.10/format/),
+[Tailwind theme variables](https://tailwindcss.com/docs/theme),
+[shared responsive variants](https://tailwindcss.com/docs/responsive-design), and
+[CSS module references](https://tailwindcss.com/docs/functions-and-directives#reference-directive).
 
 ## Checkpoint procedure
 
