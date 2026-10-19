@@ -11,6 +11,6 @@
     "dev": "pnpm --filter @journey-viewer/web dev",
     "build": "pnpm -r --if-present build",
     "build:app": "pnpm --filter @journey-viewer/web build",
-    "test": "node --test tests/*.test.mjs"
+    "test": "pnpm -r --if-present test && node --test tests/*.test.mjs"
   }
 }

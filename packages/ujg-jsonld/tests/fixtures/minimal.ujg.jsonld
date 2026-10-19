@@ -1,0 +1,47 @@
+{
+  "@context": [
+    "https://ujg.specs.openuji.org/ed/ns/core.context.jsonld",
+    "https://ujg.specs.openuji.org/ed/ns/graph.context.jsonld",
+    "https://ujg.specs.openuji.org/ed/ns/surface.context.jsonld"
+  ],
+  "@id": "urn:test:document",
+  "@type": "UJGDocument",
+  "extensions": { "org.example.notes": { "nested": { "values": [1, true, null] } } },
+  "nodes": [
+    { "@id": "urn:test:index", "@type": "JourneyEntryIndex", "entryRefs": ["urn:test:entry:root", "urn:test:entry:second"] },
+    {
+      "@id": "urn:test:journey:root", "@type": "Journey",
+      "entryRefs": ["urn:test:entry:alternative", "urn:test:entry:root"],
+      "stateRefs": ["urn:test:state:composite", "urn:test:state:root"],
+      "transitionRefs": ["urn:test:transition:enter"],
+      "exitRefs": ["urn:test:exit:root"],
+      "outgoingTransitionGroupRefs": ["urn:test:group:navigation"]
+    },
+    { "@id": "urn:test:journey:second", "@type": "Journey", "entryRefs": ["urn:test:entry:second"], "stateRefs": ["urn:test:state:second"] },
+    { "@id": "urn:test:journey:a", "@type": "Journey", "entryRefs": ["urn:test:entry:a"], "stateRefs": ["urn:test:state:a"] },
+    { "@id": "urn:test:journey:b", "@type": "Journey", "entryRefs": ["urn:test:entry:b"], "stateRefs": ["urn:test:state:b"] },
+    { "@id": "urn:test:entry:root", "@type": "JourneyEntry", "stateRef": "urn:test:state:root" },
+    { "@id": "urn:test:entry:alternative", "@type": "JourneyEntry", "stateRef": "urn:test:state:composite" },
+    { "@id": "urn:test:entry:second", "@type": "JourneyEntry", "stateRef": "urn:test:state:second" },
+    { "@id": "urn:test:entry:a", "@type": "JourneyEntry", "stateRef": "urn:test:state:a" },
+    { "@id": "urn:test:entry:b", "@type": "JourneyEntry", "stateRef": "urn:test:state:b" },
+    { "@id": "urn:test:state:root", "@type": ["State", "urn:example:FeaturedState"], "label": "Root state", "multiInstance": true, "outgoingTransitionRefs": ["urn:test:outgoing:help"] },
+    { "@id": "urn:test:state:composite", "@type": "CompositeState", "label": "Two child journeys", "subjourneyRefs": ["urn:test:journey:b", "urn:test:journey:a"] },
+    { "@id": "urn:test:state:second", "@type": "CompositeState", "label": "Reuses journey A", "subjourneyRefs": ["urn:test:journey:a"] },
+    { "@id": "urn:test:state:a", "@type": "State", "label": "Child A" },
+    { "@id": "urn:test:state:b", "@type": "CompositeState", "label": "References root", "subjourneyRefs": ["urn:test:journey:root"] },
+    { "@id": "urn:test:transition:enter", "@type": "Transition", "from": "urn:test:state:root", "to": "urn:test:state:composite", "toEntryRef": "urn:test:entry:a", "commandRef": "urn:test:command:enter" },
+    { "@id": "urn:test:exit:root", "@type": "JourneyExit", "label": "Finished" },
+    { "@id": "urn:test:command:enter", "@type": "Command", "label": "Enter" },
+    { "@id": "urn:test:group:navigation", "@type": "OutgoingTransitionGroup", "outgoingTransitionRefs": ["urn:test:outgoing:help"] },
+    { "@id": "urn:test:outgoing:help", "@type": "OutgoingTransition", "toCurrentState": true },
+    { "@id": "urn:test:touchpoint:web", "@type": "Touchpoint", "label": "Web", "channel": "web", "journeyRefs": ["urn:test:journey:root"] },
+    { "@id": "urn:test:touchpoint:a", "@type": "Touchpoint", "label": "Child channel", "journeyRefs": ["urn:test:journey:a"] },
+    { "@id": "urn:test:touchpoint:unassigned", "@type": "Touchpoint", "label": "Unassigned" },
+    { "@id": "urn:test:persona", "@type": "Persona", "label": "Reader", "touchpointRefs": ["urn:test:touchpoint:web"] },
+    { "@id": "urn:test:surface:root", "@type": "Surface", "graphNodeRef": "urn:test:state:root" },
+    { "@id": "urn:test:surface:root-detail", "@type": "Surface", "graphNodeRef": "urn:test:state:root" },
+    { "@id": "urn:test:instance", "@type": "SurfaceInstance", "surfaceRef": "urn:test:surface:root" },
+    { "@id": "urn:test:opaque", "@type": "urn:example:Custom", "payload": { "items": [{ "keep": "exactly" }] } }
+  ]
+}

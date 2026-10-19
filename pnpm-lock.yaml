@@ -57,6 +57,12 @@ importers:
         specifier: 'catalog:'
         version: 8.1.0
 
+  packages/ujg-jsonld:
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
 packages:
 
   '@emnapi/core@1.11.1':

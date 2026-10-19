@@ -1,8 +1,9 @@
 # Journey Viewer
 
 A standalone workspace for viewing User Journey Graph documents. This is the
-stage-1 checkpoint: a minimal React application and a captured Solid-OIDC baseline.
-The hierarchy renderer and other packages arrive in their assigned stages.
+stage-2 checkpoint: a minimal React application, a captured Solid-OIDC baseline,
+and readonly document types/pure queries. The hierarchy renderer and other
+packages arrive in their assigned stages.
 
 ## Run
 
@@ -24,16 +25,17 @@ pnpm test
 ## Layout
 
 - `apps/web`: minimal Vite/React/TypeScript application.
+- `packages/ujg-jsonld`: readonly source document types and pure data queries.
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export.
 - `PLAN.md`: agreed architecture, stage boundaries, and verification evidence.
 
-The workspace already includes the `packages/*` pattern. Package directories will
-be added when their stages start; there are no placeholder packages.
+Additional package directories will be added when their stages start; there are
+no placeholder packages. The app does not consume or render document data yet.
 
 The new workspace does not import or link to the source repository. No YAML
 compiler, graph store, lint runner, viewer, Storybook, or deployment tooling is
-installed at this checkpoint.
+installed at this checkpoint. The query package has no runtime dependencies.
 
 Read [PLAN.md](PLAN.md) before continuing implementation and
 [the baseline notes](examples/solid-oidc/BASELINE.md) before changing the example.

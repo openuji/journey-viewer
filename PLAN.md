@@ -2,15 +2,17 @@
 
 ## Current checkpoint
 
-- Current stage: **1 — Repository and baseline (complete)**.
-- Next stage: **2 — UJG data access**. Do not start it in the stage-1 request.
-- Stage-1 deliverable: standalone pnpm workspace, minimal web app, build
-  configuration, this plan, and the committed Solid-OIDC JSON-LD baseline.
-- Stage-1 acceptance: fresh installation and app build pass; baseline records
-  10 journeys, 47 states, 120 transitions, and 37 screens; source repository stays
-  unchanged.
-- Expected changes for stage 1: root tooling/docs, `apps/web`, the OIDC example
-  capture, and baseline regression checks. No package APIs are introduced yet.
+- Current stage: **2 — UJG data access (complete)**.
+- Next stage: **3 — Independent linting**. Do not start it in the stage-2 request.
+- Stage-2 deliverable: readonly canonical document types and pure queries for
+  node lookup, journey membership, entries/exits, child journeys, and touchpoints.
+  Syntax parsing remains native `JSON.parse`.
+- Stage-2 acceptance: minimal fixtures and OIDC work; frozen inputs remain
+  unchanged; no validation, findings, inferred topology, or alternate graph
+  representation.
+- Expected changes for stage 2: `packages/ujg-jsonld` (types, queries, built
+  exports, tests, and documentation), root test orchestration/lockfile, README,
+  and this checkpoint. The web app and captured example remain unchanged.
 
 ## Fixed architectural constraints
 
@@ -117,9 +119,36 @@ architecture. A failing acceptance gate keeps the current stage open.
 - Source repository working tree: clean at the same pinned commit after the
   export and checks. No source changes were needed.
 
+## Stage-2 evidence
+
+- Added `@journey-viewer/ujg-jsonld`: readonly Core/Graph/Surface document/node
+  types and ten pure query functions. The package exports built ESM/declarations
+  and has no runtime dependencies; TypeScript is its only development dependency.
+- Public queries cover identity/type selection, explicit journey membership,
+  entries (including entry indexes), states, transitions, exits, child journeys,
+  journey touchpoints, and graph-node surfaces. Results reference original nodes.
+  Global selections retain source-node order; reference selections retain list
+  order. Unresolved/differently tagged targets are omitted from query results,
+  without editing the source references or producing findings.
+- `pnpm test`: 13 package tests plus the 3 unchanged OIDC baseline tests passed.
+  Package tests import its built public ESM export, use deeply frozen minimal and
+  OIDC fixtures, and cover multiple/reused/recursive child references, entry
+  indexes, optional Core-only collections, untyped/unknown nodes, opaque JSON,
+  deterministic results, and the original 10/47/120/37 counts.
+- Compile-only readonly checks passed for document identity/collections,
+  reference arrays, typed query results, children, and opaque extension payloads.
+- `pnpm build`: package declarations/ESM and the unchanged web app both built.
+- `pnpm install --frozen-lockfile`: passed. The lockfile only adds the new
+  workspace's existing TypeScript catalog dependency; no new dependency versions.
+- The web app, committed OIDC example, original source repository, and stage-1
+  baseline remain unchanged. No parser wrapper, validator, findings, inferred
+  topology, index/store class, or alternate graph representation was added.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
-- All stages after 1 remain unstarted. In particular, parsing/query APIs, lint
-  rules, design-system contracts, viewer state, extensions, routing, and deployment
-  are not implemented at this checkpoint.
+- All stages after 2 remain unstarted. Lint rules, design-system contracts, viewer
+  state, extensions, routing, and deployment are not implemented. Syntax parsing
+  remains the caller's native `JSON.parse`; typed queries do not establish the
+  validity of arbitrary parsed input. Stage 3 will add independently injected
+  checking rules without changing that boundary.
