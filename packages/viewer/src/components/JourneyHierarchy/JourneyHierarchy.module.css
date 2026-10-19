@@ -1,0 +1,18 @@
+.hierarchy {
+  display: grid;
+  gap: var(--jv-space-md);
+  min-inline-size: 0;
+}
+.journey,
+.state {
+  min-inline-size: 0;
+}
+.children {
+  display: grid;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.notice {
+  margin: 0;
+  padding: var(--jv-space-sm);
+}

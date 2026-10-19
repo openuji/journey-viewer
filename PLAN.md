@@ -2,14 +2,20 @@
 
 ## Current checkpoint
 
-- Current stage: **4 — Design-system foundation (complete with corrections, uncommitted)**.
-- Next stage: **5 — Static hierarchy**. Do not start it in the stage-4 request.
-- Stage-4 deliverable: DTCG-driven themes/utilities, shared primitives and hierarchy
-  compositions, readonly contracts, independent fixture generation/checks, and
-  internal Storybook. Detailed scope and gates are recorded below.
-- Expected changes: `packages/design-system`, root commands/catalog/lockfile,
-  `.gitignore`, README, this checkpoint, and the working agreement's commit policy.
-  Existing data/lint packages, web app, and captured example remain unchanged.
+- Current stage: **5 — Static hierarchy (complete with corrections and viewer Storybook, uncommitted)**.
+- Next stage: **6 — Selection and inspection**. Do not start it in the stage-5 request.
+- Stage-5 deliverable: a viewer package rendering the fully expanded hierarchy
+  directly from canonical UJG queries, static state rows and entry/exit lists,
+  explicit reuse/recursion/rootless presentation, and viewer Storybook extending
+  the design-system catalog and development configuration.
+- Changed modules/interfaces: `packages/viewer` (`JourneyHierarchy` with readonly
+  document/heading-level props), design-system `JourneyContracts` and separate
+  `StateSummary` presentation, their fixtures/checks/stories/tests, root commands/lockfile,
+  `.gitignore`, READMEs, and this checkpoint. Existing data/lint packages, web app,
+  and captured example remain unchanged.
+- The viewer owns its Storybook and UJG examples. It may reuse the design system's
+  internal Storybook configuration/catalog in development. The design-system
+  package retains its independent Storybook and imports no viewer/UJG code.
 - **Only the user may commit.** Leave implementation and documentation changes
   uncommitted for review. This overrides earlier checkpoint commit instructions.
 
@@ -25,7 +31,8 @@
    snapshots. Derived values are computed rather than synchronized in stores.
 4. Components receive data and callbacks. File reading, image loading, DOM
    measurement, and scrolling stay at browser/application boundaries. Refs must
-   not hide mutable business state.
+   not hide mutable business state. Static and interactive presentations have
+   distinct contracts; do not use mode flags that silently ignore supplied props.
 5. The design system owns component data contracts. Fixture generation and fixture
    checking are separate operations. Generation must not invoke checking.
 6. Extensions use explicit functions/components and readonly configuration. No
@@ -392,11 +399,189 @@ separately below.
   semantic-key and fixture-invariant checks. Stage 5 remains unstarted; all
   corrections remain unstaged and uncommitted for user review.
 
+## Stage-5 evidence
+
+This records the initial implementation. The corrections below supersede its
+static-mode and local traversal-set implementation details and verification counts.
+
+- Added `@journey-viewer/viewer`, with built ESM/declarations and a separate
+  compiled layout stylesheet. It depends on the UJG query and design-system
+  packages, with React as a peer. Its only public component is `JourneyHierarchy`;
+  its readonly props are `document` and optional semantic heading `level`.
+- Rendering uses original canonical nodes returned by queries. Explicit journey
+  state membership and every child-reference occurrence retain source order.
+  Multiple children and repeated journeys render at each call site. No parent
+  assignment, normalized hierarchy graph, persistent cache, context, interaction
+  store, effects, I/O, parsing, or lint dependency was introduced.
+- Roots are journeys not referenced by the explicit composite states belonging
+  to journeys. Unowned composites do not establish parentage. Local reference
+  sets select roots and determine reachability for each render, without retaining
+  another graph. Journeys unreachable from roots appear in an explicit
+  “Journeys without a root” group, each as a separate starting point. This makes
+  disconnected cycles visible without inventing a root. Recursion stops only at
+  a repeated journey in the current ancestry and renders a labeled reference;
+  other paths still render normally.
+- Added design-system `JourneyContracts`, with readonly entry/exit presentation
+  arrays, explicit default markers, named noninteractive lists, and empty states.
+  It composes `Badge`/`Text`, with colocated CSS, stories, deterministic fixtures,
+  and independent checking. `StateRow` gains an opt-in static presentation using
+  labels and decorative carets; its existing controlled button mode is unchanged.
+  Fixture checking includes the static flag and rejects conflicting defaults.
+- Root cards and nested journey headings reuse the shared compositions. Each
+  journey displays its own entries/exits/default and all explicit touchpoint
+  labels. State marks count local entries naming that state and listed exits
+  reached by explicit local transitions, without transitive boundary inference.
+  Labels fall back to full IRIs where optional. Entry indexes do not manufacture
+  journey membership or root declarations. Screenshot colors/short labels,
+  selection/expansion, navigation and inspector behavior remain in later stages.
+- `pnpm install --offline` and `pnpm install --frozen-lockfile --offline` passed.
+  The lockfile adds only the viewer workspace, linking the two existing packages
+  and reusing catalog tooling; it adds no dependency versions.
+- `pnpm test`: **75 tests passed** (35 design-system, 17 lint, 13 UJG query,
+  7 viewer, and 3 captured-baseline checks). Readonly compile checks and all
+  11 independent component fixture checks passed. Frozen-input rendering tests
+  cover the complete OIDC hierarchy, multiple roots/children, repeated references,
+  self/mutual recursion, disconnected cycles, unowned composites, empty/unresolved
+  references, explicit defaults, scoped boundary marks, stable rendering, and
+  independent inputs. Existing 10/47/120/37 data counts remain unchanged.
+- `pnpm build` passed for every package and the web app. Viewer output is about
+  4.4 kB ESM and 0.3 kB CSS before gzip, with React and workspace dependencies
+  external. Production output excludes tests, fixtures, preview, Storybook, and
+  example data. The web bundle remains `index-Dzl6dVgS.js`.
+- `pnpm build:storybook` passed with **30 stories**, including the new static row
+  and default/empty/long-contract stories. `pnpm test:design-system:browser`
+  passed all **8 Chromium checks**, preserving themes, primitive interaction,
+  keyboard focus, accessibility, shared breakpoints and compiled-consumer behavior.
+- `pnpm test:viewer:browser` passed all **4 Chromium checks** against a compiled
+  consumer with no Tailwind processing or source aliases. The browser verifies
+  all **10 journeys, 47 states, 20 entries and 24 exits**, each journey's exact
+  explicit membership order, and the SMS scope beneath its three ancestors.
+  It also verifies reuse/cycle notices, accessible entry/exit lists and default
+  explanations, the absence of inactive controls, independent light/dark themes,
+  and no page/hierarchy overflow at **320, 859, 860, 861, 1099, 1100 and 1101px**.
+- Mobile/desktop screenshots were visually inspected. Evidence remains in ignored
+  `packages/viewer/.test-output/stage5-mobile.png`, `stage5-oidc.png` and
+  `stage5-dark.png`. The development-only preview is available through
+  `pnpm build:viewer` then `pnpm preview:viewer`. Test servers/browsers are closed
+  by their runners. The production web app is not wired to the viewer in this stage.
+- Diff review and `git diff --check` passed. The original source repository
+  remains clean at `6d9deaf0b57ba59fc22d232ca25bc999e1ce365e`; data/lint packages,
+  captured OIDC files, and web source are unchanged. No files were staged or
+  committed; destination HEAD remains `922f4a9588bbf8111914e76bba1005a31ef0c75a`.
+  Stage 5 has no unresolved acceptance failures. Stage 6 remains unstarted.
+
+## Stage-5 corrections and re-verification
+
+- Addressed the review within stage 5. Removed the `static` mode entirely and
+  restored all five `StateRow` component/style/fixture/check/story files exactly
+  to their stage-4 versions. No selection/inspection or other stage-6 work began.
+- Added the separate design-system `StateSummary` component with only readonly
+  `label`, `entryCount`, `directExitCount` and nested `children`. It uses `Text`
+  and `Badge`, always renders supplied content, and has no mode, composite,
+  expansion, selection, filtering or callback props. Its colocated fixtures and
+  independent checks reject extra properties. Compile-only regressions reject
+  interaction props on summaries and the removed mode on `StateRow`.
+- The viewer composes `StateSummary` directly. Replaced the mutable reachability
+  set/work queue with pure reductions carrying readonly reference arrays; no
+  `.add`, `.push`, `.pop`, flags, retained cache or store is used for traversal.
+  Contract fixture checks likewise compose returned findings without accumulating
+  them through array mutation. Query results still reference original nodes.
+- Journey wrappers are plain containers; their headings remain semantic and
+  named region landmarks are no longer generated for every journey. Contract
+  groups use native description-list terms with entry/exit lists as definitions,
+  eliminating repeated visible/ARIA captions without IDs or state hooks.
+- Direct-exit meaning is now explicit in the visible hierarchy caption and in
+  each count's accessible explanation/tooltip. Reference-occurrence keys remain
+  deliberate: repeated references are preserved; independent linting owns source
+  identity findings. Large-document cost and individual touchpoint identity are
+  recorded as deferred work below, without adding caches or filtering here.
+- Re-ran `pnpm test`: **77 tests passed** (37 design-system, 17 lint, 13 data-query,
+  7 viewer and an explicit **3/3 baseline pass**). Readonly compile checks and
+  all **12 independent fixture checks** passed. Existing frozen-input, topology,
+  recursion, boundary and deterministic-rendering regressions remain green.
+- Re-ran `pnpm test:viewer:browser`: all **4 Chromium checks passed**. New
+  assertions verify **zero region landmarks**, one announced Entries/Exits term
+  per contract group, and precise direct-exit explanations. The same run verified
+  **10/47/20/24** rendered journeys/states/entries/exits and source membership
+  order, all repeated/cyclic references, light/dark themes, and no overflow at
+  **320, 859, 860, 861, 1099, 1100 and 1101px**. Updated mobile and desktop
+  screenshots were visually inspected in the existing ignored evidence paths.
+- Re-ran `pnpm build:storybook`: **32 stories** built, including the new summary
+  default/nested/long-content cases. Re-ran `pnpm test:design-system:browser`:
+  all **8 Chromium checks passed**, including controlled `StateRow` interaction,
+  keyboard/focus, themes, accessibility, responsive styling and all-story loading.
+- Re-ran `pnpm build` successfully for every package/app. The web bundle remains
+  `index-Dzl6dVgS.js`. No dependencies were added for these corrections. Data/lint
+  packages, web source, captured OIDC files, and the original source repository
+  remain unchanged. `git diff --check` passes. All stage-5 work remains unstaged
+  and uncommitted; stage 6 remains unstarted.
+
+## Stage-5 viewer Storybook refinement
+
+- Replaced the standalone Vite development preview with viewer-owned Storybook.
+  Removed both the viewer `preview` script and root `preview:viewer` alias. The
+  current development command is `pnpm storybook:viewer` (port 6007), with a
+  separate `pnpm build:storybook:viewer` command. The standalone design-system
+  commands remain on port 6006. This supersedes the earlier preview instructions.
+- Viewer `.storybook/main.ts` extends the existing design-system configuration,
+  adds its catalog under “Design system” and the viewer stories under “Viewer”,
+  and serves both built-consumer fixtures. Preview configuration reuses the same
+  theme globals, scoped decorators, accessibility settings and layout. The viewer
+  Vite configuration reuses the design system's development setup. Nothing is
+  imported from the viewer into the design system; runtime/public contracts and
+  production component implementations are unchanged.
+- Added colocated `JourneyHierarchy` stories for Solid-OIDC, multiple roots and
+  recursion, an empty document and a compiled-consumer iframe. Readonly frozen
+  demonstration documents and explicit JSON parsing stay in the development-only
+  `.storybook/documents.ts` module. Storybook and the smoke fixture share those
+  inputs. Heading level is controllable; document editing is excluded from controls.
+- `tests/consumer` is retained solely as a build-only ESM/declaration/CSS smoke
+  fixture without Tailwind processing or source aliases. Storybook serves it at
+  `/viewer-consumer/`; the inherited design-system fixture stays at `/consumer/`.
+  Production declaration generation starts at the public entry point and excludes
+  stories, Storybook and fixtures. Separate package builds remain available.
+- `pnpm install --offline` and `pnpm install --frozen-lockfile --offline` passed.
+  Viewer Storybook uses the existing catalog versions as development dependencies;
+  no new dependency versions or runtime dependencies were introduced.
+- `pnpm test`: **77/77 tests passed**, including 37 design-system, 17 lint,
+  13 query, 7 viewer and the explicit 3 baseline checks. All 12 fixture checks
+  and readonly compile checks passed. Viewer source, stories and inherited
+  configuration also passed TypeScript checking after the final preview change.
+- `pnpm build` passed for every package/app; the web bundle remains
+  `index-Dzl6dVgS.js`. Output-isolation checks confirm no Storybook/demo modules
+  enter the renderer's production exports. No app routes or later stages started.
+- `pnpm build:storybook:viewer` built **36 stories: 32 inherited + 4 viewer**.
+  `pnpm build:storybook` independently rebuilt the design system's **32 stories**.
+  The viewer development server passed the CLI startup smoke test on
+  `127.0.0.1:6007` and exited, with no CSF parsing warnings.
+- `pnpm test:viewer:browser` passed **6 Chromium checks** against the final built
+  Storybook: all 36 stories load without page errors, both consumer iframes work,
+  light/dark/alternate globals affect viewer stories, source and compiled OIDC
+  retain **10/47/20/24** counts, repeated/cyclic references remain explicit, and
+  compiled/source stories wrap at **320, 859, 860, 861, 1099, 1100 and 1101px**.
+  The existing accessible-label, contract-term and zero-region checks also pass.
+  `pnpm test:design-system:browser` passed all **8 independent regression checks**.
+- Storybook mobile/desktop screenshots were visually inspected at ignored
+  `packages/viewer/.test-output/stage5-storybook-mobile.png` and
+  `stage5-storybook-oidc.png`. Browser runners and the startup smoke test close
+  their servers/browsers. `git diff --check` passes; all changes remain unstaged
+  and uncommitted. Data/lint packages, web source, OIDC capture and the original
+  source repository remain unchanged. Stage 6 remains unstarted.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
-- All stages after 4 remain unstarted. Viewer rendering/state, extensions,
-  routing, reporting UI, and deployment are not implemented. Syntax
+- Large-document rendering needs an explicit depth/size/display policy: preserving
+  every shared call site can grow output exponentially. Query scans, composite
+  identity searches and repeated child selections also add cost. Defer profiling
+  and any per-render readonly lookups until that work is scoped; add no persistent
+  cache, hierarchy model or arbitrary truncation in stage 5.
+- Stage 7 must keep individual touchpoint identities when adding filtering. The
+  current joined caption with one dot is only a static-stage presentation, not a
+  primary-touchpoint selection or identity contract.
+- All stages after 5 remain unstarted. Viewer interaction state/inspection,
+  navigation, screenshots, extensions, routing, reporting UI, and deployment
+  are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and
   target existence/classes. IRI grammar, context meaning, ownership, transition

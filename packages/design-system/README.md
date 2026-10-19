@@ -18,6 +18,11 @@ import "@journey-viewer/design-system/styles.css";
 Callers supply selection/expansion snapshots and callbacks. `StateRow` does not
 own interaction state. Nested content is an explicit child slot, with no graph
 traversal or hidden hierarchy data. Counts and labels are caller-provided.
+`StateSummary` is the separate presentation component for static hierarchies. Its
+readonly contract contains `label`, `entryCount`, `directExitCount`, and nested
+`children`. It always renders supplied children and accepts no selection,
+expansion, filtering, callback, or mode props. `StateRow` retains its stage-4
+controlled button contract; it has no static mode.
 
 ## Primitive ownership
 
@@ -30,12 +35,21 @@ traversal or hidden hierarchy data. Counts and labels are caller-provided.
 | `Badge` | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips. |
 | `Surface` | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance. |
 
-Hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`, and
-`StateRow`. They reuse these primitives and add arrangement and distinct journey
-decoration. A dot accepts a presentation color directly; the library has no
+Hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`,
+`StateRow`, `StateSummary`, and `JourneyContracts`. They reuse these primitives
+and add arrangement and distinct journey decoration. A dot accepts a presentation color directly; the library has no
 example-specific palette or state-ID conventions. A standalone dot is named;
 `decorative` hides it from assistive technology. `JourneyHead` sets this when it
 also renders the visible touchpoint caption.
+
+`JourneyContracts` receives readonly `entries` and `exits` arrays of `{ id, label }`.
+An entry may set `default: true`; the component never chooses a default. It renders
+noninteractive lists using `Badge` and `Text`, grouped by native description-list
+terms. Each visible “Entries”/“Exits” caption occurs once without a repeated ARIA
+label. Missing lists are represented by explicit empty arrays. Its fixture checker
+also detects conflicting defaults. Rendering keys identify reference occurrences
+(`index:id`) so repeated source references stay visible; data identity checking
+belongs to the independent lint rules.
 
 Components live in `src/components/Component/Component.tsx`,
 `Component.module.css`, and `Component.stories.tsx`, with colocated fixture and
@@ -124,6 +138,8 @@ defaults and explicit overrides. Fixtures exclude non-serializable content slots
 and callbacks, supplied by stories instead. Separate checks cover that fixture
 contract, including malformed structures. Generation imports no checking code.
 The state-row fixture contract also requires an expanded row to be composite.
+The state-summary fixture contract rejects extra properties, including interaction
+and mode properties, and checks both counts independently.
 These development checks are not runtime React-prop validators.
 
 Package exports are built ESM/declarations, `styles.css` (compiled components and
@@ -136,3 +152,8 @@ Storybook includes every component, variants, controlled composition, token docs
 theme comparisons, and a built-consumer iframe. That consumer imports only `dist`
 and is built without a Tailwind plugin. Stories, fixtures, checks, Storybook,
 Playwright, and token build scripts stay outside the package's production output.
+
+The viewer's internal Storybook extends this catalog and reuses its configuration,
+preview decorators/themes and Vite setup. Run `pnpm storybook:viewer` from the root
+to see both catalogs on port 6007. This Storybook stays independent on port 6006;
+no viewer or UJG imports are added to the design system.

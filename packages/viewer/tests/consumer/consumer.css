@@ -1,0 +1,6 @@
+.consumer {
+  display: grid;
+  gap: var(--jv-space-lg);
+  padding: var(--jv-space-sm);
+  min-inline-size: 0;
+}

@@ -1,0 +1,26 @@
+.summary {
+  min-inline-size: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  padding: var(--jv-space-xs) var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.label {
+  flex: 1;
+  min-inline-size: 0;
+}
+.marks {
+  display: inline-flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--jv-space-xs);
+}
+.nested {
+  margin-inline-start: var(--jv-size-indent);
+  padding-inline-start: var(--jv-space-sm);
+  border-inline-start: var(--jv-border-focus) solid var(--jv-color-border);
+}

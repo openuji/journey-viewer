@@ -13,7 +13,42 @@ import {
   JourneyHead,
   TouchpointDot,
   StateRow,
+  StateSummary,
+  JourneyContracts,
 } from "../dist/index.js";
+
+test("state summaries render nested content and precise boundary explanations without interaction props", () => {
+  const props = Object.freeze({ label: "Nested scope", entryCount: 1, directExitCount: 2 });
+  const before = JSON.stringify(props);
+  const html = renderToStaticMarkup(h(StateSummary, props, "Child journey"));
+  assert.match(html, /Nested scope/);
+  assert.match(html, /Child journey/);
+  assert.match(html, />1 entry names this state<\/span>/);
+  assert.match(html, />2 listed exits reached by a direct transition from this state<\/span>/);
+  assert.doesNotMatch(html, /<button|aria-pressed|aria-expanded/);
+  assert.equal(JSON.stringify(props), before);
+  assert.doesNotMatch(renderToStaticMarkup(h(StateSummary, { label: "No boundaries" })), /←|→/);
+});
+
+test("journey contracts render readonly entries, exits and explicit defaults as noninteractive lists", () => {
+  const props = Object.freeze({
+    entries: Object.freeze([Object.freeze({ id: "entry:a", label: "Begin", default: true })]),
+    exits: Object.freeze([Object.freeze({ id: "exit:a", label: "Complete" })]),
+  });
+  const before = JSON.stringify(props);
+  const html = renderToStaticMarkup(h(JourneyContracts, props));
+  assert.match(html, /^<dl/);
+  assert.equal((html.match(/<dt>/g) ?? []).length, 2);
+  assert.equal((html.match(/>Entries<|>Exits</g) ?? []).length, 2);
+  assert.doesNotMatch(html, /aria-label=/);
+  assert.match(html, /\(default\)/);
+  assert.match(html, /Complete/);
+  assert.doesNotMatch(html, /<button/);
+  assert.equal(JSON.stringify(props), before);
+  const empty = renderToStaticMarkup(h(JourneyContracts, { entries: [], exits: [] }));
+  assert.match(empty, /No entries\./);
+  assert.match(empty, /No exits\./);
+});
 
 test("button defaults safely inside forms and forwards native attributes", () => {
   const html = renderToStaticMarkup(

@@ -4,6 +4,8 @@ import type {
   HeadingProps,
   JourneyHeadProps,
   StateRowProps,
+  StateSummaryProps,
+  JourneyContractsProps,
 } from "../src/index.js";
 import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
 
@@ -33,3 +35,24 @@ const badge: BadgeProps = {
 };
 // @ts-expect-error Forwarded native attributes remain readonly.
 badge.id = "changed";
+
+const contracts: JourneyContractsProps = { entries: [{ id: "e", label: "Begin" }], exits: [] };
+// @ts-expect-error Contract lists are readonly.
+contracts.entries.push({ id: "next", label: "Next" });
+// @ts-expect-error Contract item data is readonly.
+contracts.entries[0]!.label = "Changed";
+
+const summary: StateSummaryProps = { label: "Start", entryCount: 1, directExitCount: 2 };
+// @ts-expect-error Summary presentation data is readonly.
+summary.label = "Changed";
+// @ts-expect-error Selection belongs to StateRow, not StateSummary.
+const selectedSummary: StateSummaryProps = { label: "Start", selected: true };
+// @ts-expect-error Summary has no interaction callbacks.
+const callbackSummary: StateSummaryProps = { label: "Start", onSelect: () => {} };
+// @ts-expect-error Nested content requires no expansion flag.
+const expandedSummary: StateSummaryProps = { label: "Start", expanded: true };
+// @ts-expect-error Summary has no filtering flag.
+const filteredSummary: StateSummaryProps = { label: "Start", filtered: true };
+// @ts-expect-error Mode flags are not part of either component's contract.
+const staticRow: StateRowProps = { label: "Start", static: true };
+void [selectedSummary, callbackSummary, expandedSummary, filteredSummary, staticRow];

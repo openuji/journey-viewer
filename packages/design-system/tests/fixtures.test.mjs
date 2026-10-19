@@ -20,6 +20,8 @@ for (const name of [
   "JourneyHead",
   "JourneyCard",
   "StateRow",
+  "StateSummary",
+  "JourneyContracts",
 ]) {
   const { [`create${name}Fixture`]: generate } = await import(
     `../src/components/${name}/${name}.fixtures.ts`
@@ -70,4 +72,26 @@ test("state-row fixture checking rejects expansion without a composite without r
     [],
   );
   assert.equal(JSON.stringify(invalid), before);
+});
+
+test("contract fixture checks reject malformed items and conflicting defaults independently", async () => {
+  const { createJourneyContractsFixture } = await import("../src/components/JourneyContracts/JourneyContracts.fixtures.ts");
+  const { checkJourneyContractsFixture } = await import("../src/components/JourneyContracts/JourneyContracts.checks.ts");
+  const invalid = freeze(createJourneyContractsFixture({
+    entries: [{ id: "e1", label: "First", default: true }, { id: "e2", label: "Second", default: true }],
+  }));
+  assert.match(checkJourneyContractsFixture(invalid)[0].message, /At most one/);
+  for (const item of [null, {}, { id: "e", label: "Begin", default: "yes" }]) {
+    assert.ok(checkJourneyContractsFixture(freeze({ entries: [item], exits: [] })).length > 0);
+  }
+  assert.deepEqual(checkJourneyContractsFixture(freeze({ entries: [], exits: [] })), []);
+});
+
+test("summary fixtures reject interaction and mode properties instead of ignoring them", async () => {
+  const { createStateSummaryFixture } = await import("../src/components/StateSummary/StateSummary.fixtures.ts");
+  const { checkStateSummaryFixture } = await import("../src/components/StateSummary/StateSummary.checks.ts");
+  for (const key of ["static", "composite", "expanded", "selected", "filtered", "onSelect", "onToggle"]) {
+    const fixture = freeze({ ...createStateSummaryFixture(), [key]: true });
+    assert.deepEqual(checkStateSummaryFixture(fixture).map((finding) => finding.path), [[key]]);
+  }
 });

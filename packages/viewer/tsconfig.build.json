@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false, "emitDeclarationOnly": true,
+    "rootDir": "src", "outDir": "dist", "declaration": true
+  },
+  "include": ["src/index.ts", "src/vite-env.d.ts"],
+  "exclude": ["**/*.stories.tsx"]
+}
