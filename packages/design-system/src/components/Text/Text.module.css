@@ -1,0 +1,28 @@
+@reference "../../styles/tailwind.css";
+.text {
+  @apply font-sans text-body font-regular leading-normal;
+  margin: 0;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.text[data-role="label"] {
+  @apply text-label font-medium;
+}
+.text[data-role="caption"] {
+  @apply text-caption;
+}
+.text[data-role="code"] {
+  @apply font-mono text-code;
+}
+.text[data-tone="muted"] {
+  color: var(--jv-color-muted);
+}
+.text[data-tone="subtle"] {
+  color: var(--jv-color-subtle);
+}
+.text[data-tone="entry"] {
+  color: var(--jv-color-entry);
+}
+.text[data-tone="exit"] {
+  color: var(--jv-color-exit);
+}

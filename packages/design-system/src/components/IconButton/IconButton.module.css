@@ -1,0 +1,11 @@
+.icon {
+  display: inline-flex;
+  inline-size: var(--jv-size-icon);
+  block-size: var(--jv-size-icon);
+  flex: 0 0 auto;
+}
+.icon svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}

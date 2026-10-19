@@ -1,0 +1,6 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "./generated/tokens.css";
+@import "./generated/tailwind.css";
+@source "../components/**/*.tsx";
+@source not "../components/**/*.stories.tsx";

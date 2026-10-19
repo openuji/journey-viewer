@@ -1,0 +1,26 @@
+/* Development layout only; shared controls and typography come from primitives. */
+.story-scope {
+  padding: var(--jv-space-lg);
+  background: var(--jv-color-background);
+  min-inline-size: 0;
+}
+.story-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jv-space-md);
+  min-inline-size: 0;
+}
+.story-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--jv-space-sm);
+}
+.story-panel {
+  padding: var(--jv-space-md);
+}
+.story-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--jv-space-lg);
+}

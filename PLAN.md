@@ -2,17 +2,16 @@
 
 ## Current checkpoint
 
-- Current stage: **3 — Independent linting (complete)**.
-- Next stage: **4 — Design-system foundation**. Its refined scope and acceptance
-  gates are recorded below; implementation has not started.
-- Stage-3 deliverable: a pure `lint(value, rules)` runner, finding types, and
-  separately exported document-shape, identity, and reference-target checks.
-- Stage-3 acceptance: rules handle malformed parsed data independently, injected
-  lists control checking, and findings never modify data. Rule order establishes
-  no prerequisites. Parsing and reporting remain caller concerns.
-- Expected changes for stage 3: `packages/lint` (runner/types, separate UJG rule
-  export, tests, build, and documentation), lockfile, README, and this checkpoint.
-  The data-query package, web app, and captured example remain unchanged.
+- Current stage: **4 — Design-system foundation (complete with corrections, uncommitted)**.
+- Next stage: **5 — Static hierarchy**. Do not start it in the stage-4 request.
+- Stage-4 deliverable: DTCG-driven themes/utilities, shared primitives and hierarchy
+  compositions, readonly contracts, independent fixture generation/checks, and
+  internal Storybook. Detailed scope and gates are recorded below.
+- Expected changes: `packages/design-system`, root commands/catalog/lockfile,
+  `.gitignore`, README, this checkpoint, and the working agreement's commit policy.
+  Existing data/lint packages, web app, and captured example remain unchanged.
+- **Only the user may commit.** Leave implementation and documentation changes
+  uncommitted for review. This overrides earlier checkpoint commit instructions.
 
 ## Fixed architectural constraints
 
@@ -78,9 +77,9 @@ packages or changing the existing site.
 
 ## Stage-4 refinement
 
-This is a planning checkpoint, not implementation evidence. Keep the architectural
-boundaries from stages 1-3. Implement stage 4 in the following order and complete
-its gates before beginning the viewer.
+Keep the architectural boundaries from stages 1-3. Implement stage 4 in the
+following order and complete its gates before beginning the viewer. Verification
+results belong in the stage-4 evidence section below.
 
 ### 1. DTCG tokens and generated styles
 
@@ -166,15 +165,15 @@ Colocate `Component.fixtures.ts` and `Component.checks.ts` where relevant.
 
 | Gate | Evidence required to close stage 4 |
 | --- | --- |
-| Token ownership | Changing a source token changes both utility output and component styling. Repeated generation is identical. Separate checks catch malformed values and broken references. |
+| Token ownership | Changing a source token changes both utility output and component styling. Repeated generation is identical. Required semantic keys are independent of theme order; missing keys in the first or only theme are detected. Separate checks catch malformed values and broken references, and foundation findings are emitted once. |
 | Primitive reuse | Stories document every primitive and supported variant. Source review confirms a single native button implementation, reused by `IconButton` and other controls, and shared owners for heading/text/surface styles. Compositions contain no copied primitive interaction or typography recipes. |
 | Theming | Browser stories demonstrate light/dark side by side and nested boundaries. An additional development theme varies color, font, and spacing through token configuration without editing component logic. |
 | Responsive behavior | Browser checks at 320px and immediately below/at/above both named thresholds show wrapping, usable controls, and no page overflow. Modules and utilities use the same breakpoints. |
 | Component boundaries | Every primitive and hierarchy composition renders from readonly presentation props without UJG/viewer/application imports, shared stores, or graph context. |
-| Fixture separation | Deterministic generators accept frozen inputs without mutation. Separate checks accept valid fixtures and reject deliberately malformed fixtures. Generation and rendering never import checks. |
-| Accessibility | Controls expose accessible names, native keyboard behavior, visible focus, and usable mobile hit areas. Heading semantics are independent of their visual sizes. |
+| Fixture separation | Deterministic generators accept frozen inputs without mutation. Separate checks accept valid fixtures and reject malformed data and cross-field violations, including expanded non-composite rows. Generation and rendering never import checks. |
+| Accessibility and visual states | Controls expose accessible names, native keyboard behavior, visible focus, and usable mobile hit areas. Entry/exit explanations appear in the accessibility tree; a visible touchpoint caption is announced once. Row labels inherit their button hover/active/selected colors. Heading semantics are independent of visual sizes. |
 | Build isolation | Independent ESM/declaration/CSS and Storybook builds pass. A browser story renders the built components with compiled CSS and no consumer Tailwind processing. Production output excludes stories, fixtures, checks, and Storybook. |
-| Regression | All existing tests and app builds pass. The original repository and captured OIDC baseline remain unchanged. Record commands and browser evidence here before the scoped implementation commit. |
+| Regression | All existing tests and app builds pass. The original repository and captured OIDC baseline remain unchanged. Record commands and browser evidence here and leave changes uncommitted for user review. |
 
 References for implementation: [DTCG 2025.10 format](https://www.designtokens.org/tr/2025.10/format/),
 [Tailwind theme variables](https://tailwindcss.com/docs/theme),
@@ -196,7 +195,8 @@ At completion:
 1. Run checks appropriate to that stage.
 2. Review the diff against the fixed constraints.
 3. Record completed work, evidence, unresolved issues, and the next stage here.
-4. Produce one scoped commit and report its outcome.
+4. Leave one stage's scoped changes uncommitted and report their outcome. Only
+   the user may create commits; do not stage files or change git history.
 
 Work discovered for later stages goes in the stage list. Call out changes to
 agreed responsibilities or public interfaces before implementing a different
@@ -283,11 +283,120 @@ architecture. A failing acceptance gate keeps the current stage open.
   remain unchanged. No parsing, rendering, I/O, registry, repair, or input
   mutation was added to the lint runner/rules.
 
+## Stage-4 evidence
+
+The following records the initial checkpoint. Correction verification is recorded
+separately below.
+
+- Added `@journey-viewer/design-system`, with React as its only runtime peer.
+  Six shared primitives (`Button`, `IconButton`, `Heading`, `Text`, `Badge`,
+  `Surface`) own repeated control, typography, and surface styling. Four hierarchy
+  compositions reuse them: `TouchpointDot`, `JourneyHead`, `JourneyCard`, `StateRow`.
+  Source checks confirm one native button implementation and primitive reuse.
+- All ten components have colocated implementation, CSS module, Storybook,
+  fixture generation, and fixture checking files. Public contracts are readonly;
+  rendering receives data/callbacks/children without graph context, checking,
+  effects, or owned interaction state. No UJG/viewer/application imports exist.
+- DTCG foundation/semantic files drive production light/dark themes, namespaced
+  CSS variables, and Tailwind sizing/color/font utilities. Checking and translation
+  are separate pure functions, with file access in CLI scripts. The build composes
+  checking before generation. Unsupported authoring features are reported rather
+  than silently accepted; the documented subset is not a full DTCG implementation.
+- Shared `md = 53.75rem` and `lg = 68.75rem` breakpoints drive both modules and
+  utilities. Theme boundaries redeclare semantic values and provide inherited
+  fonts/colors/backgrounds; nested and simultaneous themes work. An internal
+  alternate theme demonstrates independent font/color/spacing configuration.
+- Presentation adjustments: mobile/coarse-pointer hit areas are at least 44px,
+  while fine-pointer desktop sizes stay compact (30px/36px). Subtle light-theme
+  text is slightly darker than the original faint text for readability. Long
+  labels wrap and mobile descriptions follow the source hierarchy's hiding rule.
+- `pnpm install --frozen-lockfile`: passed in the destination with a fresh root
+  dependency directory (191 packages, unchanged lockfile). An incomplete link
+  from the initial incremental install was resolved by recreating `node_modules`.
+  Dependency versions remain pinned; Storybook/Tailwind/Playwright are development
+  dependencies and are absent from the library runtime output.
+- `pnpm test`: 22 new design-system tests, 17 lint tests, 13 data-query tests, and
+  3 baseline tests passed (55 total). Tests cover native semantics, controlled
+  rendering, primitive ownership, frozen deterministic fixtures, independent
+  malformed-fixture checks, token references/types/theme keys, deterministic
+  translation, and production export isolation. Compile-only readonly checks and
+  all ten fixture contract checks passed independently.
+- `pnpm build`: every current package and the unchanged web app built. Package
+  ESM is about 5.8 kB and component/theme CSS about 9.8 kB before gzip; React is
+  external. ESM, declarations, compiled styles, tokens, optional Tailwind bridge,
+  and opt-in document reset have separate exports. Production output excludes
+  stories, fixtures, checks, alternate themes, and Storybook.
+- `pnpm build:storybook`: passed with 26 stories, including all primitives and
+  hierarchy compositions, variants, controlled composition, token docs, theme
+  comparisons, and a compiled-consumer iframe. The consumer is typechecked and
+  built directly from `dist` without a Tailwind plugin or source alias.
+- `pnpm test:design-system:browser`: six Chromium acceptance checks passed in
+  the destination. They cover independent/nested themes, 320px and 859/860/861px
+  plus 1099/1100/1101px boundaries, long content/no page overflow, module/utility
+  breakpoint agreement, 44px coarse-pointer targets, native keyboard activation
+  and focus, disabled/form behavior, independent controlled demo snapshots, and
+  every story loading without page errors. Changing source DTCG values changes
+  both primitive styling and utility output in the browser, including typography.
+- Browser screenshots were inspected and remain in ignored development output:
+  `packages/design-system/.test-output/stage4-mobile.png` and
+  `packages/design-system/.test-output/stage4-themes.png`. Test browsers and the
+  temporary local server are closed by the test runner.
+- The original repository remains clean at
+  `6d9deaf0b57ba59fc22d232ca25bc999e1ce365e`. Data/lint packages, web source, OIDC
+  capture, and the 10/47/120/37 baseline remain unchanged. The web bundle remains
+  `index-Dzl6dVgS.js`; no viewer, routing, deployment, or example-specific
+  presentation configuration has been introduced.
+- Updated this plan and `AGENTS.md` to require user-only commits. All stage-4
+  changes remain unstaged and uncommitted; repository HEAD is still
+  `659a8b2668dbc243bfa8a2789bcecbf94111423c`.
+
+## Stage-4 corrections and re-verification
+
+- Addressed the review in the Journey Viewer working tree. No later stage started,
+  no dependencies were added, and no files were staged or committed.
+- `Badge` now exposes its explanatory label as visually hidden text and hides its
+  visual glyphs from the accessibility tree when a label is supplied. Entry/exit
+  counts use singular/plural spoken labels. Native span attributes are explicitly
+  included in its readonly contract and forwarded; an explicit tooltip is retained.
+- Default `Text` color inherits from its parent, so row-label hover, active, and
+  selected colors follow `Button`. Explicit semantic tones remain independent.
+- `TouchpointDot` has a readonly `decorative` option. `JourneyHead` uses it beside
+  the visible caption; standalone dots remain named. Shared class composition
+  no longer adds empty class segments.
+- The explicit readonly 54-key semantic contract in `tokens/semantic-keys.mjs`
+  drives both checking and the Tailwind bridge. First/only incomplete themes are
+  detected, and reordering themes does not change the bridge. Foundation
+  authoring/value checks run once, with findings at their original source paths.
+- Alias parsing requires a complete brace-delimited reference. Literal font names
+  containing braces and CSS punctuation are quoted safely; generic CSS font
+  families remain unquoted. Documentation explicitly states that foundation
+  values are build-time data and only semantic CSS variables are public.
+- Fixture checking rejects expansion without a composite, without changing or
+  checking generation/rendering. The existing mobile rule hiding descriptions is
+  retained, including its effect on the accessible button name.
+- Re-ran `pnpm test` in the destination: 31 design-system tests, 17 lint tests,
+  13 query tests, and 3 baseline tests passed (64 total). Readonly compile checks
+  and the independent ten-component fixture checks passed. New regressions cover
+  accessible label markup, decorative dots, native attributes, class composition,
+  cross-field fixture rules, incomplete first/only themes, ordering independence,
+  one-time foundation findings, and literal font serialization.
+- Re-ran `pnpm build` successfully. Current design-system output is about 6.3 kB
+  ESM and 10.0 kB CSS before gzip, with React external. The web bundle remains
+  `index-Dzl6dVgS.js`.
+- Re-ran `pnpm build:storybook` successfully and read its generated index: exactly
+  26 stories. Re-ran `pnpm test:design-system:browser`: all eight Chromium checks
+  passed. The new browser regressions inspect real accessibility-tree text and
+  computed row-label colors for hover/active/selected states in all three themes.
+  Previous responsive, keyboard, theme, consumer and story-loading checks passed.
+- Updated the acceptance gates to require these accessibility, visual-state,
+  semantic-key and fixture-invariant checks. Stage 5 remains unstarted; all
+  corrections remain unstaged and uncommitted for user review.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
-- All stages after 3 remain unstarted. Design-system contracts, viewer state,
-  extensions, routing, reporting UI, and deployment are not implemented. Syntax
+- All stages after 4 remain unstarted. Viewer rendering/state, extensions,
+  routing, reporting UI, and deployment are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and
   target existence/classes. IRI grammar, context meaning, ownership, transition

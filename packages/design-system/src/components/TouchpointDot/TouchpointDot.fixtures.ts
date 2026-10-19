@@ -1,0 +1,15 @@
+import type { TouchpointDotProps } from "./TouchpointDot.js";
+
+export type TouchpointDotFixture = Readonly<
+  Required<Pick<TouchpointDotProps, "label" | "color">>
+>;
+
+export function createTouchpointDotFixture(
+  overrides: Readonly<Partial<TouchpointDotFixture>> = {},
+): TouchpointDotFixture {
+  return {
+    label: "Web application",
+    color: "var(--jv-color-accent)",
+    ...overrides,
+  };
+}

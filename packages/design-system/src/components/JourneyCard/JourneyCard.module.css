@@ -1,0 +1,9 @@
+.card {
+  padding: var(--jv-space-sm);
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jv-space-2xs);
+  min-inline-size: 0;
+}

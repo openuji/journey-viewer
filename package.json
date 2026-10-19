@@ -11,6 +11,13 @@
     "dev": "pnpm --filter @journey-viewer/web dev",
     "build": "pnpm -r --if-present build",
     "build:app": "pnpm --filter @journey-viewer/web build",
-    "test": "pnpm -r --if-present test && node --test tests/*.test.mjs"
+    "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
+    "build:design-system": "pnpm --filter @journey-viewer/design-system build",
+    "check:tokens": "pnpm --filter @journey-viewer/design-system check:tokens",
+    "generate:tokens": "pnpm --filter @journey-viewer/design-system generate:tokens",
+    "check:fixtures": "pnpm --filter @journey-viewer/design-system check:fixtures",
+    "storybook": "pnpm --filter @journey-viewer/design-system storybook",
+    "build:storybook": "pnpm --filter @journey-viewer/design-system build:storybook",
+    "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser"
   }
 }

@@ -1,0 +1,8 @@
+.dot {
+  display: inline-block;
+  flex: 0 0 var(--jv-size-dot);
+  inline-size: var(--jv-size-dot);
+  block-size: var(--jv-size-dot);
+  border-radius: var(--jv-radius-full);
+  background: var(--jv-touchpoint-color, var(--jv-color-touchpoint));
+}

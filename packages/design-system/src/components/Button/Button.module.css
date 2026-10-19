@@ -1,0 +1,74 @@
+@reference "../../styles/tailwind.css";
+
+.button {
+  @apply font-sans text-label font-medium leading-tight;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jv-space-sm);
+  min-inline-size: var(--jv-size-control-mobile);
+  min-block-size: var(--jv-size-control-mobile);
+  max-inline-size: 100%;
+  padding: var(--jv-space-xs) var(--jv-space-sm);
+  border: var(--jv-border-thin) solid transparent;
+  border-radius: var(--jv-radius-sm);
+  background: transparent;
+  color: var(--jv-color-muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  touch-action: manipulation;
+  @variant md {
+    min-inline-size: var(--jv-size-control-sm);
+    min-block-size: var(--jv-size-control-sm);
+  }
+}
+.button[data-size="md"] {
+  @variant md {
+    min-inline-size: var(--jv-size-control-md);
+    min-block-size: var(--jv-size-control-md);
+  }
+}
+.button[data-variant="solid"] {
+  background: var(--jv-color-accent);
+  color: var(--jv-color-on-accent);
+}
+.button[data-variant="outline"] {
+  border-color: var(--jv-color-border);
+  background: var(--jv-color-surface);
+}
+.button[data-variant="row"] {
+  inline-size: 100%;
+  justify-content: flex-start;
+  text-align: start;
+  color: var(--jv-color-foreground);
+}
+.button[data-icon-only] {
+  flex: 0 0 auto;
+  padding: var(--jv-space-xs);
+}
+.button:enabled:hover {
+  background: var(--jv-color-hover);
+  color: var(--jv-color-foreground);
+}
+.button:enabled:active,
+.button[data-selected] {
+  background: var(--jv-color-accent-soft);
+  color: var(--jv-color-accent);
+}
+.button:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: var(--jv-border-focus);
+}
+.button:disabled {
+  opacity: var(--jv-opacity-filtered);
+  cursor: default;
+}
+@media (pointer: coarse) {
+  .button,
+  .button[data-size="md"] {
+    min-inline-size: var(--jv-size-control-mobile);
+    min-block-size: var(--jv-size-control-mobile);
+  }
+}

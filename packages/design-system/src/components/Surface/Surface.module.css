@@ -1,0 +1,20 @@
+.surface {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  background: var(--jv-color-surface);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  color: var(--jv-color-foreground);
+}
+.surface[data-surface-tone="muted"] {
+  background: var(--jv-color-muted-surface);
+}
+.surface[data-radius="sm"] {
+  border-radius: var(--jv-radius-sm);
+}
+.surface[data-radius="full"] {
+  border-radius: var(--jv-radius-full);
+}
+.surface[data-raised] {
+  box-shadow: var(--jv-shadow-raised);
+}

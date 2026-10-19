@@ -1,0 +1,13 @@
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-sm);
+}
+.title {
+  min-inline-size: 0;
+  flex: 1;
+}
+.count {
+  flex: 0 1 auto;
+}

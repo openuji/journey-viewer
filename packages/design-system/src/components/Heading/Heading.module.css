@@ -1,0 +1,13 @@
+@reference "../../styles/tailwind.css";
+.heading {
+  @apply font-sans font-semibold leading-tight text-heading-md;
+  margin: 0;
+  color: var(--jv-color-foreground);
+  overflow-wrap: anywhere;
+}
+.heading[data-size="sm"] {
+  @apply text-heading-sm;
+}
+.heading[data-size="lg"] {
+  @apply text-heading-lg;
+}

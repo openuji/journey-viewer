@@ -1,0 +1,15 @@
+/* Optional document reset. Component CSS does not import this file. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
