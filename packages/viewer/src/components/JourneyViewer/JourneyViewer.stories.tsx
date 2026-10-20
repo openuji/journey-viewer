@@ -2,7 +2,9 @@ import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@journey-viewer/design-system";
 import { JourneyViewer } from "./JourneyViewer.js";
-import { emptyCompositesDocument, emptyDocument, oidcDocument, topologyDocument } from "../../../.storybook/documents.js";
+import { emptyCompositesDocument, emptyDocument, oidcDocument, screensDocument, topologyDocument } from "../../../.storybook/documents.js";
+import { oidcScreenshots, oidcTouchpoints, missingScreenshots } from "../../../.storybook/screenshots.js";
+import { ScreenshotInputs } from "../../../.storybook/ScreenshotInputs.js";
 
 const meta = {
   title: "Viewer/JourneyViewer",
@@ -31,3 +33,14 @@ function ReplacementExample() {
   );
 }
 export const DocumentReplacement: Story = { render: () => <ReplacementExample /> };
+export const Screens: Story = { args: { screenshots: oidcScreenshots, touchpoints: oidcTouchpoints } };
+export const MissingImage: Story = { args: { screenshots: missingScreenshots, touchpoints: oidcTouchpoints } };
+export const LiveScreenshotMap: Story = { render: () => <ScreenshotInputs>{(screenshots) => (
+  <JourneyViewer document={oidcDocument} screenshots={screenshots} touchpoints={oidcTouchpoints} />
+)}</ScreenshotInputs> };
+export const SeveralSurfaces: Story = { args: { document: screensDocument, screenshots: {
+  "opaque:7": oidcScreenshots["urn:ujg:solid-oidc:app-sign-in-required-surface"]!,
+  "opaque:9": oidcScreenshots["urn:ujg:solid-oidc:app-logged-in-surface"]!,
+  "opaque:11": oidcScreenshots["urn:ujg:solid-oidc:app-sign-in-required-surface"]!,
+  "opaque:15": oidcScreenshots["urn:ujg:solid-oidc:mfa-sms-message-surface"]!,
+} } };

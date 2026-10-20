@@ -1,3 +1,9 @@
+import { createScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.fixtures.ts";
+import { checkScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.checks.ts";
+import { createScreenPreviewFixture } from "../src/components/ScreenPreview/ScreenPreview.fixtures.ts";
+import { checkScreenPreviewFixture } from "../src/components/ScreenPreview/ScreenPreview.checks.ts";
+import { createScreenLightboxFixture } from "../src/components/ScreenLightbox/ScreenLightbox.fixtures.ts";
+import { checkScreenLightboxFixture } from "../src/components/ScreenLightbox/ScreenLightbox.checks.ts";
 import { createButtonFixture } from "../src/components/Button/Button.fixtures.ts";
 import { createSearchFieldFixture } from "../src/components/SearchField/SearchField.fixtures.ts";
 import { checkSearchFieldFixture } from "../src/components/SearchField/SearchField.checks.ts";
@@ -30,6 +36,10 @@ import { createTouchpointDotFixture } from "../src/components/TouchpointDot/Touc
 import { checkTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.checks.ts";
 
 const findings = [
+  ...checkScreenImageFixture(createScreenImageFixture()).map((finding) => ({ ...finding, path: ["ScreenImage", ...finding.path] })),
+  ...checkScreenPreviewFixture(createScreenPreviewFixture()).map((finding) => ({ ...finding, path: ["ScreenPreview", ...finding.path] })),
+  ...checkScreenLightboxFixture(createScreenLightboxFixture()).map((finding) => ({ ...finding, path: ["ScreenLightbox", ...finding.path] })),
+
   ...checkSearchFieldFixture(createSearchFieldFixture()).map((finding) => ({ ...finding, path: ["SearchField", ...finding.path] })),
   ...checkJourneyContractControlsFixture(createJourneyContractControlsFixture()).map((finding) => ({ ...finding, path: ["JourneyContractControls", ...finding.path] })),
   ...checkInspectorPanelFixture(createInspectorPanelFixture()).map((finding) => ({ ...finding, path: ["InspectorPanel", ...finding.path] })),
@@ -84,4 +94,4 @@ if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("15 component fixture contracts pass independently.");
+} else console.log("18 component fixture contracts pass independently.");

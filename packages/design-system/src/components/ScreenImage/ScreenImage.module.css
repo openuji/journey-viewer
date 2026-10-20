@@ -1,0 +1,23 @@
+.frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-inline-size: 0;
+  min-block-size: 0;
+  block-size: var(--jv-screen-image-height, var(--jv-size-screen-preview));
+  overflow: hidden;
+}
+.image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  min-inline-size: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+.status {
+  position: absolute;
+  padding: var(--jv-space-sm);
+  text-align: center;
+}

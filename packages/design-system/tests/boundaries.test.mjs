@@ -5,6 +5,9 @@ import { readdir, readFile } from "node:fs/promises";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const owners = [
   "Button",
+  "ScreenImage",
+  "ScreenPreview",
+  "ScreenLightbox",
   "SearchField",
   "IconButton",
   "Heading",

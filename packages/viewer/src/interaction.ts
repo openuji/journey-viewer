@@ -77,14 +77,15 @@ export function createViewerInteraction(document: UjgDocument): ViewerInteractio
 }
 
 /** Selection reveals every explicit ancestry and all children of a selected composite. */
-export function selectNode(
+function select(
   document: UjgDocument,
   current: ViewerInteraction,
   selection: ViewerSelection,
+  openChildren: boolean,
 ): ViewerInteraction {
   const resolved = resolveSelection(document, selection);
   if (!resolved) return current;
-  const children = selection.kind === "state"
+  const children = selection.kind === "state" && openChildren
     ? childJourneys(document, resolved.journey, selection.nodeRef).map((node) => node["@id"])
     : [];
   const expandedJourneys = mergeRefs(current.expandedJourneys, [
@@ -93,6 +94,15 @@ export function selectNode(
   return sameSelection(current.selection, selection) && expandedJourneys === current.expandedJourneys
     ? current
     : { selection: { ...selection }, expandedJourneys };
+}
+
+export function selectNode(document: UjgDocument, current: ViewerInteraction, selection: ViewerSelection): ViewerInteraction {
+  return select(document, current, selection, true);
+}
+
+/** Private screen-selection operation; preserves child disclosure state. */
+export function selectScreenNode(document: UjgDocument, current: ViewerInteraction, selection: ViewerSelection): ViewerInteraction {
+  return select(document, current, selection, false);
 }
 
 /** A composite's complete child group is expanded or collapsed as one explicit action. */

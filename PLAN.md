@@ -2,21 +2,23 @@
 
 ## Current checkpoint
 
-- Current stage: **7 — Navigation controls (complete, uncommitted)**.
-- Next stage: **8 — Screens and presentation**. Do not start it in the stage-7 request.
-- Stage-7 deliverable: overview/focus columns with explicit occurrence paths,
-  bounded search, touchpoint identity filtering, graph/entry/exit navigation,
-  derived breadcrumbs, summaries and hover/selection highlights.
-- Changed modules/interfaces: viewer `ViewerOccurrence`, `ViewerNavigation`,
-  `ViewerSnapshot`, navigation queries/transitions and `JourneyNavigation`;
-  explicit `pickSearchResult` / `JourneyNavigation.onSearchPick` actions;
-  `JourneyExplorer` occurrence callbacks, optional inspector navigation,
-  `JourneyViewer` snapshot composition and private hierarchy traversal;
-  design-system `SearchField`, row relations/hover, local filtered presentation
-  and an inspector content slot; colocated fixtures/checks/stories, readonly,
-  unit/browser tests, README files and this checkpoint.
-  Static `JourneyHierarchy` and stage-6 transition contracts retain their APIs.
-  Existing data/lint packages, app and captured example stay unchanged.
+- Current stage: **8 — Screens and presentation (complete, uncommitted)**.
+- Next stage: **9 — Build-time extensions**. Do not start it in the stage-8 request.
+- Stage-8 deliverable: standalone exact-surface-ID screenshot JSON, all 37 copied
+  OIDC assets, selection/hover previews, native keyboard lightbox, live mapping
+  replacement and separate touchpoint short labels/token colors. Mapping updates
+  preserve the loaded graph object and all interaction state.
+- Changed modules/interfaces: viewer `ScreenshotMap`, screen queries/transitions,
+  `ViewerSnapshot.lightbox`, `ViewerNavigation.hoverOccurrence`, optional media
+  and presentation props, `JourneyScreens`, `JourneyLightbox`, and named image/
+  modal browser adapters; design-system `ScreenImage`, `ScreenPreview`,
+  `ScreenLightbox`, row/inspector content slots and multi-touchpoint headers;
+  DTCG category/scrim/screen-size tokens; explicit example inputs, development
+  stories, readonly/unit/browser checks and documentation.
+  Static `JourneyHierarchy` and existing stage-6 transition APIs remain intact.
+  Data/lint packages, application source, canonical UJG bytes, `baseline.json`,
+  dependency manifests and lockfile remain unchanged.
+  `BASELINE.md` prose was updated to record the completed asset copy.
 - The viewer owns its Storybook and UJG examples. It may reuse the design system's
   internal Storybook configuration/catalog in development. The design-system
   package retains its independent Storybook and imports no viewer/UJG code.
@@ -81,10 +83,58 @@ packages or changing the existing site.
 | 5. Static hierarchy | Viewer package renders journeys, states, entries, exits, and nested composition directly from UJG queries; add required presentational components. | OIDC structure matches the baseline; multiple roots/children and recursive references are handled explicitly; no persistent hierarchy model or interaction store. |
 | 6. Selection and inspection | Immutable selection/expansion transitions and inspector, connected through explicit data and callbacks. | Interactions work with frozen-input transition tests; viewer instances are independent; document replacement resets interaction state. |
 | 7. Navigation controls | Overview/focus switching, search, touchpoint filtering, entry/exit navigation; derive highlights, breadcrumbs, summaries. | Existing behavior and nested boundaries are preserved; no derived-data synchronization or mutable cache. |
-| 8. Screens and presentation | Previews/lightbox with explicit OIDC screenshot mappings, colors, short labels. | All 37 screens resolve; missing images and keyboard navigation work; no OIDC filenames or ID guessing in reusable code; DOM effects isolated. |
+| 8. Screens and presentation | Previews/lightbox with a separate replaceable surface-ID-to-screenshot JSON document; explicit OIDC assets, colors and short labels. | All 37 screens resolve; replacing screenshot mappings updates previews/lightbox without replacing UJG or resetting interaction; missing images and keyboard navigation work; no OIDC filenames or ID guessing in reusable code; DOM effects isolated. |
 | 9. Build-time extensions | Readonly descriptors for inspector panels, annotations, and rendering overrides; parser/view selection stays explicit in the app. | Small custom panel and annotation work without changing built-ins; removal restores defaults; no registration, lifecycle, or shared runtime state. |
 | 10. Standalone application | Journey Viewer brand, landing page, catalog, routes, local-file loading, finding presentation; compose reading/parsing/checking/rendering explicitly. | OIDC and local files open; syntax failures/findings displayed separately; blocking policy only in app; no upload/persistence. Routes: `/`, `/examples/solid-oidc`, `/viewer`. |
 | 11. Distribution and Cloudflare | Finish independent ESM/declaration/CSS exports and app-local Cloudflare config; separate package/app builds, Storybook, and deploy commands. | External-consumer smoke check; Cloudflare dry run and deep-link refresh; no development fixtures/Storybook in deployment; no package publication. |
+
+## Stage-8 refinement: independent screenshot document
+
+Agreed before Stage-8 implementation: screenshots are a separate input owned by
+the caller. Start with a plain JSON object whose keys are exact UJG `Surface`
+IDs and whose values are screenshot paths or URLs:
+
+```json
+{
+  "urn:ujg:solid-oidc:app-sign-in-required-surface": "./screens/app-sign-in-required.png",
+  "urn:ujg:solid-oidc:app-logged-in-surface": "./screens/app-logged-in.png"
+}
+```
+
+- Keep this document independent of canonical UJG JSON-LD and the captured
+  provenance/baseline. Do not add screenshot URLs to UJG nodes or interpret the
+  baseline's migration records as runtime configuration. Keep colors and short
+  labels separate from this screenshot-only input. No version envelope, JSON-LD
+  context, asset registry or extensible configuration runtime is needed initially.
+- Resolve graph nodes to their explicitly associated UJG surfaces, then look up
+  each exact surface ID in the supplied map. Do not derive filenames or surface
+  IDs from state IDs, labels, naming conventions or OIDC-specific logic. One
+  screenshot path per surface is sufficient for the initial contract.
+- File reading, native JSON parsing and relative-path/base-URL resolution belong
+  to the caller/browser boundary. Paths use an explicit asset or mapping-document
+  base, independently of the UJG document's location. Reusable queries receive
+  readonly data; they do not fetch files, discover assets or watch the filesystem.
+- The viewer receives the screenshot map as a separate readonly prop. Callers
+  can replace that prop while the same UJG object stays loaded. Preview, inspector,
+  search availability and lightbox resolve against the latest supplied map;
+  no screenshot URLs or derived screen catalog are synchronized into interaction
+  state. An open screen is identified by surface ID rather than a captured URL.
+- A mapping-only update preserves selection, expansion, focus, search and filters.
+  An open lightbox uses the updated path for the same surface. Removal of a mapping
+  or an image-load failure produces an explicit unavailable presentation, without
+  displaying a stale screenshot or inventing a replacement association.
+- Updating image content at an unchanged URL is a caller/browser cache concern.
+  The caller may supply a changed URL (including a query revision or blob URL)
+  through the same map. Add no implicit cache-busting or file-watching service.
+- Stage-8 verification must demonstrate live map replacement, path replacement
+  for an already open screen, mapping removal and independent viewer instances,
+  alongside the existing 37-image, missing-image and keyboard gates. Native
+  document-object replacement retains its existing full interaction reset policy.
+
+This refinement was agreed before implementation. Stage 8 follows it through
+separate readonly props and caller-owned path resolution. Its implementation and
+verification evidence are recorded below. The canonical UJG and baseline capture
+remain independent of the new screenshot/presentation inputs.
 
 ## Stage-4 refinement
 
@@ -853,6 +903,123 @@ static-mode and local traversal-set implementation details and verification coun
   and TypeScript/readonly checks; `git diff --check` passes. This small Stage-7
   correction remains uncommitted; Stage 8 is unstarted.
 
+## Stage-8 verification evidence
+
+- Implemented only Stage 8, starting from `9a8ef3af57eead9d98780781083cfbadcf78f9e2`
+  and the agreed screenshot-document refinement. No later-stage package,
+  extension runtime, application loader or deployment work was added.
+- Added standalone `examples/solid-oidc/screenshots.json`: **37 exact UJG Surface
+  IDs to screenshot paths**. Copied all 37 PNGs into `screens/`; each SHA-256
+  matches the original capture. `touchpoints.json` independently provides seven
+  short labels and generic DTCG category colors. Runtime code reads no baseline
+  migration records and contains no OIDC filenames, ID guessing or path discovery.
+  Native parsing and explicit asset-base URL resolution remain in development/
+  caller boundaries; the canonical UJG and `baseline.json` remain unchanged.
+- Added pure `getNodeScreens`, `getScreens`, `openScreenshot`, `closeScreenshot`
+  and `stepScreenshot`, with readonly `ScreenshotMap` and `ViewerLightbox`.
+  The lightbox retains surface/target identities only. Gallery derivation uses
+  original nodes in source journey/member/surface order, preserving every finite
+  call-site context. It matches all **37 source screens**, wraps at both ends,
+  skips unmapped paths and keeps failed URLs navigable. Opening a composite's
+  image reveals ancestry without opening its children. Ordinary graph navigation
+  closes the lightbox; screenshot navigation preserves query/filter/focus mode.
+- `JourneyViewer` receives independently replaceable `screenshots` and
+  `touchpoints` props. Mapped state rows expose screen actions; selection/hover
+  previews, inspector, search availability and lightbox resolve the latest map.
+  A mapping/path update preserves selection, expansion, occurrence, focus, query
+  and filters. Removal immediately clears stale images; restore/URL replacement
+  recovers them. Independent instances remain isolated; same-ID UJG object
+  replacement resets all interaction, including the open modal.
+- Design-system `ScreenImage`, `ScreenPreview` and `ScreenLightbox` own readonly
+  presentation contracts, pure fixtures, separate checks and stories. Existing
+  primitives own controls, typography and surfaces. Added always-rendered
+  `StateRow.actions` / `InspectorPanel.media` slots, optional multi-touchpoint
+  header data, and DTCG category/scrim/screen-size values in all themes.
+  The design system imports no UJG/viewer code and owns no browser effects.
+- Browser-specific behavior is isolated in `browser/BrowserScreenImage` (per-URL
+  loading/error state) and `browser/BrowserLightbox` (native modal ref/effect,
+  local keyboard/focus). These adapters receive no document or business snapshot.
+  No global listeners, body locks, hidden graph refs, retained catalog or shared
+  store were introduced. `JourneyViewer` remains the sole graph-interaction state
+  owner; existing static hierarchy and stage-6 transition APIs remain intact.
+- `pnpm test`: **126 tests passed** (**49 design-system, 44 viewer, 17 lint,
+  13 query, 3 baseline**), including readonly declaration checks and
+  **18 independent fixture contracts**. Frozen-input/SSR checks cover exact
+  opaque IDs, multiple surfaces, unresolved owners, inherited map keys, explicit
+  reused contexts, composite disclosure, wrap/no-op/invalid actions, live map
+  derivation and unchanged source data/snapshots. Token checking passes.
+- `pnpm build`, `pnpm build:storybook` and `pnpm build:storybook:viewer` passed.
+  Viewer Storybook builds and loads **78 stories: 51 inherited + 27 viewer**;
+  the independent design-system Storybook builds/loads **51 stories**. Live-map,
+  missing-image and several-surface stories use explicit example inputs.
+  Both compiled consumer fixtures still import built ESM/declarations/CSS without
+  Tailwind processing. Production outputs exclude example images/maps, fixtures,
+  stories, checks and development tooling. The app bundle remains
+  `index-Dzl6dVgS.js`.
+- Final `pnpm --filter @journey-viewer/viewer test:browser`: **25 Chromium
+  checks passed**, including all 19 prior checks. New cases verify all 37 PNG HTTP
+  responses and native image decodes, source-ordered wrap/selection, arrow keys,
+  Escape, forward/reverse Tab wrapping, opener/fallback focus restoration,
+  independent live map/path replacement, remove/restore/clear, proper 404 image
+  fallback/recovery, same-ID graph replacement, hover/selection previews, search
+  availability, short labels/colors, multiple surfaces and second-reference
+  context. The test server now reads files before sending successful headers so
+  missing assets receive a real 404.
+- Previews/lightbox fit at **320, 859, 860, 861, 1099, 1100, 1101 and 1280px**
+  without page/dialog overflow; image bounds and containment are checked.
+  Visually inspected final ignored `stage8-lightbox-320.png`,
+  `stage8-lightbox-1280.png`, `stage8-preview-320.png`,
+  `stage8-preview-1280.png` and `stage8-touchpoints-320.png` under
+  `packages/viewer/.test-output/`. Visual QA caught and fixed intrinsic image
+  cropping; full portrait screens now fit both bounded presentations.
+  `pnpm test:design-system:browser`: **8 independent Chromium checks passed**.
+  Both runners closed their temporary servers/browsers.
+- Static OIDC rendering remains **10 journeys / 47 states / 20 entries /
+  24 exits**, with the **10/47/120/37** source baseline unchanged. Data/lint
+  packages, app sources, dependency manifests and lockfile are unchanged. The
+  original repository remains clean. `git diff --check` passes; no files were
+  staged or committed. Stage 8 has no unresolved acceptance failures.
+
+### Stage-8 review corrections
+
+- Adopted the review's explicit call-site labeling option. The gallery retains
+  every finite context and uses a **views** counter when surfaces repeat.
+  Repeated images additionally show an ordinal such as **2 of 3 call sites**;
+  the context caption continues to identify the parent path. Next/Previous and
+  wrap update both counts and the actual selected occurrence. Galleries with no
+  repeated surfaces retain the existing compact counter, including OIDC's 37.
+  Missing mappings recompute the counts without retaining stale call-site text.
+- Documented that `ScreenLightbox` has an independent level-2 modal heading;
+  `JourneyViewer.level` controls hierarchy/inspector headings. Corrected the
+  checkpoint to identify unchanged **`baseline.json`**, while acknowledging the
+  `BASELINE.md` prose update recording asset copying.
+- Recorded gallery profiling as the next performance candidate, including full
+  occurrence expansion and per-candidate duplicate scanning on every render/step.
+  Added the Stage-8 exports, required snapshot fields and optional hover occurrence
+  argument to the stage-9/stage-10 API review. No fields, arguments or exports
+  were added in this correction. Safari opener capture and example token-string
+  coupling remain explicit follow-up/context notes below.
+- Re-ran `pnpm test`: **127 tests passed** (**49 design-system, 45 viewer,
+  17 lint, 13 query, 3 baseline**), with readonly checks and all **18 fixture
+  contracts**. The new frozen-input/SSR regression checks all three call-site
+  ordinals, view totals, mapping replacement/removal and input preservation.
+- `pnpm build:storybook:viewer` passed, building the required packages and both
+  compiled consumers. Re-ran `pnpm --filter @journey-viewer/viewer test:browser`:
+  **all 25 Chromium checks passed**, including 37 native image decodes, live map
+  replacement, keyboard/focus behavior and responsive thresholds. Extended the
+  reused-journey case to verify **5 / 6 views · 2 of 3 call sites**, stepping into
+  the other parent's third call site, bidirectional wrapping, and captions fitting
+  at **320px and 1280px** without page/dialog overflow. Visually inspected ignored
+  `stage8-review-call-sites-320.png` and `stage8-review-call-sites-1280.png` in
+  `packages/viewer/.test-output/`. The rebuilt catalog still has **78 stories**.
+  Independent design-system Storybook/browser results above were not rerun in
+  this correction; its component change is documentation only.
+- Confirmed both package `dist` directories contain no PNGs or screenshot/
+  presentation JSON inputs. Canonical UJG, `baseline.json`, manifests, lockfile,
+  application and original repository remain unchanged. `git diff --check`
+  passes. All Stage-8 work remains unstaged and uncommitted; later stages remain
+  unstarted.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -871,6 +1038,12 @@ static-mode and local traversal-set implementation details and verification coun
   shared diamonds despite the 18-result cap. Per-render local lookups are a
   possible optimization; moving hover to another state owner needs an explicit
   change to the agreed React state boundary.
+  Profile Stage 8's gallery next: `JourneyLightbox` derives it on each render,
+  and `stepScreenshot` derives it again on each step. Full finite-occurrence
+  expansion can be exponential on shared diamonds; the per-candidate
+  `screens.some(...)` duplicate scan can be quadratic. The call-site caption
+  correction does not optimize this work. Measure representative reused graphs
+  before selecting per-call traversal/lookups; add no persistent catalog/cache.
 - Selection and expansion intentionally follow logical IDs across all reused
   occurrences within one instance. Stage 7 now records explicit occurrence
   context for focus and breadcrumbs; it assigns no arbitrary parent and adds no
@@ -888,20 +1061,35 @@ static-mode and local traversal-set implementation details and verification coun
 - `JourneyViewer.document` must stay referentially stable between actual input
   replacements. Stage 10's local-file loading must retain each parsed object
   until the next load rather than reconstruct it during parent renders.
-- Touchpoint filtering now retains individual source identities. Joined captions
-  remain presentation text, without a primary-touchpoint identity contract.
+- Touchpoint filtering retains individual source identities. Stage 8 adds
+  explicit separate captions/dots and caller-supplied short labels/colors for
+  interactive journeys, without selecting a primary touchpoint. Static hierarchy
+  presentation retains its existing contract.
 - Two nonblocking review proposals remain separate design work: introduce a
   distinct focus-row presentation rather than adapting `StateRow`'s disclosure
   contract, and review which current helper exports (notably `getRowRelation`
   and `occurrenceLabel`) should remain public before stage-9 extensions or app
   wiring. Current focus presentation and existing exports are retained in the
   Stage-7 UX corrections; no later stage is started by these proposals.
+- The stage-9/stage-10 API pass must also review Stage 8's five exported screen
+  functions and controlled screen components, the required `ViewerSnapshot.lightbox`
+  and `ViewerNavigation.hoverOccurrence` fields, and `hoverNode`'s optional fourth
+  occurrence argument (default null). Hand-built snapshots must include new
+  fields; `createViewerSnapshot` supplies the complete defaults. This correction
+  adds no new public fields, arguments or exports.
+- Native modal focus restoration captures `activeElement` at mount. On Safari,
+  clicking a button need not focus it, so the captured element may differ from
+  the opener. Review explicit opener handoff at the browser boundary when scoped.
+  Keep current keyboard focus wrapping and restore/fallback behavior meanwhile.
+  Example touchpoint colors intentionally reference the design-system's public
+  CSS variables; that example coupling remains documented without a new runtime
+  color/token resolution abstraction.
 - Focus columns use native horizontal overflow; programmatic reveal/scrolling
   and global keyboard shortcuts stay at a browser/application boundary. Stage 10
   may compose those effects explicitly without moving them into pure queries or
-  controlled renderer components. Search screenshot-availability markers await
-  stage 8's explicit mappings.
-- All stages after 7 remain unstarted. Screenshots, extensions, routing,
+  controlled renderer components. Stage 8's modal-only keyboard/focus behavior is
+  isolated in `BrowserLightbox`; it adds no global shortcut listeners.
+- All stages after 8 remain unstarted. Extensions, routing,
   reporting UI and deployment are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and

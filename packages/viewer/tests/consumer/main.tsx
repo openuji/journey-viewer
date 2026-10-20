@@ -7,6 +7,7 @@ import "../../dist/styles.css";
 import { oidcDocument, topologyDocument } from "../../.storybook/documents.js";
 import "./consumer.css";
 import { InteractionExamples } from "./InteractionExamples.js";
+import { ScreenshotExamples } from "./ScreenshotExamples.js";
 
 createRoot(document.getElementById("root")!).render(
   <main className="consumer" data-jv-theme="light">
@@ -17,5 +18,6 @@ createRoot(document.getElementById("root")!).render(
     <div data-testid="fixture"><JourneyHierarchy document={topologyDocument} level={3} /></div>
     <div data-jv-theme="dark" data-testid="dark"><JourneyHierarchy document={topologyDocument} level={3} /></div>
     <InteractionExamples />
+    <ScreenshotExamples />
   </main>,
 );

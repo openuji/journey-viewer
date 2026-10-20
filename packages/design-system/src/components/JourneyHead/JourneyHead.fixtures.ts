@@ -3,6 +3,7 @@ import { createTouchpointDotFixture } from "../TouchpointDot/TouchpointDot.fixtu
 
 export type JourneyHeadFixture = Readonly<
   Required<Pick<JourneyHeadProps, "title" | "count" | "level" | "touchpoint" | "filtered">>
+  & Pick<JourneyHeadProps, "touchpoints">
 >;
 
 export function createJourneyHeadFixture(
@@ -13,6 +14,7 @@ export function createJourneyHeadFixture(
     count: "4 states",
     level: 2,
     filtered: false,
+    touchpoints: [],
     touchpoint: createTouchpointDotFixture(),
     ...overrides,
   };

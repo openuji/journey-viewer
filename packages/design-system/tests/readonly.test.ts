@@ -11,6 +11,7 @@ import type {
 } from "../src/index.js";
 import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
 import type { SearchFieldProps } from "../src/index.js";
+import type { ScreenImageProps, ScreenLightboxProps } from "../src/index.js";
 
 const button: ButtonProps = { children: "Select", selected: false };
 // @ts-expect-error Component props are immutable snapshots.
@@ -74,3 +75,12 @@ search.value = "other";
 // @ts-expect-error Search keyboard callbacks must be supplied explicitly.
 const uncontrolledSearch: SearchFieldProps = { label: "Search", value: "" };
 void uncontrolledSearch;
+declare const image: ScreenImageProps;
+// @ts-expect-error Loading state is supplied by the browser caller.
+image.status = "unavailable";
+// @ts-expect-error Native image events must have explicit callbacks.
+const missingImageCallbacks: ScreenImageProps = { source: "image.png", label: "Example", status: "loading" };
+void missingImageCallbacks;
+declare const lightbox: ScreenLightboxProps;
+// @ts-expect-error Lightbox presentation does not own modal state.
+lightbox.position = "2 / 3";

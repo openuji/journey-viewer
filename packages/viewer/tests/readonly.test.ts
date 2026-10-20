@@ -1,6 +1,7 @@
 import type { JourneyHierarchyProps, JourneyExplorerProps, ViewerInteraction, ViewerSelection } from "../dist/index.js";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
-import type { JourneyNavigationProps, ViewerSnapshot, ViewerOccurrence } from "../dist/index.js";
+import type { JourneyNavigationProps, JourneyInspectorProps, ViewerSnapshot, ViewerOccurrence } from "../dist/index.js";
+import type { ScreenshotMap, TouchpointPresentation, JourneyScreenControls } from "../dist/index.js";
 
 declare const document: UjgDocument;
 const props: JourneyHierarchyProps = { document, level: 2 };
@@ -38,3 +39,21 @@ declare const navigationProps: JourneyNavigationProps;
 // @ts-expect-error Search picking is an explicit required action, separate from ordinary navigation.
 const missingSearchPick: JourneyNavigationProps = { ...navigationProps, onSearchPick: undefined };
 void missingSearchPick;
+declare const screenshots: ScreenshotMap;
+// @ts-expect-error Screenshot documents are immutable caller inputs.
+screenshots["urn:surface"] = "./updated.png";
+declare const touchpoints: TouchpointPresentation;
+// @ts-expect-error Presentation overrides remain readonly.
+touchpoints["urn:touchpoint"]!.color = "red";
+// @ts-expect-error Screenshot rendering controls require an explicit open callback.
+const missingOpen: JourneyScreenControls = { screenshots };
+void missingOpen;
+// @ts-expect-error Inspector media supplies its preview target and controls together.
+const missingMediaTarget: JourneyInspectorProps = { document, selection, media: { screenshots, onOpen: () => {} } };
+void missingMediaTarget;
+if (snapshot.lightbox) {
+  // @ts-expect-error An open screen is an immutable identity, never a cached URL.
+  snapshot.lightbox.surfaceRef = "other";
+  // @ts-expect-error Resolved paths do not belong in interaction state.
+  snapshot.lightbox.source = "./cached.png";
+}

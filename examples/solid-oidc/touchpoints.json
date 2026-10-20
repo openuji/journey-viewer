@@ -1,0 +1,30 @@
+{
+  "urn:ujg:solid-oidc:app": {
+    "shortLabel": "App",
+    "color": "var(--jv-color-category-orange)"
+  },
+  "urn:ujg:solid-oidc:idp": {
+    "shortLabel": "IdP",
+    "color": "var(--jv-color-category-blue)"
+  },
+  "urn:ujg:solid-oidc:pod-authorization": {
+    "shortLabel": "Pod",
+    "color": "var(--jv-color-category-violet)"
+  },
+  "urn:ujg:solid-oidc:authenticator-app": {
+    "shortLabel": "Authenticator",
+    "color": "var(--jv-color-category-green)"
+  },
+  "urn:ujg:solid-oidc:sms-channel": {
+    "shortLabel": "SMS",
+    "color": "var(--jv-color-category-teal)"
+  },
+  "urn:ujg:solid-oidc:email-provider": {
+    "shortLabel": "Email",
+    "color": "var(--jv-color-category-gold)"
+  },
+  "urn:ujg:solid-oidc:platform-authenticator": {
+    "shortLabel": "Platform",
+    "color": "var(--jv-color-category-rose)"
+  }
+}

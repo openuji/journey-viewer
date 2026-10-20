@@ -44,7 +44,23 @@ Hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`,
 and add arrangement and distinct journey decoration. A dot accepts a presentation color directly; the library has no
 example-specific palette or state-ID conventions. A standalone dot is named;
 `decorative` hides it from assistive technology. `JourneyHead` sets this when it
-also renders the visible touchpoint caption.
+also renders the visible touchpoint caption. Its optional readonly `touchpoints`
+array takes `{ id, label, color? }` items and renders every supplied caption/dot
+with an identity tooltip. The original singular `touchpoint` remains supported;
+if both props are supplied, both presentations render.
+
+`ScreenImage` renders a bounded, contained image from explicit `source`, `label`,
+`status` (`loading`, `ready`, `unavailable`) and required load/error callbacks.
+The caller owns load status; the component has no state or effects. `ScreenPreview`
+composes a title, full identity, always-rendered image/content slot and a controlled
+open button. `available` controls that button's disabled presentation.
+`ScreenLightbox` owns only modal content: title, identity, context, position,
+previous/next/close controls and the image/content slot. The browser/caller owns
+the actual dialog lifecycle, keyboard handling and focus. Its heading is level 2
+within the independent dialog; it does not inherit a hierarchy heading level.
+All three have pure
+fixtures, separate checks and stories; no UJG IDs or asset path conventions enter
+the design system.
 
 `JourneyContracts` receives readonly `entries` and `exits` arrays of `{ id, label }`.
 An entry may set `default: true`; the component never chooses a default. It renders
@@ -153,6 +169,7 @@ that do not name a listed contract of the same kind.
 `InspectorPanel` receives readonly display strings, touchpoint captions and
 sections of `{ id, label, details }` items. It composes `Surface`, `Heading`,
 `Text` and `Badge` without UJG queries, selection state or effects. Its optional
+`media` slot renders supplied previews between the header and details. Its
 `children` slot always renders caller-supplied content, including explicit
 navigation controls. The panel owns no navigation behavior.
 Both components have colocated fixtures, independent checks and stories.
@@ -163,6 +180,10 @@ callback reports pointer entry/leave for the caller to interpret. `JourneyHead`,
 `JourneyContractControls` and `StateRow` accept readonly `filtered` presentation.
 Only a row's own content is dimmed; nested children retain their own presentation.
 The design system derives none of these values from graph data.
+`StateRow.actions` always renders supplied row controls beside selection/counts;
+it owns no screenshot behavior. Shared category colors, modal scrim and screen
+dimensions live in DTCG tokens, including `--jv-color-category-*`,
+`--jv-color-scrim`, `--jv-size-screen-preview` and `--jv-size-lightbox`.
 
 Package exports are built ESM/declarations, `styles.css` (compiled components and
 production theme variables), `tokens.css` (theme variables only), `tailwind.css`

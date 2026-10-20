@@ -1,0 +1,29 @@
+.panel {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--jv-space-sm);
+  padding: var(--jv-space-sm);
+  min-inline-size: 0;
+  block-size: calc(100dvh - 2 * var(--jv-space-lg));
+}
+.header,
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.caption {
+  display: grid;
+  flex: 1;
+  gap: var(--jv-space-2xs);
+  min-inline-size: 0;
+}
+.body {
+  --jv-screen-image-height: 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+}

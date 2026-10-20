@@ -15,8 +15,11 @@ using the existing source exporter, not a compiler added to this repository.
 `baseline.json` records the source commit and paths, SHA-256 values for the source
 document/exporter/parser and exported bytes, root and initial-state IRIs, and the
 original 37 PNG asset identities/checksums. Its screen records are migration
-evidence, not a runtime model or presentation configuration. Screenshots are not
-copied yet; stage 8 will copy them and provide explicit presentation mappings.
+evidence, not a runtime model or presentation configuration. Stage 8 copied the
+37 PNGs into `screens/`, preserving their recorded checksums, and added the
+independent `screenshots.json` path map and `touchpoints.json` presentation input.
+The viewer never reads this capture's migration records at runtime. See
+[the example inputs](README.md) for path resolution and replacement.
 
 | Item | Count |
 | --- | ---: |

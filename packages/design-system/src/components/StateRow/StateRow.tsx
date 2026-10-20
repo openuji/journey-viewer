@@ -18,6 +18,7 @@ export interface StateRowProps {
   readonly onSelect?: () => void;
   readonly onToggle?: () => void;
   readonly onHover?: (hovered: boolean) => void;
+  readonly actions?: ReactNode;
   /** Persistent nested information, independent of child disclosure. */
   readonly notice?: ReactNode;
   readonly children?: ReactNode;
@@ -36,6 +37,7 @@ export function StateRow({
   onSelect,
   onToggle,
   onHover,
+  actions,
   notice,
   children,
 }: StateRowProps) {
@@ -96,6 +98,7 @@ export function StateRow({
             </Text>
           )}
         </Button>
+        {actions}
         {(entryCount > 0 || exitCount > 0) && (
           <span className={styles.marks}>
             {entryCount > 0 && (

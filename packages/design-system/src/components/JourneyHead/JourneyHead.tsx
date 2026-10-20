@@ -10,6 +10,7 @@ export interface JourneyHeadProps {
   readonly title: string;
   readonly count?: string;
   readonly touchpoint?: Readonly<Pick<TouchpointDotProps, "label" | "color">>;
+  readonly touchpoints?: readonly Readonly<{ id: string; label: string; color?: string }>[];
   readonly level?: HeadingLevel;
   readonly filtered?: boolean;
 }
@@ -18,6 +19,7 @@ export function JourneyHead({
   title,
   count,
   touchpoint,
+  touchpoints = [],
   level = 2,
   filtered = false,
 }: JourneyHeadProps) {
@@ -33,6 +35,10 @@ export function JourneyHead({
             {touchpoint.label}
           </Text>
         )}
+        {touchpoints.map((item, index) => <span className={styles.touchpoint} key={`${index}:${item.id}`} title={item.id}>
+          <TouchpointDot label={item.label} {...(item.color ? { color: item.color } : {})} decorative />
+          <Text variant="caption" tone="muted">{item.label}</Text>
+        </span>)}
       </div>
       {count !== undefined && (
         <Badge className={styles.count ?? ""}>{count}</Badge>

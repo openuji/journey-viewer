@@ -85,7 +85,12 @@ pnpm test:viewer:browser
 See [the viewer documentation](packages/viewer/README.md) for its readonly input
 contract and root/recursion presentation. `pnpm storybook` still runs the independent
 design-system catalog on port 6006. Navigation controls are available in the viewer
-stories and compiled consumer. Screens and presentation start in stage 8.
+stories and compiled consumer. Stage 8 adds screenshot previews, a keyboard
+lightbox, and live screenshot-map replacement. The example's
+[screenshots.json](examples/solid-oidc/screenshots.json) maps exact UJG Surface IDs
+to independent image paths; [touchpoints.json](examples/solid-oidc/touchpoints.json)
+supplies separate short labels and token colors. Callers can replace the screenshot
+map while retaining the loaded UJG object and its interaction state.
 The app remains minimal until its application stage.
 
 Only the user may commit. Agent changes remain uncommitted for review.

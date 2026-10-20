@@ -26,9 +26,10 @@ export interface InspectorPanelProps {
   readonly sections: readonly InspectorSection[];
   readonly level?: HeadingLevel;
   readonly children?: ReactNode;
+  readonly media?: ReactNode;
 }
 
-export function InspectorPanel({ title, kind, identity, context, touchpoints, sections, level = 2, children }: InspectorPanelProps) {
+export function InspectorPanel({ title, kind, identity, context, touchpoints, sections, level = 2, children, media }: InspectorPanelProps) {
   return (
     <Surface as="aside" aria-label="Selection inspector" className={styles.panel}>
       <header className={styles.header}>
@@ -42,6 +43,7 @@ export function InspectorPanel({ title, kind, identity, context, touchpoints, se
           </ul>
         )}
       </header>
+      {media}
       {sections.map((section, index) => (
         <div key={`${index}:${section.title}`} className={styles.section}>
           <div className={styles.sectionHead}>

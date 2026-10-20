@@ -11,6 +11,9 @@ const freeze = (value) => {
 
 for (const name of [
   "Button",
+  "ScreenImage",
+  "ScreenPreview",
+  "ScreenLightbox",
   "SearchField",
   "IconButton",
   "Heading",
@@ -121,5 +124,22 @@ test("inspection and contract-control fixtures independently reject malformed ne
   const { checkInspectorPanelFixture } = await import("../src/components/InspectorPanel/InspectorPanel.checks.ts");
   for (const sections of [null, [null], [{ title: "Section", items: [null] }], [{ title: "Section", items: [{ id: "x", label: "X", details: [null] }] }]]) {
     assert.ok(checkInspectorPanelFixture(freeze(createInspectorPanelFixture({ sections }))).length > 0);
+  }
+});
+
+test("screen image status requires a source and journey touchpoint lists are checked independently", async () => {
+  const { createScreenImageFixture } = await import("../src/components/ScreenImage/ScreenImage.fixtures.ts");
+  const { checkScreenImageFixture } = await import("../src/components/ScreenImage/ScreenImage.checks.ts");
+  for (const status of ["loading", "ready"]) {
+    const input = freeze(createScreenImageFixture({ source: undefined, status }));
+    assert.deepEqual(checkScreenImageFixture(input).map((finding) => finding.path), [["source"]]);
+    assert.equal(input.source, undefined);
+  }
+  assert.deepEqual(checkScreenImageFixture(freeze(createScreenImageFixture({ source: undefined, status: "unavailable" }))), []);
+  const { createJourneyHeadFixture } = await import("../src/components/JourneyHead/JourneyHead.fixtures.ts");
+  const { checkJourneyHeadFixture } = await import("../src/components/JourneyHead/JourneyHead.checks.ts");
+  assert.deepEqual(checkJourneyHeadFixture(freeze(createJourneyHeadFixture({ touchpoints: [{ id: "tp:1", label: "App" }] }))), []);
+  for (const touchpoints of [false, [null], [{ id: "tp:1", label: "App", color: false }]]) {
+    assert.ok(checkJourneyHeadFixture(freeze(createJourneyHeadFixture({ touchpoints }))).length > 0);
   }
 });

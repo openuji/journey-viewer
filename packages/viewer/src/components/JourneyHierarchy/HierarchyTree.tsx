@@ -19,6 +19,8 @@ import type { UjgCompositeState, UjgState, UjgDocument, UjgJourney } from "@jour
 import { getJourneyStarts } from "../../journey-starts.js";
 import { childOccurrence, getOccurrenceTrail } from "../../occurrence.js";
 import type { ViewerOccurrence } from "../../occurrence.js";
+import type { TouchpointPresentation } from "../../presentation.js";
+import { touchpointColor, touchpointLabel } from "../../presentation.js";
 import styles from "./JourneyHierarchy.module.css";
 
 export interface StateContent {
@@ -41,6 +43,7 @@ export interface HierarchyTreeProps {
   /** Explicit finite branches for focus columns; omitted by static/overview presentations. */
   readonly occurrences?: readonly ViewerOccurrence[];
   readonly isJourneyFiltered?: (journey: UjgJourney) => boolean;
+  readonly touchpointPresentation?: TouchpointPresentation;
 }
 
 type JourneyBranchProps = Readonly<Omit<HierarchyTreeProps, "level"> & {
@@ -75,12 +78,18 @@ function JourneyBranch(props: JourneyBranchProps) {
   const exits = getJourneyExits(document, journey);
   const transitions = getJourneyTransitions(document, journey);
   const touchpoints = getJourneyTouchpoints(document, ref);
+  const presentation = props.touchpointPresentation;
   const head = {
     filtered: props.isJourneyFiltered?.(journey) ?? false,
     title,
     count: `${states.length} ${states.length === 1 ? "state" : "states"}`,
     level,
-    ...(touchpoints.length
+    ...(presentation ? {
+      touchpoints: touchpoints.map((node) => {
+        const color = touchpointColor(node, presentation);
+        return { id: node["@id"], label: touchpointLabel(node, presentation), ...(color ? { color } : {}) };
+      }),
+    } : touchpoints.length
       ? { touchpoint: { label: touchpoints.map((node) => node.label).join(", ") } }
       : {}),
   };

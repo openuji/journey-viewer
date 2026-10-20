@@ -18,6 +18,7 @@ const config: StorybookConfig = {
     "../src/**/*.stories.tsx",
   ],
   staticDirs: [
+    { from: "../../../examples/solid-oidc", to: "/solid-oidc" },
     { from: "../../design-system/.test-output/consumer", to: "/consumer" },
     { from: "../.test-output/consumer", to: "/viewer-consumer" },
   ],

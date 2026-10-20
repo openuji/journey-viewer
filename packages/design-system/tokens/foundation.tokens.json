@@ -485,6 +485,20 @@
           "value": 0.1875,
           "unit": "rem"
         }
+      },
+      "screen-preview": {
+        "$type": "dimension",
+        "$value": {
+          "value": 18,
+          "unit": "rem"
+        }
+      },
+      "lightbox": {
+        "$type": "dimension",
+        "$value": {
+          "value": 72,
+          "unit": "rem"
+        }
       }
     },
     "text": {
@@ -666,6 +680,97 @@
             "unit": "px"
           }
         }
+      }
+    },
+    "category": {
+      "orange": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8901960784313725,
+            0.5411764705882353,
+            0.3215686274509804
+          ]
+        }
+      },
+      "blue": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.30980392156862746,
+            0.4549019607843137,
+            0.7725490196078432
+          ]
+        }
+      },
+      "violet": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.5450980392156862,
+            0.396078431372549,
+            0.7843137254901961
+          ]
+        }
+      },
+      "green": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.12941176470588237,
+            0.6274509803921569,
+            0.5450980392156862
+          ]
+        }
+      },
+      "teal": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.07058823529411765,
+            0.6549019607843137,
+            0.6509803921568628
+          ]
+        }
+      },
+      "gold": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7725490196078432,
+            0.5568627450980392,
+            0.18823529411764706
+          ]
+        }
+      },
+      "rose": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6980392156862745,
+            0.4196078431372549,
+            0.596078431372549
+          ]
+        }
+      }
+    },
+    "scrim": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "alpha": 0.65
       }
     }
   },

@@ -3,7 +3,8 @@
 `@journey-viewer/viewer` renders static and interactive hierarchies from a readonly
 canonical compact UJG document. React is a peer. The renderer uses the UJG query
 package and design-system components; parsing, linting, file access, themes, and
-browser effects belong to callers.
+asset path resolution belong to callers. Native image loading and modal effects
+are isolated in the viewer's named browser adapters.
 
 ```tsx
 import { JourneyHierarchy } from "@journey-viewer/viewer";
@@ -48,7 +49,7 @@ Unresolved and differently typed references follow the query package's omission
 behavior. Empty documents, journeys, composites, and contract lists have explicit
 empty messages. Rendering does not validate or produce findings.
 
-Production code holds no hierarchy model, parent map, shared interaction store,
+Graph rendering holds no hierarchy model, parent map, shared interaction store,
 DOM refs, or effects. Each render recomputes selections of original source nodes and uses
 readonly reference arrays solely to select roots and detect unreachable journeys.
 Reachability passes new values through pure reductions, without mutating a set
@@ -131,7 +132,8 @@ design system's readonly `InspectorPanel`; contract selection uses the separate
 `JourneyContractControls`. Static components have no interactive mode flags.
 The informational inspector remains available through its original props. Supply
 the complete optional `navigation: { occurrence, onNavigate }` contract to add
-graph-navigation controls. Screenshots and extension descriptors remain in later stages.
+graph-navigation controls. Optional screenshot controls are described below;
+extension descriptors remain in stage 9.
 
 ## Navigation
 
@@ -153,7 +155,9 @@ may be omitted. Enter picks the first result, Escape clears the query, and each
 result is a native keyboard-operable button. A search pick clears the query,
 reveals the selection and updates the focused path when focus is active. Row,
 breadcrumb, inspector and scope-focus navigation preserve the query.
-Screenshot availability will be added with stage 8's explicit asset mappings.
+Results show a Screenshot badge when an explicitly associated surface has a path
+in the current screenshot map. This reports mapping availability; browser image
+failures do not enter search/query state.
 
 Touchpoint buttons retain each source identity, even when labels coincide or a
 journey has several assignments. Colliding labels include their full touchpoint
@@ -176,9 +180,10 @@ mapping produces no invented target. No journey acquires a preferred parent.
 Incoming/outgoing row marks are recomputed from local transitions; hover takes
 precedence over selection and pointer leave restores selection-derived marks.
 
-The new readonly `ViewerSnapshot` contains the existing `interaction` plus a
+The readonly `ViewerSnapshot` contains the existing `interaction` plus a
 `navigation` snapshot (`focus`, selected `occurrence`, `query`, `touchpointRefs`,
-`hover`). `ViewerOccurrence` is `{ startJourneyRef, steps }`, with each step
+`hover`, `hoverOccurrence`) and a `lightbox` identity or null.
+`ViewerOccurrence` is `{ startJourneyRef, steps }`, with each step
 holding zero-based `stateIndex` and `childIndex` into the typed query results.
 These indices preserve repeated reference positions. Paths only address finite
 rendered occurrences: invalid indices, non-starting roots and recursion beyond
@@ -209,7 +214,7 @@ as its second argument; existing single-argument callbacks remain valid. Its
 optional `navigation`, `onHover` and `onFocusJourney` props supply navigation
 presentation/actions. `JourneyInspector.navigation` couples occurrence context
 with its required navigation callback. `JourneyViewer` remains the sole React
-state owner; controlled components invoke no callbacks during rendering.
+graph-interaction state owner; controlled components invoke no callbacks during rendering.
 Programmatic scrolling, global shortcuts and DOM measurement remain caller/browser
 boundary responsibilities.
 
@@ -232,8 +237,107 @@ explicit display policy; a persistent graph/cache would violate the plan.
 Local collections confined to one call do not retain state and may be used in
 future pure traversal optimizations, including per-render lookups. Moving hover
 to another state owner would require an explicit change to the agreed single
-React state boundary. The joined touchpoint caption is also
+React graph-interaction state boundary. Touchpoint captions are
 presentation-only: filtering retains each source touchpoint identity independently.
+
+## Screens and presentation
+
+Screenshot paths are an independent readonly input. A plain JSON object starts
+the contract; it needs no JSON-LD context, version envelope or asset registry:
+
+```json
+{
+  "urn:example:surface": "./screens/sign-in.png"
+}
+```
+
+The caller reads/parses that document and resolves relative paths against an
+explicit mapping-document or asset base. It then passes the resulting map:
+
+```tsx
+import type { ScreenshotMap, TouchpointPresentation } from "@journey-viewer/viewer";
+
+const screenshots: ScreenshotMap = {
+  "urn:example:surface": "https://example.test/screens/sign-in.png",
+};
+const touchpoints: TouchpointPresentation = {
+  "urn:example:app": { shortLabel: "App", color: "var(--jv-color-category-orange)" },
+};
+
+<JourneyViewer document={document} screenshots={screenshots} touchpoints={touchpoints} />
+```
+
+`ScreenshotMap` is `Readonly<Record<string, string>>`. Exact surface IDs are
+looked up only after querying the node's explicit UJG Surface associations. A
+node can have several surfaces; each gets its own preview/open action. Unmapped
+surfaces show an unavailable preview. Missing surfaces show an empty message.
+No primary surface, filename or association is inferred. `TouchpointPresentation`
+is a separate readonly record of exact touchpoint IDs to optional `shortLabel`
+and `color`. Unconfigured labels fall back to source labels/IDs; unconfigured
+colors use the design-system default. Short-label collisions retain full IDs in
+filter buttons. Multiple journey touchpoints remain separate captions and dots.
+The static `JourneyHierarchy` API retains its original presentation.
+
+Selection supplies the inspector preview. Pointer hover temporarily previews the
+hovered state and its call-site context; leaving restores the selected preview.
+Each mapped state has a row Screen button. Opening a screenshot updates selection
+and occurrence, reveals ancestors, preserves search/filters/focus mode, and keeps
+the selected composite's child disclosure unchanged. The native modal has
+Previous/Next buttons, Left/Right keys, Escape/Close, forward/reverse Tab wrapping,
+and focus restoration to the opener. If that opener was removed or disabled,
+focus returns to the owning viewer's first enabled control. Closing retains the
+last selected screen's graph item. Ordinary graph navigation closes the modal.
+The dialog uses an independent level-2 heading; `JourneyViewer.level` controls
+the hierarchy and inspector headings.
+
+The lightbox derives its gallery anew from original source nodes: source journey
+order, each finite call-site occurrence, then journey/state/entry/exit member
+order and explicit surface order. Reused journeys retain all distinct occurrence
+contexts; identical repeated member/surface references are shown once per context.
+When any surface repeats, the gallery counter counts views, and repeated images
+also say, for example, “2 of 3 call sites.” Each view represents a surface at one
+explicit call site; Next/Previous changes that context as well as the counter.
+The full context caption identifies the parent path. A gallery with no repeated
+surfaces retains the compact screen counter.
+Traversal wraps and skips unmapped paths. Failed URLs stay navigable so they can
+recover after a caller update. The Solid-OIDC gallery matches the captured source
+order across all 37 screens. This derived list is never retained as a catalog.
+
+Replace `screenshots` with a new readonly map while keeping `document` stable.
+Selection, expansion, focus, query and filters remain intact. An open lightbox
+retains only `{ surfaceRef, target }` and resolves its URL from the latest prop.
+Removal clears the old image and displays Screenshot unavailable; adding/restoring
+the mapping or changing its URL can recover it. Clear-all disables stepping.
+Image error/loading state is local to the actual URL at the browser boundary,
+separate from the immutable graph snapshot. Loading is lazy and both preview and
+lightbox contain the complete image inside their bounded frames.
+
+New image bytes at an unchanged URL follow the host/browser cache policy. Supply
+a revised URL, query revision, or blob URL through the same map when needed.
+The viewer does not fetch/parse mappings, watch files or add cache busting. Native
+UJG object replacement still resets the full snapshot, including the lightbox.
+
+Pure operations are `getNodeScreens(document, screenshots, nodeRef)`,
+`getScreens(document, screenshots)`,
+`openScreenshot(document, screenshots, snapshot, target, surfaceRef)`,
+`closeScreenshot(snapshot)` and
+`stepScreenshot(document, screenshots, snapshot, -1 | 1)`. Invalid or unchanged
+actions preserve snapshot identity. Node/surface query results reference original
+document nodes; none mutate the supplied graph, maps or snapshots.
+
+Controlled compositions can use `JourneyScreens` with a document, target, map and
+required `onOpen(target, surfaceRef)`. `JourneyExplorer.media` takes the complete
+`{ screenshots, onOpen }` contract; `JourneyInspector.media` additionally requires
+`target` (or null) so preview context and controls are supplied together.
+`JourneyNavigation.screenshots` supplies availability markers. `JourneyLightbox`
+receives the current identity, map and explicit close/previous/next callbacks.
+`hoverNode` accepts an optional occurrence; `JourneyExplorer.onHover` reports it
+as a second argument. Existing single-argument callbacks remain compatible.
+
+Only `browser/BrowserScreenImage` owns per-URL image load status, and only
+`browser/BrowserLightbox` owns a dialog ref/effect and local DOM keyboard/focus
+handling. They receive no UJG document or viewer snapshot. Business transitions
+stay pure; no global listeners, body locks, graph refs or shared state are added.
 
 Two design follow-ups remain separate from these Stage-7 corrections. Focus
 currently reuses the selectable row without a disclosure and offers explicit
@@ -242,6 +346,12 @@ extending its semantics. The package also still exports presentation helpers suc
 as `getRowRelation` and `occurrenceLabel`. Their public/private status needs an
 API review before stage-9 extensions or application wiring; no existing exports
 are removed in this correction.
+That review also needs to cover the five screen functions, controlled screen
+components and snapshot construction. Stage 8 made `ViewerSnapshot.lightbox`
+and `ViewerNavigation.hoverOccurrence` required; callers constructing snapshots
+by hand must include them. Prefer `createViewerSnapshot(document)` for defaults.
+The optional fourth `hoverNode` argument supplies call-site context and defaults
+to null. This correction adds no further public fields, arguments or exports.
 
 From the workspace root:
 
@@ -266,6 +376,9 @@ editing is excluded from controls. Navigation stories include bounded search,
 no matches, multiple/equal-label touchpoints, capped results and a repeated child
 focused at its second reference. A review fixture includes unresolved state/child
 references to check that UI wording does not expose query-result positions.
+Screen stories include all 37 OIDC assets, several opaque surface IDs, a missing
+file and independent map/path replacement. The live-input story and compiled
+consumer have caller-owned replace/remove/clear/restore controls.
 
 The compiled-consumer iframe reads built ESM/declarations/CSS without Tailwind
 processing or source aliases. `tests/consumer` is a build-only smoke fixture,
@@ -281,12 +394,13 @@ recursion/reuse, accessibility, themes and responsive wrapping in the compiled
 consumer, then loads the full inherited catalog, both iframes and viewer stories.
 It checks inherited light/dark/alternate theme globals, source-story wrapping,
 native keyboard selection/disclosure, instance independence and document reset,
+all 37 PNG decodes, live map changes, image failure/recovery, modal focus/keys,
 and closes its temporary server/browser. Screenshots remain in ignored `.test-output`.
 Install Chromium once with
 `pnpm --filter @journey-viewer/viewer exec playwright install chromium`, or set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing binary.
 
 Production exports contain only the renderer and compiled layout CSS. Fixtures,
-Storybook, consumer fixtures, tests and tooling stay outside `dist`. Screenshots,
-extensions, app composition and deployment retain their later stage
+Storybook, consumer fixtures, tests, example assets and tooling stay outside `dist`.
+Extensions, app composition and deployment retain their later stage
 boundaries in the root plan.

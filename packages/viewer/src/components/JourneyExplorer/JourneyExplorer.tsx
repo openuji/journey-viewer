@@ -9,6 +9,9 @@ import { childOccurrence, getOccurrenceTrail } from "../../occurrence.js";
 import type { ViewerOccurrence } from "../../occurrence.js";
 import { referenceLabel } from "../../occurrence-presentation.js";
 import { HierarchyTree } from "../JourneyHierarchy/HierarchyTree.js";
+import type { JourneyScreenControls } from "../JourneyScreens/JourneyScreens.js";
+import type { TouchpointPresentation } from "../../presentation.js";
+import { getNodeScreens } from "../../screens.js";
 
 export interface JourneyExplorerProps {
   readonly document: UjgDocument;
@@ -16,17 +19,20 @@ export interface JourneyExplorerProps {
   readonly onSelect: (selection: ViewerSelection, occurrence: ViewerOccurrence) => void;
   readonly onToggleChildren: (journeyRef: string, stateRef: string) => void;
   readonly navigation?: ViewerNavigation;
-  readonly onHover?: (selection: ViewerSelection | null) => void;
+  readonly onHover?: (selection: ViewerSelection | null, occurrence: ViewerOccurrence | null) => void;
   readonly onFocusJourney?: (occurrence: ViewerOccurrence) => void;
   readonly level?: HeadingLevel;
+  readonly media?: JourneyScreenControls;
+  readonly touchpoints?: TouchpointPresentation;
 }
 
 /** Controlled UJG composition; callers own the immutable snapshot and its transitions. */
-export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChildren, onHover, onFocusJourney, ...props }: JourneyExplorerProps) {
+export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChildren, onHover, onFocusJourney, media, touchpoints, ...props }: JourneyExplorerProps) {
   const focus = navigation?.focus;
   return (
     <HierarchyTree
       {...props}
+      {...(touchpoints ? { touchpointPresentation: touchpoints } : {})}
       isJourneyFiltered={(journey) => !matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? [])}
       {...(focus ? { occurrences: getOccurrenceTrail(props.document, focus).map((crumb) => crumb.occurrence) } : {})}
       renderJourneyAction={(journey, occurrence) => {
@@ -61,7 +67,11 @@ export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChi
             entryCount={entryCount}
             exitCount={directExitCount}
             onSelect={() => onSelect(target, occurrence)}
-            onHover={(hovered) => onHover?.(hovered ? target : null)}
+            onHover={(hovered) => onHover?.(hovered ? target : null, hovered ? occurrence : null)}
+            actions={media && getNodeScreens(props.document, media.screenshots, state["@id"]).filter((screen) => screen.source).map((screen) => (
+              <Button key={screen.surface["@id"]} variant="outline" aria-label={`Open screenshot: ${state.label} (${screen.surface["@id"]})`}
+                onClick={() => media.onOpen({ selection: target, occurrence }, screen.surface["@id"])}><Text variant="caption">Screen</Text></Button>
+            ))}
             notice={childJourneys.length === 0 ? renderChildren?.({ visibleJourneyRefs: [] }) : focus && onFocusJourney ? (
               <div>{childJourneys.map((child, childIndex) => {
                 const path = childOccurrence(occurrence, stateIndex, childIndex);

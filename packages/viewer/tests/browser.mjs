@@ -19,7 +19,8 @@ const server = createServer(async (request, response) => {
   const path = resolve(root, `.${pathname.endsWith("/") ? `${pathname}index.html` : pathname}`);
   if (!path.startsWith(resolve(root) + sep)) return void response.writeHead(403).end();
   try {
-    response.writeHead(200, { "content-type": types[extname(path)] ?? "application/octet-stream" }).end(await readFile(path));
+    const content = await readFile(path);
+    response.writeHead(200, { "content-type": types[extname(path)] ?? "application/octet-stream" }).end(content);
   } catch {
     response.writeHead(404).end();
   }
@@ -110,8 +111,8 @@ try {
   await test("viewer Storybook extends the design-system catalog and loads all stories and consumer iframes", async () => {
     const index = await (await fetch(`${url}/index.json`)).json();
     const stories = Object.values(index.entries).filter((entry) => entry.type === "story");
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 42);
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 23);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 51);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 27);
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
       await page.waitForFunction(() => document.querySelector("#storybook-root")?.childElementCount > 0);
@@ -516,6 +517,231 @@ try {
     await page.setViewportSize({ width: 320, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await first().getByRole("list", { name: "Search results" }).screenshot({ path: `${evidence}/stage7-search-320.png` });
+    assert.deepEqual(errors, []);
+  });
+
+  const screensFirst = () => page.getByTestId("screens-first");
+  const screensSecond = () => page.getByTestId("screens-second");
+  const lightbox = () => page.getByRole("dialog", { name: "Screenshot viewer", exact: true });
+  const firstSurface = `${prefix}app-sign-in-required-surface`;
+  const openInitialScreen = async () => {
+    const button = screensFirst().locator(`[data-state-ref="${prefix}app-sign-in-required"]`).getByRole("button", { name: /^Open screenshot:/ });
+    await button.focus();
+    await button.press("Enter");
+    await lightbox().waitFor();
+    return button;
+  };
+  const readyImage = async () => {
+    await lightbox().locator('[data-image-status="ready"]').waitFor();
+    assert.equal(await lightbox().getByRole("img").evaluate((element) => element.complete && element.naturalWidth > 0), true);
+  };
+  const imageFits = async (scope) => {
+    assert.equal(await scope.getByRole("img").evaluate((element) => {
+      const image = element.getBoundingClientRect();
+      const frame = element.parentElement.getBoundingClientRect();
+      return getComputedStyle(element).objectFit === "contain" && image.left >= frame.left && image.top >= frame.top
+        && image.right <= frame.right + 1 && image.bottom <= frame.bottom + 1;
+    }), true, "the complete image fits its bounded frame");
+  };
+  // Simulate a caller input update while native modality makes the outer controls inert.
+  const replaceFromCaller = async (name) => page.getByRole("button", { name, exact: true, includeHidden: true })
+    .evaluate((element) => element.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+  await test("all 37 mapped OIDC PNGs load, source-ordered lightbox navigation wraps and Escape restores keyboard focus", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    assert.equal(await screensFirst().getByRole("button", { name: /^Open screenshot:/ }).count(), 38, "37 row controls and the selection preview");
+    const mapping = await (await fetch(`${url}/solid-oidc/screenshots.json`)).json();
+    const baseline = await (await fetch(`${url}/solid-oidc/baseline.json`)).json();
+    for (const record of baseline.screens) {
+      const response = await fetch(new URL(mapping[record.surfaceRef], `${url}/solid-oidc/`));
+      assert.equal(response.status, 200, record.surfaceRef);
+      assert.match(response.headers.get("content-type"), /image\/png/);
+    }
+    const opener = await openInitialScreen();
+    await readyImage();
+    assert.equal(await lightbox().evaluate((element) => element.matches(":modal")), true);
+    const visited = [];
+    for (const [index, record] of baseline.screens.entries()) {
+      await readyImage();
+      assert.equal(await lightbox().locator("header code").textContent(), record.surfaceRef);
+      assert.equal(await lightbox().getByRole("img").getAttribute("src"), new URL(mapping[record.surfaceRef], `${url}/solid-oidc/`).href);
+      assert.equal(await screensFirst().locator('aside[aria-label="Selection inspector"] header code').textContent(), record.graphNodeRef);
+      await lightbox().getByText(`${index + 1} / 37`, { exact: true }).waitFor();
+      visited.push(record.surfaceRef);
+      await lightbox().getByRole("button", { name: "Next screen", exact: true }).click();
+    }
+    assert.equal(new Set(visited).size, 37);
+    assert.equal(await lightbox().locator("header code").textContent(), firstSurface);
+    await lightbox().press("ArrowLeft");
+    assert.equal(await lightbox().locator("header code").textContent(), `${prefix}pod-support-surface`);
+    await lightbox().press("ArrowRight");
+    assert.equal(await lightbox().locator("header code").textContent(), firstSurface);
+    for (let count = 0; count < 8; count += 1) {
+      await page.keyboard.press("Tab");
+      assert.equal(await lightbox().evaluate((element) => element.contains(element.ownerDocument.activeElement)), true);
+    }
+    await lightbox().getByRole("button", { name: "Close screenshot", exact: true }).focus();
+    await page.keyboard.press("Shift+Tab");
+    assert.equal(await lightbox().getByRole("button", { name: "Next screen", exact: true }).evaluate((element) => element === element.ownerDocument.activeElement), true);
+    await page.keyboard.press("Escape");
+    assert.equal(await lightbox().count(), 0);
+    assert.equal(await opener.evaluate((element) => element === element.ownerDocument.activeElement), true);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("live screenshot map/path replacement preserves interaction, updates an open image and keeps instances independent", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const scope = screensFirst();
+    await scope.getByRole("button", { name: "Collapse all", exact: true }).click();
+    await scope.getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    await scope.getByRole("group", { name: "Touchpoint filter" }).getByRole("button", { name: "App", exact: true }).click();
+    await scope.getByRole("searchbox").fill("keep this query");
+    await openInitialScreen();
+    await readyImage();
+    const previousSource = await lightbox().getByRole("img").getAttribute("src");
+    await replaceFromCaller("Replace first screenshot path");
+    await lightbox().locator('img[src$="app-logged-in.png?revision=2"]').waitFor();
+    await readyImage();
+    assert.equal(await lightbox().locator("header code").textContent(), firstSurface);
+    assert.notEqual(await lightbox().getByRole("img").getAttribute("src"), previousSource);
+    assert.equal(await scope.locator('input[type="search"]').inputValue(), "keep this query");
+    assert.equal(await scope.locator(`[data-touchpoint-ref="${prefix}app"]`).getAttribute("aria-pressed"), "true");
+    assert.equal(await scope.locator('[aria-label="Focused journey path"] [data-journey-ref]').count(), 1);
+    assert.equal(await screensSecond().locator('aside[aria-label="Selection inspector"] header code').textContent(), `${prefix}app-sign-in-required`);
+    assert.equal(await screensSecond().locator('[aria-label="Screenshot previews"] img').getAttribute("src"), previousSource);
+    await replaceFromCaller("Remove first screenshot mapping");
+    await lightbox().getByText("Screenshot unavailable.", { exact: true }).waitFor();
+    assert.equal(await lightbox().locator("img").count(), 0, "removed mappings never display a stale image");
+    await replaceFromCaller("Restore screenshot map");
+    await readyImage();
+    assert.equal(await lightbox().getByRole("img").getAttribute("src"), previousSource);
+    await replaceFromCaller("Clear screenshot map");
+    await lightbox().getByText("Screenshot unavailable.", { exact: true }).waitFor();
+    assert.equal(await lightbox().getByRole("button", { name: "Next screen", exact: true }).isDisabled(), true);
+    await lightbox().press("ArrowRight");
+    assert.equal(await lightbox().locator("header code").textContent(), firstSurface);
+    await lightbox().getByRole("button", { name: "Close screenshot", exact: true }).click();
+    assert.equal(await scope.getByRole("button", { name: "Overview", exact: true }).evaluate((element) => element === element.ownerDocument.activeElement), true);
+    assert.equal(await scope.getByRole("searchbox").inputValue(), "keep this query");
+    await scope.getByRole("button", { name: "Overview", exact: true }).click();
+    assert.equal(await scope.locator('[data-journey-ref]').count(), 1, "mapping updates preserve collapsed child groups");
+    assert.deepEqual(errors, []);
+  });
+
+  await test("image errors are explicit and recover after URL replacement; same-ID UJG replacement resets modal state", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await openInitialScreen();
+    await readyImage();
+    await replaceFromCaller("Use missing screenshot file");
+    await lightbox().getByText("Screenshot unavailable.", { exact: true }).waitFor();
+    assert.equal(await lightbox().locator("img").count(), 0);
+    await lightbox().press("ArrowRight");
+    await readyImage();
+    assert.equal(await lightbox().locator("header code").textContent(), `${prefix}app-auth-callback-processing-surface`);
+    await replaceFromCaller("Restore screenshot map");
+    await lightbox().press("ArrowLeft");
+    await readyImage();
+    assert.equal(await lightbox().locator("header code").textContent(), firstSurface);
+    await replaceFromCaller("Replace screenshot viewer document");
+    assert.equal(await lightbox().count(), 0);
+    assert.equal(await screensFirst().getByRole("searchbox").inputValue(), "");
+    assert.equal(await screensFirst().getByRole("button", { name: "Overview", exact: true }).getAttribute("aria-pressed"), "true");
+    assert.equal(await screensFirst().locator('aside[aria-label="Selection inspector"] header code').textContent(), `${prefix}app-sign-in-required`);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("hover/selection previews, search availability and touchpoint presentation use the supplied inputs", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const scope = screensFirst();
+    const preview = scope.getByRole("group", { name: "Screenshot previews" });
+    const initialUrl = await preview.locator("img").getAttribute("src");
+    await stateButton(scope, `${prefix}app-logged-in`, "Logged in").hover();
+    assert.match(await preview.locator("img").getAttribute("src"), /app-logged-in\.png$/);
+    await scope.getByRole("searchbox").hover();
+    assert.equal(await preview.locator("img").getAttribute("src"), initialUrl);
+    await scope.getByRole("searchbox").fill("app-sign-in-required");
+    await scope.getByRole("list", { name: "Search results" }).getByText("Screenshot", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Remove first screenshot mapping", exact: true }).click();
+    assert.equal(await scope.getByRole("list", { name: "Search results" }).getByText("Screenshot", { exact: true }).count(), 0);
+    assert.equal(await preview.getByRole("button", { name: /^Open screenshot:/ }).isDisabled(), true);
+    const appFilter = scope.locator(`[data-touchpoint-ref="${prefix}app"]`);
+    assert.equal(await appFilter.textContent(), "App");
+    const dot = appFilter.locator('[aria-hidden="true"]');
+    assert.equal(await dot.evaluate((element) => getComputedStyle(element).backgroundColor), "rgb(227, 138, 82)");
+    assert.equal(await scope.getByRole("heading", { name: "App auth journey", exact: true }).count(), 1);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("multiple surfaces preserve composite disclosure and reused views show distinct call-site counters", async () => {
+    await page.goto(`${url}/iframe.html?id=viewer-journeyviewer--several-surfaces&viewMode=story`);
+    const scope = page.locator("#storybook-root");
+    await scope.getByRole("button", { name: "Collapse all", exact: true }).click();
+    await scope.locator('[data-state-ref="urn:composite"]').getByRole("button", { name: /Open screenshot:.*opaque:11/ }).click();
+    await readyImage();
+    assert.equal(await lightbox().locator("header code").textContent(), "opaque:11");
+    await lightbox().press("Escape");
+    assert.equal(await scope.locator('[data-journey-ref="urn:child"]').count(), 0);
+    const leaf = scope.locator('[data-state-ref="urn:leaf"]');
+    assert.equal(await leaf.getByRole("button", { name: /^Open screenshot:/ }).count(), 2);
+    await leaf.getByRole("button", { name: /opaque:9/ }).click();
+    await readyImage();
+    assert.equal(await lightbox().locator("header code").textContent(), "opaque:9");
+    await lightbox().press("Escape");
+    assert.equal(await scope.locator('[data-journey-ref="urn:child"]').count(), 0);
+    await scope.getByRole("button", { name: "Call shared", exact: true }).click();
+    assert.equal(await scope.locator('[data-journey-ref="urn:child"]').count(), 3);
+    const shared = scope.locator('[data-journey-ref="urn:child"]').nth(1).getByRole("button", { name: /^Open screenshot:/ });
+    await shared.click();
+    await readyImage();
+    assert.match(await lightbox().textContent(), /reference 2 of 2/);
+    await lightbox().getByText("5 / 6 views · 2 of 3 call sites", { exact: true }).waitFor();
+    const sharedSource = await lightbox().getByRole("img").getAttribute("src");
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+      assert.equal(await lightbox().evaluate((element) => element.scrollWidth > element.clientWidth + 1), false);
+      await lightbox().screenshot({ path: `${evidence}/stage8-review-call-sites-${width}.png` });
+    }
+    await lightbox().press("ArrowRight");
+    await readyImage();
+    await lightbox().getByText("6 / 6 views · 3 of 3 call sites", { exact: true }).waitFor();
+    assert.equal(await lightbox().getByRole("img").getAttribute("src"), sharedSource);
+    assert.match(await lightbox().textContent(), /Other parent/);
+    await lightbox().press("ArrowRight");
+    await lightbox().getByText("1 / 6 views", { exact: true }).waitFor();
+    await lightbox().press("ArrowLeft");
+    await lightbox().getByText("6 / 6 views · 3 of 3 call sites", { exact: true }).waitFor();
+    assert.deepEqual(errors, []);
+    await lightbox().press("Escape");
+  });
+
+  await test("screen previews and lightbox fit mobile and shared thresholds with native focus and compiled styles", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await openInitialScreen();
+    await readyImage();
+    for (const width of [320, 859, 860, 861, 1099, 1100, 1101, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `screens overflow at ${width}`);
+      const bounds = await lightbox().evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, overflow: element.scrollWidth > element.clientWidth + 1 };
+      });
+      assert.ok(bounds.left >= 0 && bounds.right <= width + 1 && bounds.top >= 0 && bounds.bottom <= 901, `dialog bounds at ${width}`);
+      assert.equal(bounds.overflow, false);
+      await imageFits(lightbox());
+      if (width === 320 || width === 1280) await lightbox().screenshot({ path: `${evidence}/stage8-lightbox-${width}.png` });
+    }
+    await lightbox().press("Escape");
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await screensFirst().getByRole("searchbox").hover();
+      const preview = screensFirst().getByRole("group", { name: "Screenshot previews" });
+      await preview.scrollIntoViewIfNeeded();
+      await preview.locator('[data-image-status="ready"]').waitFor();
+      await imageFits(preview);
+      await preview.screenshot({ path: `${evidence}/stage8-preview-${width}.png` });
+      await screensFirst().getByRole("group", { name: "Touchpoint filter" }).screenshot({ path: `${evidence}/stage8-touchpoints-${width}.png` });
+    }
     assert.deepEqual(errors, []);
   });
 } finally {

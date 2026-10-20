@@ -1,0 +1,20 @@
+{
+  "@context": "urn:example:context",
+  "@id": "urn:example:screens-document",
+  "@type": "UJGDocument",
+  "nodes": [
+    { "@id": "urn:p", "@type": "Journey", "label": "Parent", "stateRefs": ["urn:composite", "urn:leaf"], "entryRefs": [] },
+    { "@id": "urn:q", "@type": "Journey", "label": "Other parent", "stateRefs": ["urn:other-call"], "entryRefs": [] },
+    { "@id": "urn:composite", "@type": "CompositeState", "label": "Call shared", "subjourneyRefs": ["urn:child", "urn:child"] },
+    { "@id": "urn:other-call", "@type": "CompositeState", "label": "Call again", "subjourneyRefs": ["urn:child"] },
+    { "@id": "urn:leaf", "@type": "State", "label": "One state, several surfaces" },
+    { "@id": "urn:child", "@type": "Journey", "label": "Shared", "stateRefs": ["urn:child-state"], "entryRefs": [] },
+    { "@id": "urn:child-state", "@type": "State", "label": "Shared state" },
+    { "@id": "opaque:7", "@type": "Surface", "graphNodeRef": "urn:leaf" },
+    { "@id": "opaque:9", "@type": "Surface", "graphNodeRef": "urn:leaf" },
+    { "@id": "opaque:11", "@type": "Surface", "graphNodeRef": "urn:composite" },
+    { "@id": "opaque:15", "@type": "Surface", "graphNodeRef": "urn:child-state" },
+    { "@id": "opaque:unresolved", "@type": "Surface", "graphNodeRef": "urn:missing" },
+    { "@id": "toString", "@type": "Surface", "graphNodeRef": "urn:leaf" }
+  ]
+}

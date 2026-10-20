@@ -74,6 +74,38 @@
     "touchpoint": {
       "$type": "color",
       "$value": "{foundation.light.touchpoint}"
+    },
+    "category-orange": {
+      "$type": "color",
+      "$value": "{foundation.category.orange}"
+    },
+    "category-blue": {
+      "$type": "color",
+      "$value": "{foundation.category.blue}"
+    },
+    "category-violet": {
+      "$type": "color",
+      "$value": "{foundation.category.violet}"
+    },
+    "category-green": {
+      "$type": "color",
+      "$value": "{foundation.category.green}"
+    },
+    "category-teal": {
+      "$type": "color",
+      "$value": "{foundation.category.teal}"
+    },
+    "category-gold": {
+      "$type": "color",
+      "$value": "{foundation.category.gold}"
+    },
+    "category-rose": {
+      "$type": "color",
+      "$value": "{foundation.category.rose}"
+    },
+    "scrim": {
+      "$type": "color",
+      "$value": "{foundation.scrim}"
     }
   },
   "space": {
@@ -141,6 +173,14 @@
     "stripe": {
       "$type": "dimension",
       "$value": "{foundation.size.stripe}"
+    },
+    "screen-preview": {
+      "$type": "dimension",
+      "$value": "{foundation.size.screen-preview}"
+    },
+    "lightbox": {
+      "$type": "dimension",
+      "$value": "{foundation.size.lightbox}"
     }
   },
   "text": {

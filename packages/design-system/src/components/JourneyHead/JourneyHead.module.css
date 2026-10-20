@@ -9,6 +9,13 @@
   flex: 1;
 }
 .head[data-filtered] { opacity: var(--jv-opacity-filtered); }
+.touchpoint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jv-space-xs);
+  margin-inline-end: var(--jv-space-sm);
+  min-inline-size: 0;
+}
 .count {
   flex: 0 1 auto;
 }

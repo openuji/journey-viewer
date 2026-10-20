@@ -8,6 +8,7 @@ import type { ViewerInteraction, ViewerSelection } from "./interaction.js";
 import { childOccurrence, getOccurrenceTrail, journeyOccurrences, sameOccurrence } from "./occurrence.js";
 import type { ViewerOccurrence } from "./occurrence.js";
 import { getOccurrenceLabels } from "./occurrence-presentation.js";
+import type { ViewerLightbox } from "./screens.js";
 
 export interface ViewerNavigation {
   readonly focus: ViewerOccurrence | null;
@@ -15,12 +16,14 @@ export interface ViewerNavigation {
   readonly query: string;
   readonly touchpointRefs: readonly string[];
   readonly hover: ViewerSelection | null;
+  readonly hoverOccurrence: ViewerOccurrence | null;
 }
 
 /** Change selection through navigateViewer/pickSearchResult to retain matching occurrence context. */
 export interface ViewerSnapshot {
   readonly interaction: ViewerInteraction;
   readonly navigation: ViewerNavigation;
+  readonly lightbox: ViewerLightbox | null;
 }
 
 export interface ViewerTarget {
@@ -41,7 +44,7 @@ const selectionFor = (journey: UjgJourney, node: UjgNode, kind: ViewerSelection[
 export function createViewerSnapshot(document: UjgDocument): ViewerSnapshot {
   const interaction = createViewerInteraction(document);
   const start = journeyOccurrences(document).next().value;
-  return { interaction, navigation: { focus: null, occurrence: start?.occurrence ?? null, query: "", touchpointRefs: [], hover: null } };
+  return { interaction, navigation: { focus: null, occurrence: start?.occurrence ?? null, query: "", touchpointRefs: [], hover: null, hoverOccurrence: null }, lightbox: null };
 }
 
 function navigate(
@@ -53,8 +56,8 @@ function navigate(
   const navigation = current.navigation;
   const focus = navigation.focus === null ? null : target.occurrence;
   if (interaction === current.interaction && sameOccurrence(navigation.occurrence, target.occurrence)
-    && sameOccurrence(navigation.focus, focus) && navigation.query === query && navigation.hover === null) return current;
-  return { interaction, navigation: { ...navigation, occurrence: target.occurrence, focus, query, hover: null } };
+    && sameOccurrence(navigation.focus, focus) && navigation.query === query && navigation.hover === null && current.lightbox === null) return current;
+  return { ...current, interaction, navigation: { ...navigation, occurrence: target.occurrence, focus, query, hover: null, hoverOccurrence: null }, lightbox: null };
 }
 
 /** Selection and occurrence update together; ordinary navigation preserves search text. */
@@ -69,11 +72,11 @@ export function pickSearchResult(document: UjgDocument, current: ViewerSnapshot,
 
 export function focusJourney(document: UjgDocument, current: ViewerSnapshot, occurrence: ViewerOccurrence): ViewerSnapshot {
   if (getOccurrenceTrail(document, occurrence).length === 0 || sameOccurrence(current.navigation.focus, occurrence)) return current;
-  return { ...current, navigation: { ...current.navigation, focus: occurrence, hover: null } };
+  return { ...current, navigation: { ...current.navigation, focus: occurrence, hover: null, hoverOccurrence: null } };
 }
 
 export function showOverview(current: ViewerSnapshot): ViewerSnapshot {
-  return current.navigation.focus === null ? current : { ...current, navigation: { ...current.navigation, focus: null, hover: null } };
+  return current.navigation.focus === null ? current : { ...current, navigation: { ...current.navigation, focus: null, hover: null, hoverOccurrence: null } };
 }
 
 export function setSearchQuery(current: ViewerSnapshot, query: string): ViewerSnapshot {
@@ -87,9 +90,11 @@ export function toggleTouchpoint(document: UjgDocument, current: ViewerSnapshot,
   return { ...current, navigation: { ...current.navigation, touchpointRefs: refs.includes(ref) ? refs.filter((value) => value !== ref) : [...refs, ref] } };
 }
 
-export function hoverNode(document: UjgDocument, current: ViewerSnapshot, hover: ViewerSelection | null): ViewerSnapshot {
-  if ((hover && !resolveSelection(document, hover)) || sameSelection(current.navigation.hover, hover)) return current;
-  return { ...current, navigation: { ...current.navigation, hover: hover ? { ...hover } : null } };
+export function hoverNode(document: UjgDocument, current: ViewerSnapshot, hover: ViewerSelection | null, occurrence: ViewerOccurrence | null = null): ViewerSnapshot {
+  if (hover && (!resolveSelection(document, hover) || (occurrence && getOccurrenceTrail(document, occurrence).at(-1)?.journey["@id"] !== hover.journeyRef))) return current;
+  const hoverOccurrence = hover ? occurrence : null;
+  if (sameSelection(current.navigation.hover, hover) && sameOccurrence(current.navigation.hoverOccurrence, hoverOccurrence)) return current;
+  return { ...current, navigation: { ...current.navigation, hover: hover ? { ...hover } : null, hoverOccurrence } };
 }
 
 export function matchesTouchpoints(document: UjgDocument, journeyRef: string, refs: readonly string[]): boolean {

@@ -9,11 +9,11 @@ type LabeledCrumb = OccurrenceCrumb & Readonly<{ label: string; viaLabel?: strin
 const label = (node: UjgNode) => typeof node.label === "string" ? node.label : node["@id"];
 
 /** Internal presentation only: positions are ordinal counts of the same reference. */
-export function referenceLabel(nodes: readonly UjgNode[], index: number): string {
+export function referenceLabel(nodes: readonly UjgNode[], index: number, labelFor: (node: UjgNode) => string = label): string {
   const node = nodes[index];
   if (!node) return "";
-  const title = label(node);
-  const distinguishIdentity = nodes.some((other) => other["@id"] !== node["@id"] && label(other) === title);
+  const title = labelFor(node);
+  const distinguishIdentity = nodes.some((other) => other["@id"] !== node["@id"] && labelFor(other) === title);
   const name = distinguishIdentity ? `${title} (${node["@id"]})` : title;
   const repeated = nodes.filter((other) => other["@id"] === node["@id"]).length;
   const ordinal = nodes.slice(0, index + 1).filter((other) => other["@id"] === node["@id"]).length;

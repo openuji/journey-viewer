@@ -1,10 +1,14 @@
-import { Button, SearchField, Text } from "@journey-viewer/design-system";
+import { Badge, Button, SearchField, Text, TouchpointDot } from "@journey-viewer/design-system";
 import { getNodesByType } from "@journey-viewer/ujg-jsonld";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import { getOccurrenceLabels, referenceLabel } from "../../occurrence-presentation.js";
 import { getViewerSummary, searchViewer } from "../../navigation.js";
 import type { ViewerSnapshot, ViewerTarget } from "../../navigation.js";
 import styles from "./JourneyNavigation.module.css";
+import type { ScreenshotMap } from "../../screens.js";
+import { getNodeScreens } from "../../screens.js";
+import type { TouchpointPresentation } from "../../presentation.js";
+import { touchpointColor, touchpointLabel } from "../../presentation.js";
 
 export interface JourneyNavigationProps {
   readonly document: UjgDocument;
@@ -17,10 +21,12 @@ export interface JourneyNavigationProps {
   readonly onTouchpoint: (ref: string) => void;
   readonly onOverview: () => void;
   readonly onFocus: () => void;
+  readonly screenshots?: ScreenshotMap;
+  readonly touchpoints?: TouchpointPresentation;
 }
 
 /** Controlled navigation; every result, breadcrumb and summary is derived from source. */
-export function JourneyNavigation({ document, snapshot, onNavigate, onSearchPick, onQuery, onTouchpoint, onOverview, onFocus }: JourneyNavigationProps) {
+export function JourneyNavigation({ document, snapshot, onNavigate, onSearchPick, onQuery, onTouchpoint, onOverview, onFocus, screenshots = {}, touchpoints: presentation = {} }: JourneyNavigationProps) {
   const { navigation } = snapshot;
   const results = searchViewer(document, navigation.query, navigation.touchpointRefs);
   const summary = getViewerSummary(document, navigation.touchpointRefs);
@@ -47,6 +53,7 @@ export function JourneyNavigation({ document, snapshot, onNavigate, onSearchPick
               <Button variant="row" onClick={() => onSearchPick(result)}>
                 <span><Text variant="label">{result.label}</Text>{" "}<Text variant="caption">({result.selection.kind})</Text>
                   <Text className={styles.detail} variant="caption" tone="muted">{result.context}</Text></span>
+                {getNodeScreens(document, screenshots, result.selection.nodeRef).some((screen) => screen.source) && <Badge>Screenshot</Badge>}
               </Button>
             </li>)}
           </ul>
@@ -58,7 +65,10 @@ export function JourneyNavigation({ document, snapshot, onNavigate, onSearchPick
           {touchpoints.map((touchpoint, index) => (
             <Button key={`${index}:${touchpoint["@id"]}`} variant="outline" title={touchpoint["@id"]}
               data-touchpoint-ref={touchpoint["@id"]} selected={navigation.touchpointRefs.includes(touchpoint["@id"])}
-              aria-pressed={navigation.touchpointRefs.includes(touchpoint["@id"])} onClick={() => onTouchpoint(touchpoint["@id"])}>{referenceLabel(touchpoints, index)}</Button>
+              aria-pressed={navigation.touchpointRefs.includes(touchpoint["@id"])} onClick={() => onTouchpoint(touchpoint["@id"])}>
+              <TouchpointDot label={touchpointLabel(touchpoint, presentation)} decorative
+                {...(touchpointColor(touchpoint, presentation) ? { color: touchpointColor(touchpoint, presentation)! } : {})} />
+              {referenceLabel(touchpoints, index, (node) => touchpointLabel(node, presentation))}</Button>
           ))}
         </div>
         <Text as="p" variant="caption" tone="muted" role="status">{summary.matchingJourneys} of {summary.journeys} journeys match. Select any matching touchpoint; nested scopes remain visible.</Text>
