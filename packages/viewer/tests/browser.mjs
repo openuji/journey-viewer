@@ -61,8 +61,8 @@ try {
     }
     const sms = oidc.locator('[data-journey-ref="urn:ujg:solid-oidc:sms-verification-journey"]');
     assert.equal(await sms.locator("xpath=ancestor::*[@data-journey-ref]").count(), 3);
-    assert.equal(await page.getByRole("button").count(), 0);
-    assert.equal(await page.getByRole("region").count(), 0);
+    assert.equal(await oidc.getByRole("button").count(), 0);
+    assert.equal(await oidc.getByRole("region").count(), 0);
   });
 
   await test("multiple child references, reuse, rootless cycles, and static semantics remain explicit", async () => {
@@ -110,8 +110,8 @@ try {
   await test("viewer Storybook extends the design-system catalog and loads all stories and consumer iframes", async () => {
     const index = await (await fetch(`${url}/index.json`)).json();
     const stories = Object.values(index.entries).filter((entry) => entry.type === "story");
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 32);
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 4);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 39);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 16);
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
       await page.waitForFunction(() => document.querySelector("#storybook-root")?.childElementCount > 0);
@@ -160,6 +160,143 @@ try {
     await page.screenshot({ path: `${evidence}/stage5-storybook-oidc.png`, fullPage: true });
     await page.goto(`${url}/iframe.html?id=viewer-journeyhierarchy--empty&viewMode=story`);
     await page.getByText("No journeys.", { exact: true }).waitFor();
+    assert.deepEqual(errors, []);
+  });
+
+  const inspector = (scope) => scope.getByRole("complementary", { name: "Selection inspector" });
+  const identity = (scope) => inspector(scope).locator("header code").textContent();
+  const first = () => page.getByTestId("interactive-first");
+  const second = () => page.getByTestId("interactive-second");
+  const prefix = "urn:ujg:solid-oidc:";
+  const stateButton = (scope, ref, name) => scope.locator(`[data-state-ref="${ref}"]`).getByRole("button", { name, exact: true });
+
+  await test("compiled viewer selection and keyboard interaction are independent across instances", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    const denied = stateButton(first(), `${prefix}app-access-denied`, "Access denied");
+    await denied.focus();
+    assert.equal(await denied.evaluate((element) => getComputedStyle(element).outlineStyle), "solid");
+    await page.keyboard.press("Enter");
+    assert.equal(await identity(first()), `${prefix}app-access-denied`);
+    assert.equal(await denied.getAttribute("aria-pressed"), "true");
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    await first().getByRole("button", { name: "Inspect App auth journey", exact: true }).click();
+    assert.equal(await identity(first()), `${prefix}app-auth-journey`);
+    assert.equal(await inspector(first()).getByRole("heading", { name: "States", exact: true }).count(), 1);
+    await first().locator(`[data-contract-ref="${prefix}idp-login-entry"]`).getByRole("button").click();
+    assert.equal(await identity(first()), `${prefix}idp-login-entry`);
+    assert.equal(await inspector(first()).getByRole("heading", { name: "Call sites", exact: true }).count(), 1);
+    assert.match(await inspector(first()).textContent(), /app-starts-idp-auth/);
+    await first().locator(`[data-contract-ref="${prefix}idp-auth-failed"]`).getByRole("button").click();
+    assert.equal(await identity(first()), `${prefix}idp-auth-failed`);
+    assert.match(await inspector(first()).textContent(), /app-continues-after-idp-failed/);
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("disclosure, expand/collapse all, composite selection and reset use immutable snapshots", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await first().locator(`[data-contract-ref="${prefix}idp-login-entry"]`).getByRole("button").click();
+    await first().getByRole("button", { name: "Collapse all", exact: true }).click();
+    assert.equal(await first().locator("[data-state-ref]").count(), 10);
+    assert.equal(await first().locator(`[data-contract-ref="${prefix}idp-login-entry"]`).count(), 0);
+    assert.equal(await identity(first()), `${prefix}idp-login-entry`);
+    assert.equal(await second().locator("[data-state-ref]").count(), 47);
+    const expand = first().getByRole("button", { name: "Expand Authenticate with identity provider", exact: true });
+    await expand.focus();
+    await page.keyboard.press("Space");
+    assert.equal(await first().locator(`[data-journey-ref="${prefix}idp-auth-journey"]`).count(), 1);
+    assert.equal(await first().locator(`[data-journey-ref="${prefix}mfa-challenge-journey"]`).count(), 0);
+    await first().getByRole("button", { name: "Collapse Authenticate with identity provider", exact: true }).click();
+    assert.equal(await first().locator(`[data-journey-ref="${prefix}idp-auth-journey"]`).count(), 0);
+    await stateButton(first(), `${prefix}idp-auth-flow`, "Authenticate with identity provider").click();
+    assert.equal(await first().locator(`[data-journey-ref="${prefix}idp-auth-journey"]`).count(), 1);
+    assert.equal(await identity(first()), `${prefix}idp-auth-flow`);
+    await first().getByRole("button", { name: "Expand all", exact: true }).click();
+    assert.equal(await first().locator("[data-state-ref]").count(), 47);
+    assert.equal(await identity(first()), `${prefix}idp-auth-flow`);
+    await first().getByRole("button", { name: "Reset selection and expansion", exact: true }).click();
+    assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("same-ID replacement and empty/different documents reset selection and expansion without affecting another viewer", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await stateButton(first(), `${prefix}app-access-denied`, "Access denied").click();
+    await first().getByRole("button", { name: "Collapse all", exact: true }).click();
+    await page.getByRole("button", { name: "Replace document with same ID", exact: true }).click();
+    assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
+    assert.equal(await first().locator("[data-state-ref]").count(), 47);
+    await page.getByRole("button", { name: "Load empty document", exact: true }).click();
+    assert.equal(await first().getByText("No journeys.", { exact: true }).count(), 1);
+    assert.equal(await inspector(first()).getByText("Select a journey, state, entry or exit to inspect it.", { exact: true }).count(), 1);
+    assert.equal(await first().locator("[data-state-ref]").count(), 0);
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    await page.getByRole("button", { name: "Load topology document", exact: true }).click();
+    assert.equal(await identity(first()), "urn:test:compose");
+    assert.equal(await first().locator('[data-journey-ref="urn:test:shared"]').count(), 3);
+    await first().getByRole("button", { name: "Collapse Several child journeys", exact: true }).click();
+    assert.equal(await first().locator('[data-journey-ref="urn:test:shared"]').count(), 0);
+    assert.equal(await first().locator('[data-journey-ref="urn:test:other"]').count(), 0);
+    await first().getByRole("button", { name: "Several child journeys", exact: true }).click();
+    assert.equal(await first().locator('[data-journey-ref="urn:test:shared"]').count(), 3);
+    assert.equal(await first().locator('[data-journey-ref="urn:test:other"]').count(), 1);
+    assert.equal(await first().locator('[data-recursive-ref="urn:test:shared"]').count(), 3);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("interactive source stories and compiled layouts retain responsive boundaries and precise inspection", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    for (const width of [320, 859, 860, 861, 1099, 1100, 1101]) {
+      await page.setViewportSize({ width, height: 900 });
+      const columns = await first().locator(":scope > div > div").last().evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+      assert.equal(columns, width < 1100 ? 1 : 2, `viewer columns at ${width}`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `viewer overflow at ${width}`);
+    }
+    await page.setViewportSize({ width: 320, height: 900 });
+    await first().screenshot({ path: `${evidence}/stage6-mobile.png` });
+    await first().getByRole("button", { name: "Collapse all", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${evidence}/stage6-mobile-viewport.png` });
+    await inspector(first()).screenshot({ path: `${evidence}/stage6-inspector-mobile.png` });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await first().screenshot({ path: `${evidence}/stage6-viewer.png` });
+    await first().getByRole("button", { name: "Collapse all", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${evidence}/stage6-viewer-viewport.png` });
+    await page.goto(`${url}/iframe.html?id=viewer-journeyviewer--document-replacement&viewMode=story`);
+    const source = page.locator("#storybook-root");
+    await stateButton(source, `${prefix}app-access-denied`, "Access denied").click();
+    assert.equal(await identity(source), `${prefix}app-access-denied`);
+    await source.getByRole("button", { name: "Replace document with same ID", exact: true }).click();
+    assert.equal(await identity(source), `${prefix}app-sign-in-required`);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("empty-composite notices stay nested and selectable without a meaningless disclosure", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await page.getByRole("button", { name: "Load empty composites", exact: true }).click();
+    await first().getByRole("button", { name: "Collapse all", exact: true }).click();
+    for (const [ref, label] of [["empty", "No child references"], ["unresolved", "No resolvable children"]]) {
+      const state = first().locator(`[data-state-ref="urn:test:${ref}"]`);
+      const notice = state.getByText("No child journeys.", { exact: true });
+      assert.equal(await state.getByRole("button").count(), 1);
+      assert.equal(await state.locator("[aria-expanded]").count(), 0);
+      await state.getByRole("button", { name: label, exact: true }).click();
+      assert.equal(await identity(first()), `urn:test:${ref}`);
+      assert.equal(await notice.evaluate((element) => {
+        const nested = element.parentElement.parentElement;
+        return parseFloat(getComputedStyle(nested).marginInlineStart) > 0
+          && nested.parentElement.parentElement.hasAttribute("data-state-ref");
+      }), true);
+    }
+    assert.equal(await first().getByText("No child journeys.", { exact: true }).count(), 2);
+    assert.equal(await first().locator('[data-state-ref="urn:test:leaf"]').getByText("No child journeys.", { exact: true }).count(), 0);
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+      await first().screenshot({ path: `${evidence}/stage6-empty-composites-${width}.png` });
+    }
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
     assert.deepEqual(errors, []);
   });
 } finally {

@@ -1,0 +1,22 @@
+@reference "@journey-viewer/design-system/tailwind.css";
+.viewer {
+  display: grid;
+  gap: var(--jv-space-md);
+  min-inline-size: 0;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.layout {
+  display: grid;
+  gap: var(--jv-space-lg);
+  align-items: start;
+  min-inline-size: 0;
+  @variant lg {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}

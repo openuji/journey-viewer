@@ -20,6 +20,8 @@ for (const name of [
   "JourneyHead",
   "JourneyCard",
   "StateRow",
+  "JourneyContractControls",
+  "InspectorPanel",
   "StateSummary",
   "JourneyContracts",
 ]) {
@@ -93,5 +95,18 @@ test("summary fixtures reject interaction and mode properties instead of ignorin
   for (const key of ["static", "composite", "expanded", "selected", "filtered", "onSelect", "onToggle"]) {
     const fixture = freeze({ ...createStateSummaryFixture(), [key]: true });
     assert.deepEqual(checkStateSummaryFixture(fixture).map((finding) => finding.path), [[key]]);
+  }
+});
+
+test("inspection and contract-control fixtures independently reject malformed nested data and wrong selections", async () => {
+  const { createJourneyContractControlsFixture } = await import("../src/components/JourneyContractControls/JourneyContractControls.fixtures.ts");
+  const { checkJourneyContractControlsFixture } = await import("../src/components/JourneyContractControls/JourneyContractControls.checks.ts");
+  for (const selection of [{ kind: "entry", id: "missing" }, { kind: "exit", id: "entry:start" }, false, {}]) {
+    assert.ok(checkJourneyContractControlsFixture(freeze(createJourneyContractControlsFixture({ selection }))).length > 0);
+  }
+  const { createInspectorPanelFixture } = await import("../src/components/InspectorPanel/InspectorPanel.fixtures.ts");
+  const { checkInspectorPanelFixture } = await import("../src/components/InspectorPanel/InspectorPanel.checks.ts");
+  for (const sections of [null, [null], [{ title: "Section", items: [null] }], [{ title: "Section", items: [{ id: "x", label: "X", details: [null] }] }]]) {
+    assert.ok(checkInspectorPanelFixture(freeze(createInspectorPanelFixture({ sections }))).length > 0);
   }
 });

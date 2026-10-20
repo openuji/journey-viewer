@@ -1,0 +1,32 @@
+.contracts {
+  display: grid;
+  gap: var(--jv-space-xs);
+  margin: var(--jv-space-sm) 0 0;
+  padding: var(--jv-space-xs);
+  min-inline-size: 0;
+}
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.items {
+  margin: 0;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jv-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+.list li {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}

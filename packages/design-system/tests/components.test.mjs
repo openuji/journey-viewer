@@ -15,7 +15,39 @@ import {
   StateRow,
   StateSummary,
   JourneyContracts,
+  JourneyContractControls,
+  InspectorPanel,
 } from "../dist/index.js";
+
+test("contract controls compose native buttons with explicit selection snapshots and callbacks", () => {
+  const html = renderToStaticMarkup(h(JourneyContractControls, {
+    entries: [{ id: "e", label: "Begin", default: true }], exits: [{ id: "x", label: "Complete" }],
+    selection: { kind: "entry", id: "e" },
+    onSelect: () => assert.fail("rendering does not invoke event callbacks"),
+  }));
+  assert.equal((html.match(/<button/g) ?? []).length, 2);
+  assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1);
+  assert.match(html, /Begin \(default\)/);
+  assert.match(html, /type="button"/);
+});
+
+test("inspector presentation uses shared semantics and safely renders readonly plain-text details", () => {
+  const props = Object.freeze({
+    title: "Inspect <state>", identity: "urn:s", context: "Root", kind: "state", level: 4,
+    touchpoints: Object.freeze(["Web"]),
+    sections: Object.freeze([Object.freeze({ title: "Outgoing", items: Object.freeze([Object.freeze({ id: "urn:t", label: "Continue", details: Object.freeze(["Entry boundary: Login"]) })]) })]),
+  });
+  const before = JSON.stringify(props);
+  const html = renderToStaticMarkup(h(InspectorPanel, props));
+  assert.match(html, /^<aside/);
+  assert.match(html, /aria-label="Selection inspector"/);
+  assert.match(html, /<h4/);
+  assert.match(html, /<h5/);
+  assert.match(html, /Inspect &lt;state&gt;/);
+  assert.match(html, /Entry boundary: Login/);
+  assert.doesNotMatch(html, /<button/);
+  assert.equal(JSON.stringify(props), before);
+});
 
 test("state summaries render nested content and precise boundary explanations without interaction props", () => {
   const props = Object.freeze({ label: "Nested scope", entryCount: 1, directExitCount: 2 });
@@ -135,6 +167,15 @@ test("a journey composition accepts caller content without graph data or viewer 
   assert.match(html, /<h3/);
   assert.match(html, /4 states/);
   assert.match(html, /Start/);
+});
+
+test("persistent row notices remain nested independently of disclosure", () => {
+  const html = renderToStaticMarkup(h(StateRow, {
+    label: "Empty composition", notice: "No child journeys.",
+  }, "Collapsed child content"));
+  assert.match(html, /<div class="[^"]*nested[^"]*">No child journeys\.<\/div><\/div>$/);
+  assert.equal((html.match(/<button/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /aria-expanded|Collapsed child content/);
 });
 
 test("badge explanations are exposed as text and native span attributes reach the element", () => {

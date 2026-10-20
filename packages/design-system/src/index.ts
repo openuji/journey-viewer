@@ -27,6 +27,10 @@ export { StateRow } from "./components/StateRow/StateRow.js";
 export type { StateRowProps } from "./components/StateRow/StateRow.js";
 export { StateSummary } from "./components/StateSummary/StateSummary.js";
 export type { StateSummaryProps } from "./components/StateSummary/StateSummary.js";
+export { JourneyContractControls } from "./components/JourneyContractControls/JourneyContractControls.js";
+export type { JourneyContractControlsProps, ContractSelection } from "./components/JourneyContractControls/JourneyContractControls.js";
+export { InspectorPanel } from "./components/InspectorPanel/InspectorPanel.js";
+export type { InspectorPanelProps, InspectorItem, InspectorSection } from "./components/InspectorPanel/InspectorPanel.js";
 export { JourneyContracts } from "./components/JourneyContracts/JourneyContracts.js";
 export type {
   JourneyContractsProps,

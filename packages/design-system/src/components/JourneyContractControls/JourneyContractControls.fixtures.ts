@@ -1,0 +1,10 @@
+import type { JourneyContractControlsProps } from "./JourneyContractControls.js";
+import { createJourneyContractsFixture } from "../JourneyContracts/JourneyContracts.fixtures.ts";
+
+export type JourneyContractControlsFixture = Readonly<Omit<JourneyContractControlsProps, "onSelect">>;
+
+export function createJourneyContractControlsFixture(
+  overrides: Readonly<Partial<JourneyContractControlsFixture>> = {},
+): JourneyContractControlsFixture {
+  return { ...createJourneyContractsFixture(), selection: null, ...overrides };
+}

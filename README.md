@@ -1,9 +1,10 @@
 # Journey Viewer
 
 A standalone workspace for viewing User Journey Graph documents. This is the
-stage-5 checkpoint: a minimal React application, a captured Solid-OIDC baseline,
+stage-6 checkpoint: a minimal React application, a captured Solid-OIDC baseline,
 readonly document types/pure queries, independently selected lint rules, a
-DTCG-driven design system with internal Storybook, and a static hierarchy renderer.
+DTCG-driven design system with internal Storybook, static and interactive hierarchy
+components, immutable selection/expansion transitions, and an inspector.
 
 ## Run
 
@@ -29,8 +30,9 @@ pnpm test
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
   readonly presentation contracts, independent fixture checks, and Storybook.
-- `packages/viewer`: static hierarchy rendering directly over canonical UJG
-  queries, with explicit handling of multiple roots, reuse, and recursion.
+- `packages/viewer`: static/controlled hierarchy rendering directly over UJG
+  queries, immutable selection/expansion, derived inspection, and an instance-local
+  React boundary with document-replacement reset.
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export.
 - `PLAN.md`: agreed architecture, stage boundaries, and verification evidence.
@@ -69,8 +71,9 @@ web app is unchanged and does not use these components until its assigned stages
 
 The viewer has its own Storybook on port 6007, extending the design-system
 catalog and reusing its themes, decorators, addons and Vite setup. It includes
-Solid-OIDC, multiple roots/recursion, an empty document, and a compiled-consumer
-iframe for package/CSS verification. Run:
+Solid-OIDC, multiple roots/recursion, empty documents, independent interactive
+instances, document replacement, and a compiled-consumer iframe for package/CSS
+verification. Run:
 
 ```sh
 pnpm storybook:viewer
@@ -80,7 +83,7 @@ pnpm test:viewer:browser
 
 See [the viewer documentation](packages/viewer/README.md) for its readonly input
 contract and root/recursion presentation. `pnpm storybook` still runs the independent
-design-system catalog on port 6006. Selection and inspection start in stage 6.
+design-system catalog on port 6006. Navigation controls start in stage 7.
 The app remains minimal until its application stage.
 
 Only the user may commit. Agent changes remain uncommitted for review.

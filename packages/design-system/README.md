@@ -22,7 +22,10 @@ traversal or hidden hierarchy data. Counts and labels are caller-provided.
 readonly contract contains `label`, `entryCount`, `directExitCount`, and nested
 `children`. It always renders supplied children and accepts no selection,
 expansion, filtering, callback, or mode props. `StateRow` retains its stage-4
-controlled button contract; it has no static mode.
+controlled button contract; it has no static mode. Its optional `notice` content
+slot stays visible in the row's nested layout independently of disclosure;
+`children` still appear only while expanded. Callers supply any empty-content
+message and decide whether a disclosure control is meaningful.
 
 ## Primitive ownership
 
@@ -36,7 +39,7 @@ controlled button contract; it has no static mode.
 | `Surface` | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance. |
 
 Hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`,
-`StateRow`, `StateSummary`, and `JourneyContracts`. They reuse these primitives
+`StateRow`, `StateSummary`, `JourneyContracts`, and `JourneyContractControls`. They reuse these primitives
 and add arrangement and distinct journey decoration. A dot accepts a presentation color directly; the library has no
 example-specific palette or state-ID conventions. A standalone dot is named;
 `decorative` hides it from assistive technology. `JourneyHead` sets this when it
@@ -140,6 +143,16 @@ contract, including malformed structures. Generation imports no checking code.
 The state-row fixture contract also requires an expanded row to be composite.
 The state-summary fixture contract rejects extra properties, including interaction
 and mode properties, and checks both counts independently.
+`JourneyContractControls` is the interactive counterpart to `JourneyContracts`:
+it receives the same readonly items, an explicit `{ kind, id } | null` selection,
+and a required `onSelect(kind, id)` callback. It composes `Button` and `Text`;
+static contract lists remain noninteractive. Fixture checks reject selections
+that do not name a listed contract of the same kind.
+
+`InspectorPanel` receives only readonly display strings, touchpoint captions and
+sections of `{ id, label, details }` items. It composes `Surface`, `Heading`,
+`Text` and `Badge` without UJG queries, selection state, navigation or effects.
+Both components have colocated fixtures, independent checks and stories.
 These development checks are not runtime React-prop validators.
 
 Package exports are built ESM/declarations, `styles.css` (compiled components and

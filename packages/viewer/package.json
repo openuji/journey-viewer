@@ -27,6 +27,7 @@
     "@types/react": "catalog:", "@types/react-dom": "catalog:",
     "@types/node": "catalog:", "typescript": "catalog:",
     "vite": "catalog:", "@vitejs/plugin-react": "catalog:",
+    "@tailwindcss/vite": "catalog:",
     "storybook": "catalog:", "@storybook/react-vite": "catalog:",
     "@storybook/addon-docs": "catalog:", "@storybook/addon-a11y": "catalog:",
     "playwright": "catalog:"

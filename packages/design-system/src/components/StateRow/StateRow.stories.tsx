@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { StateRow } from "./StateRow.js";
+import { Text } from "../Text/Text.js";
 import { createStateRowFixture } from "./StateRow.fixtures.ts";
 
 const meta = {
@@ -11,6 +12,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
+export const Notice: Story = {
+  args: {
+    ...createStateRowFixture({ label: "Empty composition", composite: false }),
+    notice: <Text as="p" variant="caption" tone="subtle">No child journeys.</Text>,
+  },
+};
 export const Filtered: Story = {
   args: createStateRowFixture({ filtered: true }),
 };

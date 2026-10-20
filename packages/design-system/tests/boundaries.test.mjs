@@ -14,6 +14,8 @@ const owners = [
   "JourneyHead",
   "JourneyCard",
   "StateRow",
+  "JourneyContractControls",
+  "InspectorPanel",
   "StateSummary",
   "JourneyContracts",
 ];

@@ -1,0 +1,27 @@
+{
+  "@context": "urn:example:context",
+  "@id": "urn:test:empty-composites",
+  "@type": "UJGDocument",
+  "nodes": [
+    {
+      "@id": "urn:test:root",
+      "@type": "Journey",
+      "label": "Empty compositions",
+      "entryRefs": [],
+      "stateRefs": ["urn:test:empty", "urn:test:unresolved", "urn:test:leaf"]
+    },
+    {
+      "@id": "urn:test:empty",
+      "@type": "CompositeState",
+      "label": "No child references",
+      "subjourneyRefs": []
+    },
+    {
+      "@id": "urn:test:unresolved",
+      "@type": "CompositeState",
+      "label": "No resolvable children",
+      "subjourneyRefs": ["urn:test:missing", "urn:test:leaf"]
+    },
+    { "@id": "urn:test:leaf", "@type": "State", "label": "Ordinary state" }
+  ]
+}

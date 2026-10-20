@@ -6,6 +6,8 @@ import type {
   StateRowProps,
   StateSummaryProps,
   JourneyContractsProps,
+  JourneyContractControlsProps,
+  InspectorPanelProps,
 } from "../src/index.js";
 import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
 
@@ -56,3 +58,12 @@ const filteredSummary: StateSummaryProps = { label: "Start", filtered: true };
 // @ts-expect-error Mode flags are not part of either component's contract.
 const staticRow: StateRowProps = { label: "Start", static: true };
 void [selectedSummary, callbackSummary, expandedSummary, filteredSummary, staticRow];
+
+declare const panel: InspectorPanelProps;
+// @ts-expect-error Inspector presentation collections are readonly.
+panel.sections.push({ title: "Other", items: [] });
+// @ts-expect-error Nested inspector details are readonly.
+panel.sections[0]!.items[0]!.details.push("Changed");
+// @ts-expect-error Contract controls require their explicit selection callback.
+const uncontrolledContracts: JourneyContractControlsProps = { entries: [], exits: [], selection: null };
+void uncontrolledContracts;

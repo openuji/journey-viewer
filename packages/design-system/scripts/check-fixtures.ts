@@ -1,4 +1,8 @@
 import { createButtonFixture } from "../src/components/Button/Button.fixtures.ts";
+import { createJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.fixtures.ts";
+import { checkJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.checks.ts";
+import { createInspectorPanelFixture } from "../src/components/InspectorPanel/InspectorPanel.fixtures.ts";
+import { checkInspectorPanelFixture } from "../src/components/InspectorPanel/InspectorPanel.checks.ts";
 import { createJourneyContractsFixture } from "../src/components/JourneyContracts/JourneyContracts.fixtures.ts";
 import { checkJourneyContractsFixture } from "../src/components/JourneyContracts/JourneyContracts.checks.ts";
 import { createStateSummaryFixture } from "../src/components/StateSummary/StateSummary.fixtures.ts";
@@ -24,6 +28,8 @@ import { createTouchpointDotFixture } from "../src/components/TouchpointDot/Touc
 import { checkTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.checks.ts";
 
 const findings = [
+  ...checkJourneyContractControlsFixture(createJourneyContractControlsFixture()).map((finding) => ({ ...finding, path: ["JourneyContractControls", ...finding.path] })),
+  ...checkInspectorPanelFixture(createInspectorPanelFixture()).map((finding) => ({ ...finding, path: ["InspectorPanel", ...finding.path] })),
   ...checkStateSummaryFixture(createStateSummaryFixture()).map((finding) => ({
     ...finding, path: ["StateSummary", ...finding.path],
   })),
@@ -75,4 +81,4 @@ if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("12 component fixture contracts pass independently.");
+} else console.log("14 component fixture contracts pass independently.");

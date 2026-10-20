@@ -16,6 +16,8 @@ export interface StateRowProps {
   readonly exitCount?: number;
   readonly onSelect?: () => void;
   readonly onToggle?: () => void;
+  /** Persistent nested information, independent of child disclosure. */
+  readonly notice?: ReactNode;
   readonly children?: ReactNode;
 }
 
@@ -30,6 +32,7 @@ export function StateRow({
   exitCount = 0,
   onSelect,
   onToggle,
+  notice,
   children,
 }: StateRowProps) {
   return (
@@ -107,6 +110,7 @@ export function StateRow({
           </span>
         )}
       </div>
+      {notice && <div className={styles.nested}>{notice}</div>}
       {expanded && children && <div className={styles.nested}>{children}</div>}
     </div>
   );

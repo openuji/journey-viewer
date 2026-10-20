@@ -2,17 +2,18 @@
 
 ## Current checkpoint
 
-- Current stage: **5 — Static hierarchy (complete with corrections and viewer Storybook, uncommitted)**.
-- Next stage: **6 — Selection and inspection**. Do not start it in the stage-5 request.
-- Stage-5 deliverable: a viewer package rendering the fully expanded hierarchy
-  directly from canonical UJG queries, static state rows and entry/exit lists,
-  explicit reuse/recursion/rootless presentation, and viewer Storybook extending
-  the design-system catalog and development configuration.
-- Changed modules/interfaces: `packages/viewer` (`JourneyHierarchy` with readonly
-  document/heading-level props), design-system `JourneyContracts` and separate
-  `StateSummary` presentation, their fixtures/checks/stories/tests, root commands/lockfile,
-  `.gitignore`, READMEs, and this checkpoint. Existing data/lint packages, web app,
-  and captured example remain unchanged.
+- Current stage: **6 — Selection and inspection (complete, uncommitted)**.
+- Next stage: **7 — Navigation controls**. Do not start it in the stage-6 request.
+- Stage-6 deliverable: pure immutable selection/expansion transitions, controlled
+  explorer/inspector composition, an instance-local React snapshot boundary,
+  same-ID document replacement reset, design-system presentation and Storybook.
+- Changed modules/interfaces: viewer `ViewerSelection`/`ViewerInteraction`,
+  transition functions, `JourneyExplorer`, `JourneyInspector`, `JourneyViewer`,
+  a shared pure hierarchy traversal; design-system `JourneyContractControls` and
+  `InspectorPanel` and the persistent `StateRow.notice` content slot;
+  fixtures/checks/stories/consumer/browser tests, build tooling,
+  README files and this checkpoint. Static `JourneyHierarchy` retains its API.
+  Existing data/lint packages, app and captured example stay unchanged.
 - The viewer owns its Storybook and UJG examples. It may reuse the design system's
   internal Storybook configuration/catalog in development. The design-system
   package retains its independent Storybook and imports no viewer/UJG code.
@@ -568,19 +569,172 @@ static-mode and local traversal-set implementation details and verification coun
   and uncommitted. Data/lint packages, web source, OIDC capture and the original
   source repository remain unchanged. Stage 6 remains unstarted.
 
+## Stage-6 evidence
+
+- Started from a clean working tree at user-created commit
+  `3754b53f25f3cd83439694949baea89585b3b0c9`. Implemented selection/inspection only;
+  stage-7 navigation, search/filtering, breadcrumbs/highlights, screenshot
+  resolution, extension descriptors and app wiring remain unstarted.
+- Added readonly `ViewerSelection` (`kind`, `journeyRef`, `nodeRef`) and
+  `ViewerInteraction` (selection and an expanded-journey ID array), plus the pure
+  `createViewerInteraction`, `selectNode`, `toggleChildJourneys`,
+  `expandAllJourneys` and `collapseAllJourneys` functions. Frozen inputs remain
+  unchanged; no mutable sets, queues, patches, caches, parent maps or hierarchy
+  model are retained. Invalid owner/type/ref selections are no-ops. Useful
+  selection/expansion no-ops preserve snapshot identity.
+- Initial selection follows the first root (or rootless starting point), an
+  explicit default entry's member state, then the first member state, then an
+  empty journey itself. Empty documents have no selection. The captured OIDC
+  default remains `app-sign-in-required` in `app-auth-journey`. Expansion starts
+  with all journeys open. Expand/collapse preserves selection; reset restores
+  initial selection and expansion.
+- Static `JourneyHierarchy` retains its existing readonly contract and output.
+  Shared UJG traversal stays in the private `HierarchyTree`, receiving explicit
+  presentation callbacks from the static and controlled compositions. Added
+  `JourneyExplorer` with required snapshot/selection/disclosure callbacks and
+  `JourneyInspector` with an explicit selection. Neither owns React state.
+  Recursion, ordering, multiple roots and repeated references remain explicit.
+- Expansion follows journey identity within one instance. Disclosure toggles
+  the complete child group: any open child can be collapsed; a closed group
+  opens every child. Selecting a composite opens all children. Selecting a
+  descendant reveals every explicit ancestor path, and the traversal renders
+  each open child independently of collapsed siblings. A frozen-input/SSR
+  regression covers the multi-child case that previously hid a selected shared
+  child when its sibling was closed. No arbitrary parent assignment is used.
+- Added `JourneyViewer`, the sole production React state boundary. It keeps one
+  readonly local snapshot and the original document reference for replacement
+  detection. A changed input object, including one with the same `@id` and same
+  node objects, resets state before children render. Stale updaters for replaced
+  inputs are ignored. This uses React's documented
+  [guarded render-time state adjustment](https://react.dev/reference/react/useState#storing-information-from-previous-renders),
+  with no effects, refs, context, subscriptions or global store. Instances sharing
+  the same frozen input remain independent.
+- Inspection derives local incoming/outgoing transitions, entry start states,
+  all explicit child journeys/touchpoints, boundary entry/exit annotations and
+  commands, entry call sites and parent continuation handlers. It checks every
+  explicit caller rather than inventing one parent. Inspector rows are
+  informational; transition navigation and breadcrumbs belong to stage 7.
+  Data/lint packages and canonical documents remain unchanged.
+- Added design-system `JourneyContractControls` and `InspectorPanel`, each with
+  readonly presentation contracts, colocated CSS/stories/fixtures/checks and
+  public exports. Static contract lists/rows acquire no mode flags. Controls use
+  the existing `Button`/`Text`; the panel uses `Surface`, `Heading`, `Text` and
+  `Badge`. Fixture checks cover selected contract identity/kind and malformed
+  nested inspector data. Primitive behavior, typography, tokens and surfaces
+  retain their original owners. All interaction is explicit data and callbacks.
+- The mobile-first viewer layout consumes the design system's public compiled
+  Tailwind bridge for the shared `lg` breakpoint. Its build adds only the existing
+  catalog `@tailwindcss/vite` development dependency; no versions or runtime
+  dependencies were introduced. Consumers import compiled CSS without Tailwind.
+  `pnpm install --offline` and `pnpm install --frozen-lockfile --offline` passed.
+- `pnpm test`: **97 tests passed** (42 design-system, 22 viewer, 17 lint, 13 query
+  and 3 baseline). All readonly compile checks and **14 independent component
+  fixture checks** passed. Regressions cover explicit/nonfirst default entries,
+  invalid selections, all ancestor paths, all child groups, partial sibling
+  expansion, self/mutual recursion, stable no-ops, frozen independent snapshots,
+  all parent call sites, explicit exit handlers and controlled rendering without
+  callback invocation. Production-boundary checks permit React state only in
+  `JourneyViewer`, and continue excluding effects, refs, context, I/O and lint.
+- `pnpm test:viewer:browser` passed all **10 Chromium checks** against the final
+  built renderer/Storybook. Tests verify native Enter/Space selection/disclosure
+  and visible focus; state/journey/entry/exit inspection; expand/collapse/reset;
+  independent instances; same-ID, empty and different-document replacement;
+  repeated/recursive child groups; source and compiled consumers; and preserved
+  static **10 journeys / 47 states / 20 entries / 24 exits**. No overflow occurs
+  at **320, 859, 860, 861, 1099, 1100 and 1101px**; viewer columns use the same
+  `lg = 68.75rem` threshold as the design system. The six existing stage-5 checks
+  remain green, including accessible contract terms and inherited themes.
+- Viewer Storybook built and loaded **53 stories**: **38 inherited + 15 viewer**.
+  The new examples cover controlled exploration, each inspector selection kind,
+  independent viewers and same-ID replacement. `pnpm build:storybook` independently
+  built **38 design-system stories**. `pnpm test:design-system:browser` passed all
+  **8 Chromium checks**, preserving the existing controlled row, keyboard/focus,
+  typography colors, theme/token, responsive and package-consumer behavior.
+- `pnpm build` passed for all packages/app. Viewer output is about **14.0 kB ESM**
+  and **0.7 kB CSS** before gzip, with React/workspace dependencies external.
+  Declarations/CSS exports remain independently consumable; production output
+  excludes stories, fixtures, checks and example data. The app bundle remains
+  `index-Dzl6dVgS.js`, and the captured **10/47/120/37** baseline is unchanged.
+- Mobile/desktop presentation was visually inspected in ignored evidence:
+  `packages/viewer/.test-output/stage6-mobile-viewport.png`,
+  `stage6-inspector-mobile.png`, `stage6-viewer-viewport.png`, with full viewer
+  screenshots alongside them. Test servers and browsers close in their runners.
+  `git diff --check` passes; data/lint packages, web source and OIDC capture are
+  unchanged. The original repository is clean at
+  `6d9deaf0b57ba59fc22d232ca25bc999e1ce365e`. No files were staged or committed;
+  destination HEAD remains `3754b53f25f3cd83439694949baea89585b3b0c9`.
+  Stage 6 has no unresolved acceptance failures. Stage 7 remains unstarted.
+
+### Stage-6 review corrections
+
+- Documented the referential-stability requirement in `JourneyViewerProps` and
+  the viewer README. Inline parsing/reconstruction resets interaction on each
+  parent render; callers retain or memoize the parsed input. Object-identity
+  replacement and same-ID reset semantics are unchanged.
+- Added the readonly `StateRow.notice` content slot for persistent nested
+  information, independently of expanded `children`. An empty or entirely
+  unresolved composite remains selectable and renders “No child journeys.”
+  inside its row container with design-system nesting. It has no disclosure
+  control because there is no resolvable child to open. No mode flag, extra
+  interaction state or graph logic was added to the design system.
+- The private `renderChildren` callback now requires named options with an
+  explicit `visibleJourneyRefs` list. Static rendering supplies every child ref;
+  controlled rendering supplies expanded refs. There is no implicit `undefined`
+  selection meaning “all”; `null` still denotes a non-composite without children.
+- Removed the blanket prohibition on local collection construction and mutation
+  methods. The boundary check now inspects module scope for mutable bindings and
+  retained `Set`/`Map` collections while keeping state hooks restricted to
+  `JourneyViewer` and excluding effects/refs/context. Frozen-input transition
+  tests still check immutability. No traversal algorithm, cache or persistent
+  collection was introduced in these corrections.
+- Recorded the shared logical-ID interaction policy, selection retained after
+  collapse, stage-7 occurrence-path requirement and ancestor-lookup performance
+  cost below. The browser regression explicitly verifies that collapse can hide
+  an entry while its inspector selection remains unchanged.
+- `pnpm test`: **99 tests passed** (43 design-system, 23 viewer, 17 lint,
+  13 query, 3 baseline), including readonly compile and independent fixture
+  checks. Added frozen-input/SSR coverage for empty, unresolved and differently
+  typed child references, persistent notices and ordinary leaf states.
+- `pnpm test:viewer:browser`: **11 Chromium checks passed**, including the new
+  empty-composite containment, indentation, selection and collapse regression.
+  The final browser script also passed against the built Storybook. Both
+  Storybooks build; the viewer loads **55 stories (39 inherited + 16 viewer)**
+  and the standalone design system loads **39 stories**.
+  `pnpm test:design-system:browser`: **8 Chromium checks passed**.
+- Visually inspected the compiled consumer's mobile/desktop empty-composite
+  screenshots at `packages/viewer/.test-output/stage6-empty-composites-320.png`
+  and `stage6-empty-composites-1280.png`. These are ignored verification artifacts.
+  `pnpm build` and `git diff --check` passed. No files are staged or committed;
+  stage 7 remains unstarted.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
 - Large-document rendering needs an explicit depth/size/display policy: preserving
   every shared call site can grow output exponentially. Query scans, composite
-  identity searches and repeated child selections also add cost. Defer profiling
-  and any per-render readonly lookups until that work is scoped; add no persistent
-  cache, hierarchy model or arbitrary truncation in stage 5.
+  identity searches and repeated child selections also add cost. Ancestor lookup
+  on selection revisits shared diamond paths with only an ancestry guard, builds
+  duplicate arrays and rescans journeys/states/composites at each level; that
+  work can also grow exponentially before merging removes duplicates. Defer
+  profiling and per-call lookup improvements until scoped; local temporary
+  collections can preserve purity, but add no retained cache, hierarchy model or
+  arbitrary truncation in these corrections.
+- Selection and expansion intentionally follow logical IDs across all reused
+  occurrences within one instance. Stage 7 must represent occurrence context
+  explicitly for focus and breadcrumbs rather than assign an arbitrary parent;
+  stage 6 adds no per-call-site state.
+- Collapse intentionally preserves selection even when its row becomes hidden;
+  the inspector continues to show that item, without automatic reveal or
+  clearing. A new selection reveals its explicit ancestor paths. This behavior is
+  documented; no hidden-selection flag or retained visibility state is added.
+- `JourneyViewer.document` must stay referentially stable between actual input
+  replacements. Stage 10's local-file loading must retain each parsed object
+  until the next load rather than reconstruct it during parent renders.
 - Stage 7 must keep individual touchpoint identities when adding filtering. The
   current joined caption with one dot is only a static-stage presentation, not a
   primary-touchpoint selection or identity contract.
-- All stages after 5 remain unstarted. Viewer interaction state/inspection,
-  navigation, screenshots, extensions, routing, reporting UI, and deployment
+- All stages after 6 remain unstarted. Navigation, screenshots, extensions,
+  routing, reporting UI, and deployment
   are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and
@@ -589,3 +743,6 @@ static-mode and local traversal-set implementation details and verification coun
   exclusivity need additional independently supplied rules when required. This
   checkpoint does not introduce a full SHACL/conformance engine or infer overall
   validity from an empty list of findings. Imports are not resolved or fetched.
+- Stage 11 should make the shared Storybook development configuration an explicit
+  supported export or copy the small needed setup, resolving the currently
+  accepted relative dependency on design-system private development files.

@@ -1,0 +1,6 @@
+.empty {
+  display: grid;
+  gap: var(--jv-space-sm);
+  padding: var(--jv-space-md);
+  min-inline-size: 0;
+}
