@@ -13,7 +13,7 @@ export type StateRowFixture = Readonly<
       | "entryCount"
       | "exitCount"
     >
-  >
+  > & Pick<StateRowProps, "relation">
 >;
 
 export function createStateRowFixture(

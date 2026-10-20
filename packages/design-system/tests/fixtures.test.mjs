@@ -11,6 +11,7 @@ const freeze = (value) => {
 
 for (const name of [
   "Button",
+  "SearchField",
   "IconButton",
   "Heading",
   "Text",
@@ -74,6 +75,18 @@ test("state-row fixture checking rejects expansion without a composite without r
     [],
   );
   assert.equal(JSON.stringify(invalid), before);
+});
+
+test("search and row-relation fixtures distinguish valid empty text from malformed presentation", async () => {
+  const { createSearchFieldFixture } = await import("../src/components/SearchField/SearchField.fixtures.ts");
+  const { checkSearchFieldFixture } = await import("../src/components/SearchField/SearchField.checks.ts");
+  const { createStateRowFixture } = await import("../src/components/StateRow/StateRow.fixtures.ts");
+  const { checkStateRowFixture } = await import("../src/components/StateRow/StateRow.checks.ts");
+  assert.deepEqual(checkSearchFieldFixture(freeze(createSearchFieldFixture({ value: "" }))), []);
+  assert.ok(checkSearchFieldFixture(freeze(createSearchFieldFixture({ value: null }))).length > 0);
+  assert.ok(checkSearchFieldFixture(freeze(createSearchFieldFixture({ placeholder: false }))).length > 0);
+  for (const relation of ["incoming", "outgoing", "both"]) assert.deepEqual(checkStateRowFixture(freeze(createStateRowFixture({ relation }))), []);
+  assert.ok(checkStateRowFixture(freeze(createStateRowFixture({ relation: "other" }))).length > 0);
 });
 
 test("contract fixture checks reject malformed items and conflicting defaults independently", async () => {

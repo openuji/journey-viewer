@@ -1,4 +1,6 @@
 import { createButtonFixture } from "../src/components/Button/Button.fixtures.ts";
+import { createSearchFieldFixture } from "../src/components/SearchField/SearchField.fixtures.ts";
+import { checkSearchFieldFixture } from "../src/components/SearchField/SearchField.checks.ts";
 import { createJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.fixtures.ts";
 import { checkJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.checks.ts";
 import { createInspectorPanelFixture } from "../src/components/InspectorPanel/InspectorPanel.fixtures.ts";
@@ -28,6 +30,7 @@ import { createTouchpointDotFixture } from "../src/components/TouchpointDot/Touc
 import { checkTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.checks.ts";
 
 const findings = [
+  ...checkSearchFieldFixture(createSearchFieldFixture()).map((finding) => ({ ...finding, path: ["SearchField", ...finding.path] })),
   ...checkJourneyContractControlsFixture(createJourneyContractControlsFixture()).map((finding) => ({ ...finding, path: ["JourneyContractControls", ...finding.path] })),
   ...checkInspectorPanelFixture(createInspectorPanelFixture()).map((finding) => ({ ...finding, path: ["InspectorPanel", ...finding.path] })),
   ...checkStateSummaryFixture(createStateSummaryFixture()).map((finding) => ({
@@ -81,4 +84,4 @@ if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("14 component fixture contracts pass independently.");
+} else console.log("15 component fixture contracts pass independently.");

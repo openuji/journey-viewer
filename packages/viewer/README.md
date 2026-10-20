@@ -68,14 +68,14 @@ import "@journey-viewer/viewer/styles.css";
 ```
 
 `JourneyViewer` owns a local immutable interaction snapshot and composes the
-controlled `JourneyExplorer` with `JourneyInspector`. Each instance is independent,
+controlled `JourneyNavigation`, `JourneyExplorer` and `JourneyInspector`. Each instance is independent,
 even when instances receive the same frozen document. The state boundary retains
 the original document reference only to detect replacement. A new document object,
 including one with the same `@id` and node objects, resets selection and expansion
-before children render. No effect, ref, mutable store or identity registry is used.
+before children render, including focus, search, filters and hover. No effect, ref, mutable store or identity registry is used.
 Keep `document` referentially stable between actual replacements. Parsing or
 rebuilding it inline, such as `<JourneyViewer document={JSON.parse(source)} />`,
-resets selection and expansion on every parent render. Parse once when loading
+resets the entire viewer snapshot on every parent render. Parse once when loading
 an input and retain that result in application state, or memoize parsing by the
 source input. Stage 10's local-file loader must keep the parsed object until the
 next file load.
@@ -105,9 +105,12 @@ selection/expansion no-ops retain snapshot identity, and frozen inputs are suppo
 Expansion follows journey identity across repeated call sites within one viewer;
 collapsing a reused journey affects all its occurrences. A selected item is
 highlighted at every occurrence of its journey/state/contract identity. There is
-no per-call-site expansion or selected path. Stage 7 must explicitly resolve
-occurrence context for focus and breadcrumbs rather than choose an arbitrary
-parent.
+no per-call-site expansion. Navigation separately retains an explicit occurrence
+path for focus and breadcrumbs, without changing this logical selection policy.
+Every pressed row marks the same selected graph identity, wherever it is reused.
+Breadcrumbs and inspector navigation describe the last chosen call site. They
+identify the active occurrence; the repeated row highlights identify the shared
+node. Consumers should keep this distinction when composing custom controls.
 
 A composite disclosure toggles its complete explicit child group. Selecting a
 composite opens all children; selection reveals all explicit ancestor paths without
@@ -126,8 +129,89 @@ call sites and all parent continuation handlers. No boundary associations are
 inferred. Inspector presentation data is computed per render and passed to the
 design system's readonly `InspectorPanel`; contract selection uses the separate
 `JourneyContractControls`. Static components have no interactive mode flags.
-Transition rows are informational here; navigation, breadcrumbs/highlights,
-screenshots and extension descriptors remain in later stages.
+The informational inspector remains available through its original props. Supply
+the complete optional `navigation: { occurrence, onNavigate }` contract to add
+graph-navigation controls. Screenshots and extension descriptors remain in later stages.
+
+## Navigation
+
+`JourneyViewer` starts in Overview with all journeys expanded. “Focus selected
+scope” shows one column for every journey on the selected occurrence path.
+Columns scroll horizontally inside the viewer; each keeps its own states and
+entry/exit contracts. Explicit “Open child” buttons address every child reference,
+including repeated references. Recursive calls remain labeled terminal references.
+Overview restores the tree using its existing expansion snapshot. Expand/collapse
+controls update that tree snapshot in either view. “Reset view” restores selection,
+expansion, overview, blank search, all touchpoints and no hover.
+
+Search matches journey/state/entry/exit labels, full IDs and tags without case
+sensitivity, in hierarchy traversal order. Whitespace produces no results; at
+most 18 results are returned. At the limit, the status says “Showing first 18
+matches” and asks the user to refine the search. Repeated call sites remain
+separate results and may occupy much of this limit, so other matching identities
+may be omitted. Enter picks the first result, Escape clears the query, and each
+result is a native keyboard-operable button. A search pick clears the query,
+reveals the selection and updates the focused path when focus is active. Row,
+breadcrumb, inspector and scope-focus navigation preserve the query.
+Screenshot availability will be added with stage 8's explicit asset mappings.
+
+Touchpoint buttons retain each source identity, even when labels coincide or a
+journey has several assignments. Colliding labels include their full touchpoint
+ID in the visible text and accessible name. Multiple selected touchpoints use OR; none
+selected means all journeys match. Assignments are never inherited. Nonmatching
+scope headers, own rows and contracts are dimmed while all topology stays present.
+A matching child is not dimmed by its parent. Search results follow the same
+filter; the summary counts matching journeys independently of expansion or focus.
+
+Breadcrumbs show the actual starting point, composite call sites and journey
+labels. Repeated references within the same sibling list add “reference 1 of 2”
+or similar wording; equal labels on different identities add their IDs. These are
+counts of repeated references, independent of unresolved references in the input.
+Unambiguous paths and child buttons use labels without query-result positions.
+Selecting a breadcrumb navigates to that journey occurrence.
+The inspector's “Navigate graph” links follow local transition endpoints, entry
+start states, explicit `toEntryRef` / `fromExitRef` boundary mappings, nested
+journeys, and every explicit parent caller/continuation. An absent or unresolved
+mapping produces no invented target. No journey acquires a preferred parent.
+Incoming/outgoing row marks are recomputed from local transitions; hover takes
+precedence over selection and pointer leave restores selection-derived marks.
+
+The new readonly `ViewerSnapshot` contains the existing `interaction` plus a
+`navigation` snapshot (`focus`, selected `occurrence`, `query`, `touchpointRefs`,
+`hover`). `ViewerOccurrence` is `{ startJourneyRef, steps }`, with each step
+holding zero-based `stateIndex` and `childIndex` into the typed query results.
+These indices preserve repeated reference positions. Paths only address finite
+rendered occurrences: invalid indices, non-starting roots and recursion beyond
+the current ancestry are rejected. Paths belong to their input object and must
+be reset when that input is replaced.
+
+Pure public operations are `createViewerSnapshot`, `navigateViewer`, `pickSearchResult`,
+`focusJourney`, `showOverview`, `setSearchQuery`, `toggleTouchpoint` and `hoverNode`.
+Queries include `getOccurrenceTrail` (original journey nodes), `searchViewer`,
+`getNavigationItems`, `getViewerSummary`, `matchesTouchpoints`, `getRowRelation`
+and `occurrenceLabel`. Nothing retains derived results between calls. Valid
+unchanged navigation/hover operations preserve snapshot identity.
+
+Snapshot consumers must use `navigateViewer` or `pickSearchResult` for selection
+so the selected identity and its occurrence are validated and updated together.
+`navigateViewer` preserves the query; `pickSearchResult` clears it after validating
+the target. The stage-6 `selectNode` API remains supported for callers that own
+only a `ViewerInteraction`. Spreading its result into a `ViewerSnapshot` without
+updating navigation can leave stale occurrence context. Expansion-only transitions
+can be composed without changing the navigation context; reset the whole snapshot
+through `createViewerSnapshot` when replacing the input.
+
+Externally controlled compositions can use `JourneyNavigation` with its snapshot
+and explicit callbacks: `onNavigate` handles breadcrumbs and `onSearchPick` handles
+result clicks and Enter. Connect those to the corresponding pure transitions.
+`JourneyExplorer.onSelect` now also receives the occurrence
+as its second argument; existing single-argument callbacks remain valid. Its
+optional `navigation`, `onHover` and `onFocusJourney` props supply navigation
+presentation/actions. `JourneyInspector.navigation` couples occurrence context
+with its required navigation callback. `JourneyViewer` remains the sole React
+state owner; controlled components invoke no callbacks during rendering.
+Programmatic scrolling, global shortcuts and DOM measurement remain caller/browser
+boundary responsibilities.
 
 The layout uses the design system's public Tailwind bridge during the viewer
 build to consume its shared `lg` breakpoint. Consumers only import compiled CSS;
@@ -138,11 +222,26 @@ produce exponentially many rows in a heavily shared graph. Queries scan source
 collections, and there is no render-size or depth policy yet. Ancestor lookup on
 selection can also revisit the same ancestors exponentially along shared diamond
 paths, build duplicate reference arrays and rescan journeys/states/composites
-before reference merging removes duplicates. Future performance work needs an
+before reference merging removes duplicates. Hover updates the root snapshot,
+which re-renders the hierarchy and recomputes navigation summaries, paths and
+search. Per-row relation queries repeat selection resolution and linear scans.
+A no-match search traverses every finite occurrence; shared diamond paths can
+make this work exponential even though the returned list is capped at 18.
+Future performance work needs an
 explicit display policy; a persistent graph/cache would violate the plan.
 Local collections confined to one call do not retain state and may be used in
-future pure traversal optimizations. The joined touchpoint caption is also
-temporary: stage 7 must retain each touchpoint's identity when adding filtering.
+future pure traversal optimizations, including per-render lookups. Moving hover
+to another state owner would require an explicit change to the agreed single
+React state boundary. The joined touchpoint caption is also
+presentation-only: filtering retains each source touchpoint identity independently.
+
+Two design follow-ups remain separate from these Stage-7 corrections. Focus
+currently reuses the selectable row without a disclosure and offers explicit
+child links; a distinct focus-row presentation should be considered before
+extending its semantics. The package also still exports presentation helpers such
+as `getRowRelation` and `occurrenceLabel`. Their public/private status needs an
+API review before stage-9 extensions or application wiring; no existing exports
+are removed in this correction.
 
 From the workspace root:
 
@@ -163,7 +262,10 @@ multiple roots and recursion, empty documents, independent instances, same-ID
 replacement, empty/unresolved composites and the compiled consumer. Native JSON parsing and
 frozen demonstration documents are shared only at the development boundary in
 `.storybook/documents.ts`. Story controls receive the heading level; document
-editing is excluded from controls.
+editing is excluded from controls. Navigation stories include bounded search,
+no matches, multiple/equal-label touchpoints, capped results and a repeated child
+focused at its second reference. A review fixture includes unresolved state/child
+references to check that UI wording does not expose query-result positions.
 
 The compiled-consumer iframe reads built ESM/declarations/CSS without Tailwind
 processing or source aliases. `tests/consumer` is a build-only smoke fixture,
@@ -185,6 +287,6 @@ Install Chromium once with
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing binary.
 
 Production exports contain only the renderer and compiled layout CSS. Fixtures,
-Storybook, consumer fixtures, tests and tooling stay outside `dist`. Navigation,
-screenshots, extensions, app composition and deployment retain their later stage
+Storybook, consumer fixtures, tests and tooling stay outside `dist`. Screenshots,
+extensions, app composition and deployment retain their later stage
 boundaries in the root plan.

@@ -1,5 +1,6 @@
 import type { JourneyHierarchyProps, JourneyExplorerProps, ViewerInteraction, ViewerSelection } from "../dist/index.js";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyNavigationProps, ViewerSnapshot, ViewerOccurrence } from "../dist/index.js";
 
 declare const document: UjgDocument;
 const props: JourneyHierarchyProps = { document, level: 2 };
@@ -23,3 +24,17 @@ const missingCallbacks: JourneyExplorerProps = { document, interaction };
 // @ts-expect-error The static contract has no interactive mode.
 const interactiveStatic: JourneyHierarchyProps = { document, interaction };
 void [missingCallbacks, interactiveStatic];
+declare const snapshot: ViewerSnapshot;
+declare const occurrence: ViewerOccurrence;
+// @ts-expect-error Navigation snapshots are immutable.
+snapshot.navigation.query = "query";
+// @ts-expect-error Touchpoint identities cannot be patched in place.
+snapshot.navigation.touchpointRefs.push("urn:tp");
+// @ts-expect-error Occurrence paths are readonly.
+occurrence.steps.push({ stateIndex: 0, childIndex: 0 });
+// @ts-expect-error Occurrence segments cannot be patched in place.
+occurrence.steps[0]!.childIndex = 2;
+declare const navigationProps: JourneyNavigationProps;
+// @ts-expect-error Search picking is an explicit required action, separate from ordinary navigation.
+const missingSearchPick: JourneyNavigationProps = { ...navigationProps, onSearchPick: undefined };
+void missingSearchPick;

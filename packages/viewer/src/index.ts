@@ -10,3 +10,13 @@ export {
   createViewerInteraction, selectNode, toggleChildJourneys, expandAllJourneys, collapseAllJourneys,
 } from "./interaction.js";
 export type { ViewerInteraction, ViewerSelection } from "./interaction.js";
+export { JourneyNavigation } from "./components/JourneyNavigation/JourneyNavigation.js";
+export type { JourneyNavigationProps } from "./components/JourneyNavigation/JourneyNavigation.js";
+export { getOccurrenceTrail } from "./occurrence.js";
+export type { ViewerOccurrence, OccurrenceCrumb } from "./occurrence.js";
+export {
+  createViewerSnapshot, navigateViewer, pickSearchResult, focusJourney, showOverview, setSearchQuery,
+  toggleTouchpoint, hoverNode, matchesTouchpoints, getViewerSummary, searchViewer,
+  getNavigationItems, getRowRelation, occurrenceLabel,
+} from "./navigation.js";
+export type { ViewerSnapshot, ViewerNavigation, ViewerTarget, ViewerNavigationItem } from "./navigation.js";

@@ -12,10 +12,12 @@ export interface StateRowProps {
   readonly expanded?: boolean;
   readonly selected?: boolean;
   readonly filtered?: boolean;
+  readonly relation?: "incoming" | "outgoing" | "both";
   readonly entryCount?: number;
   readonly exitCount?: number;
   readonly onSelect?: () => void;
   readonly onToggle?: () => void;
+  readonly onHover?: (hovered: boolean) => void;
   /** Persistent nested information, independent of child disclosure. */
   readonly notice?: ReactNode;
   readonly children?: ReactNode;
@@ -28,10 +30,12 @@ export function StateRow({
   expanded = false,
   selected = false,
   filtered = false,
+  relation,
   entryCount = 0,
   exitCount = 0,
   onSelect,
   onToggle,
+  onHover,
   notice,
   children,
 }: StateRowProps) {
@@ -39,6 +43,9 @@ export function StateRow({
     <div className={styles.container} data-filtered={filtered || undefined}>
       <div
         className={styles.row}
+        data-relation={relation}
+        onPointerEnter={() => onHover?.(true)}
+        onPointerLeave={() => onHover?.(false)}
         data-boundary={
           entryCount && exitCount
             ? "both"
@@ -109,6 +116,9 @@ export function StateRow({
             )}
           </span>
         )}
+        {relation && <Badge tone={relation === "incoming" ? "entry" : "exit"}>
+          {relation === "both" ? "Incoming and outgoing" : relation === "incoming" ? "Incoming" : "Outgoing"}
+        </Badge>}
       </div>
       {notice && <div className={styles.nested}>{notice}</div>}
       {expanded && children && <div className={styles.nested}>{children}</div>}

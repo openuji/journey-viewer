@@ -8,6 +8,7 @@
   min-inline-size: 0;
   flex: 1;
 }
+.head[data-filtered] { opacity: var(--jv-opacity-filtered); }
 .count {
   flex: 0 1 auto;
 }

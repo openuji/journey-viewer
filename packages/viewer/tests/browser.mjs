@@ -110,8 +110,8 @@ try {
   await test("viewer Storybook extends the design-system catalog and loads all stories and consumer iframes", async () => {
     const index = await (await fetch(`${url}/index.json`)).json();
     const stories = Object.values(index.entries).filter((entry) => entry.type === "story");
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 39);
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 16);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 42);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 23);
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
       await page.waitForFunction(() => document.querySelector("#storybook-root")?.childElementCount > 0);
@@ -216,7 +216,7 @@ try {
     await first().getByRole("button", { name: "Expand all", exact: true }).click();
     assert.equal(await first().locator("[data-state-ref]").count(), 47);
     assert.equal(await identity(first()), `${prefix}idp-auth-flow`);
-    await first().getByRole("button", { name: "Reset selection and expansion", exact: true }).click();
+    await first().getByRole("button", { name: "Reset view", exact: true }).click();
     assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
     assert.deepEqual(errors, []);
   });
@@ -297,6 +297,225 @@ try {
       await first().screenshot({ path: `${evidence}/stage6-empty-composites-${width}.png` });
     }
     assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("search supports native keyboard picking/clearing, no matches, whitespace and instance isolation", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const search = first().getByRole("searchbox", { name: "Search the graph", exact: true });
+    await search.focus();
+    assert.equal(await search.evaluate((element) => getComputedStyle(element).outlineStyle), "solid");
+    await search.fill("no such item");
+    await first().getByText("No matches.", { exact: true }).waitFor();
+    await search.press("Escape");
+    assert.equal(await search.inputValue(), "");
+    await search.fill("   ");
+    assert.equal(await first().getByRole("list", { name: "Search results" }).count(), 0);
+    await search.fill("SMS");
+    const results = first().getByRole("list", { name: "Search results" });
+    assert.ok(await results.getByRole("button").count() >= 2);
+    await search.fill("sms-verification-journey");
+    await search.press("Enter");
+    assert.equal(await search.inputValue(), "");
+    assert.equal(await identity(first()), `${prefix}sms-verification-journey`);
+    assert.equal(await identity(second()), `${prefix}app-sign-in-required`);
+    assert.equal(await second().getByRole("searchbox").inputValue(), "");
+    const crumbs = first().getByRole("navigation", { name: "Selection breadcrumbs" });
+    assert.equal(await crumbs.getByRole("listitem").count(), 4);
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    assert.equal(await first().getByRole("group", { name: "Focused journey path" }).locator("[data-journey-ref]").count(), 4);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("row, breadcrumb, inspector and focus navigation retain a query; clicking a search result clears it", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const search = first().getByRole("searchbox");
+    await search.fill("SMS");
+    await stateButton(first(), `${prefix}app-access-denied`, "Access denied").click();
+    assert.equal(await search.inputValue(), "SMS");
+    const crumbs = first().getByRole("navigation", { name: "Selection breadcrumbs" });
+    await crumbs.getByRole("button", { name: "App auth journey", exact: true }).click();
+    assert.equal(await search.inputValue(), "SMS");
+    await inspector(first()).getByRole("navigation", { name: "Related items" })
+      .getByRole("button", { name: /^State: Sign-in required/ }).click();
+    assert.equal(await search.inputValue(), "SMS");
+    await first().getByRole("button", { name: "Focus IdP auth journey", exact: true }).click();
+    assert.equal(await search.inputValue(), "SMS");
+    await first().getByRole("list", { name: "Search results" }).getByRole("button").first().click();
+    assert.equal(await search.inputValue(), "");
+    assert.equal(await identity(first()), `${prefix}mfa-sms-message`);
+    assert.equal(await second().getByRole("searchbox").inputValue(), "");
+    assert.deepEqual(errors, []);
+  });
+
+  await test("equal touchpoint labels, bounded results and repeated references remain distinguishable with unresolved refs", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await page.getByRole("button", { name: "Load navigation review", exact: true }).click();
+    const filters = first().getByRole("group", { name: "Touchpoint filter" });
+    const web = filters.getByRole("button", { name: "Web (urn:test:web)", exact: true });
+    const phone = filters.getByRole("button", { name: "Web (urn:test:phone)", exact: true });
+    assert.equal(await web.count(), 1);
+    assert.equal(await phone.count(), 1);
+    assert.equal(await filters.getByRole("button", { name: "Web", exact: true }).count(), 0);
+    await web.click();
+    assert.match(await filters.textContent(), /1 of 6 journeys match/);
+    assert.equal(await phone.getAttribute("aria-pressed"), "false");
+    await phone.click();
+    assert.match(await filters.textContent(), /2 of 6 journeys match/);
+    await web.click();
+    await phone.click();
+    const search = first().getByRole("searchbox");
+    await search.fill("urn:test:");
+    const results = first().getByRole("list", { name: "Search results" });
+    assert.equal(await results.getByRole("button").count(), 18);
+    await first().getByText("Showing first 18 matches. Refine your search to narrow the results.", { exact: true }).waitFor();
+    await search.fill("urn:test:shared");
+    const matches = results.getByRole("button");
+    assert.equal(await matches.count(), 3);
+    assert.match(await matches.nth(0).textContent(), /reference 1 of 2/);
+    assert.match(await matches.nth(1).textContent(), /reference 2 of 2/);
+    assert.doesNotMatch(await matches.nth(2).textContent(), /reference \d|state \d|child \d/);
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+      await filters.screenshot({ path: `${evidence}/stage7-review-filters-${width}.png` });
+      await results.screenshot({ path: `${evidence}/stage7-review-contexts-${width}.png` });
+    }
+    await matches.nth(1).click();
+    const selectedOccurrence = first().locator('[data-journey-ref="urn:test:shared"]').nth(1);
+    await selectedOccurrence.getByRole("button", { name: "Recurse here", exact: true }).click();
+    const logicalMatches = first().locator('[data-state-ref="urn:test:repeat"]').getByRole("button", { name: "Recurse here", exact: true });
+    assert.equal(await logicalMatches.count(), 3);
+    assert.equal(await logicalMatches.evaluateAll((buttons) => buttons.every((button) => button.getAttribute("aria-pressed") === "true")), true);
+    const crumbs = first().getByRole("navigation", { name: "Selection breadcrumbs" });
+    assert.match(await crumbs.textContent(), /reference 2 of 2/);
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    const lanes = first().getByRole("group", { name: "Focused journey path" });
+    await lanes.getByRole("button", { name: "Open Repeated child (reference 1 of 2)", exact: true }).waitFor();
+    await lanes.getByRole("button", { name: "Open Repeated child (reference 2 of 2)", exact: true }).waitFor();
+    await lanes.getByRole("button", { name: "Open Other child", exact: true }).waitFor();
+    assert.doesNotMatch(await lanes.textContent(), /state \d|child \d/);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("focus and breadcrumbs distinguish repeated child occurrences and explicit rootless starting points", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await page.getByRole("button", { name: "Load topology document", exact: true }).click();
+    const search = first().getByRole("searchbox");
+    await search.fill("urn:test:shared");
+    const results = first().getByRole("list", { name: "Search results" }).getByRole("button");
+    assert.equal(await results.count(), 3);
+    await results.nth(1).click();
+    const crumbs = first().getByRole("navigation", { name: "Selection breadcrumbs" });
+    assert.match(await crumbs.textContent(), /reference 2 of 2/);
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    const lanes = first().getByRole("group", { name: "Focused journey path" });
+    assert.deepEqual(await lanes.locator("[data-journey-ref]").evaluateAll((elements) => elements.map((element) => element.getAttribute("data-journey-ref"))), ["urn:test:first", "urn:test:shared"]);
+    assert.equal(await lanes.getByText("Recursive journey reference: Repeated child", { exact: true }).count(), 1);
+    assert.equal(await lanes.locator("[aria-expanded]").count(), 0, "focus offers explicit child links instead of tree disclosures");
+    await lanes.getByRole("button", { name: "Open Other child", exact: true }).click();
+    assert.equal(await identity(first()), "urn:test:other");
+    assert.match(await crumbs.textContent(), /Other child/);
+    assert.doesNotMatch(await crumbs.textContent(), /reference \d|state \d|child \d/);
+    await crumbs.getByRole("button", { name: "First root", exact: true }).click();
+    assert.equal(await lanes.locator("[data-journey-ref]").count(), 1);
+    await first().getByRole("button", { name: "Overview", exact: true }).click();
+    assert.equal(await first().locator('[data-journey-ref="urn:test:shared"]').count(), 3);
+    await search.fill("urn:test:cycle-b");
+    const cycles = first().getByRole("list", { name: "Search results" }).getByRole("button");
+    assert.equal(await cycles.count(), 4, "journey and composite-state ID searches are literal substring matches");
+    await cycles.last().click();
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    assert.equal(await first().getByRole("navigation", { name: "Selection breadcrumbs" }).getByRole("listitem").count(), 1);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("touchpoint filtering preserves nested boundaries and matching children stay undimmed", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const filters = first().getByRole("group", { name: "Touchpoint filter" });
+    const smsFilter = filters.getByRole("button", { name: "SMS channel touchpoint", exact: true });
+    await smsFilter.click();
+    assert.equal(await smsFilter.getAttribute("aria-pressed"), "true");
+    assert.match(await filters.textContent(), /1 of 10 journeys match/);
+    assert.equal(await first().locator("[data-journey-ref]").count(), 10);
+    const smsState = first().locator(`[data-state-ref="${prefix}mfa-sms-message-presented"]`);
+    assert.equal(await smsState.locator("[data-filtered]").count(), 0);
+    assert.equal(await smsState.evaluate((element) => {
+      for (let current = element; current; current = current.parentElement) if (Number(getComputedStyle(current).opacity) < 1) return false;
+      return true;
+    }), true, "a filtered ancestor must not dim a matching descendant");
+    const appState = first().locator(`[data-state-ref="${prefix}app-sign-in-required"]`);
+    assert.equal(await appState.locator("[data-filtered]").count(), 1);
+    assert.equal(await second().locator("[data-filtered]").count(), 0);
+    await first().getByRole("searchbox").fill("App auth");
+    await first().getByText("No matches.", { exact: true }).waitFor();
+    await filters.getByRole("button", { name: "App touchpoint", exact: true }).click();
+    assert.match(await filters.textContent(), /2 of 10 journeys match/);
+    assert.equal(await first().getByRole("list", { name: "Search results" }).getByRole("button").count(), 2);
+    await first().getByRole("button", { name: "Reset view", exact: true }).click();
+    assert.equal(await first().locator("[data-filtered]").count(), 0);
+    assert.equal(await first().getByRole("searchbox").inputValue(), "");
+    assert.deepEqual(errors, []);
+  });
+
+  await test("inspector buttons navigate explicit child entries, entry starts and parent exit continuations", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const related = () => inspector(first()).getByRole("navigation", { name: "Related items" });
+    await related().getByRole("button", { name: /^Enter child: Start at login/ }).click();
+    assert.equal(await identity(first()), `${prefix}idp-login-entry`);
+    await related().getByRole("button", { name: /^Starts at: Login/ }).click();
+    assert.equal(await identity(first()), `${prefix}idp-login`);
+    await first().locator(`[data-contract-ref="${prefix}idp-auth-failed"]`).getByRole("button").click();
+    await related().getByRole("button", { name: /^Parent continuation · Continue after failed login/ }).click();
+    assert.equal(await identity(first()), `${prefix}app-login-error`);
+    assert.equal(await first().getByRole("navigation", { name: "Selection breadcrumbs" }).getByRole("listitem").count(), 1);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("hover-derived highlights take precedence and document replacement resets all navigation", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const initial = first().locator(`[data-state-ref="${prefix}app-sign-in-required"]`);
+    const composite = first().locator(`[data-state-ref="${prefix}idp-auth-flow"]`);
+    await stateButton(first(), `${prefix}app-sign-in-required`, "Sign-in required").hover();
+    assert.equal(await composite.locator(":scope > div > div[data-relation]").getAttribute("data-relation"), "outgoing");
+    await stateButton(first(), `${prefix}idp-auth-flow`, "Authenticate with identity provider").hover();
+    assert.equal(await initial.locator("[data-relation]").getAttribute("data-relation"), "incoming");
+    await first().getByRole("searchbox").hover();
+    assert.equal(await initial.locator("[data-relation]").count(), 0);
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    await first().getByRole("group", { name: "Touchpoint filter" }).getByRole("button").first().click();
+    await first().getByRole("searchbox").fill("SMS");
+    await page.getByRole("button", { name: "Replace document with same ID", exact: true }).click();
+    assert.equal(await first().getByRole("button", { name: "Overview", exact: true }).getAttribute("aria-pressed"), "true");
+    assert.equal(await first().getByRole("searchbox").inputValue(), "");
+    assert.equal(await first().locator("[data-filtered]").count(), 0);
+    assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
+    await page.getByRole("button", { name: "Load empty document", exact: true }).click();
+    assert.equal(await first().getByRole("button", { name: "Focus selected scope", exact: true }).isDisabled(), true);
+    await first().getByText("No selected scope.", { exact: true }).waitFor();
+    assert.deepEqual(errors, []);
+  });
+
+  await test("navigation, focused columns and search results fit mobile and shared breakpoint boundaries", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    await first().getByRole("searchbox").fill("sms-verification-journey");
+    await first().getByRole("searchbox").press("Enter");
+    await first().getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    for (const width of [320, 859, 860, 861, 1099, 1100, 1101]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `focus overflow at ${width}`);
+    }
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await first().getByRole("searchbox").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${evidence}/stage7-navigation-${width}.png` });
+      await first().getByRole("group", { name: "Focused journey path" }).locator("[data-journey-ref]").last().scrollIntoViewIfNeeded();
+      await first().getByRole("group", { name: "Focused journey path" }).screenshot({ path: `${evidence}/stage7-focus-${width}.png` });
+    }
+    await first().getByRole("searchbox").fill("SMS");
+    await page.setViewportSize({ width: 320, height: 900 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    await first().getByRole("list", { name: "Search results" }).screenshot({ path: `${evidence}/stage7-search-320.png` });
     assert.deepEqual(errors, []);
   });
 } finally {

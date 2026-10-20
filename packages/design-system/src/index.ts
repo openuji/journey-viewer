@@ -1,4 +1,6 @@
 export { Button } from "./components/Button/Button.js";
+export { SearchField } from "./components/SearchField/SearchField.js";
+export type { SearchFieldProps } from "./components/SearchField/SearchField.js";
 export type {
   ButtonProps,
   ButtonVariant,

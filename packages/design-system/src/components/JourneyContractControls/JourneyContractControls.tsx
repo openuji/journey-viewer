@@ -11,11 +11,12 @@ export interface ContractSelection {
 export interface JourneyContractControlsProps extends JourneyContractsProps {
   readonly selection: ContractSelection | null;
   readonly onSelect: (kind: "entry" | "exit", id: string) => void;
+  readonly filtered?: boolean;
 }
 
-export function JourneyContractControls({ entries, exits, selection, onSelect }: JourneyContractControlsProps) {
+export function JourneyContractControls({ entries, exits, selection, onSelect, filtered = false }: JourneyContractControlsProps) {
   return (
-    <dl className={styles.contracts}>
+    <dl className={styles.contracts} data-filtered={filtered || undefined}>
       <div className={styles.group}>
         <dt><Text variant="caption" tone="subtle">Entries</Text></dt>
         <dd className={styles.items}>

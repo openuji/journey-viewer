@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Heading } from "@journey-viewer/design-system";
 import { JourneyViewer } from "../../dist/index.js";
-import { emptyCompositesDocument, emptyDocument, oidcDocument, topologyDocument } from "../../.storybook/documents.js";
+import { emptyCompositesDocument, emptyDocument, navigationReviewDocument, oidcDocument, topologyDocument } from "../../.storybook/documents.js";
 
 const replacement = Object.freeze({ ...oidcDocument });
 
@@ -16,6 +16,7 @@ export function InteractionExamples() {
         <Button onClick={() => setDocument(emptyDocument)}>Load empty document</Button>
         <Button onClick={() => setDocument(topologyDocument)}>Load topology document</Button>
         <Button onClick={() => setDocument(emptyCompositesDocument)}>Load empty composites</Button>
+        <Button onClick={() => setDocument(navigationReviewDocument)}>Load navigation review</Button>
       </div>
       <div data-testid="interactive-first"><JourneyViewer document={document} level={3} /></div>
       <Heading level={2}>Independent second instance</Heading>

@@ -1,7 +1,22 @@
+@reference "@journey-viewer/design-system/tailwind.css";
 .hierarchy {
   display: grid;
   gap: var(--jv-space-md);
   min-inline-size: 0;
+}
+.focus {
+  display: flex;
+  align-items: start;
+  gap: var(--jv-space-sm);
+  overflow-x: auto;
+  min-inline-size: 0;
+  padding-block-end: var(--jv-space-sm);
+}
+.focus > .journey {
+  flex: 0 0 100%;
+  @variant md {
+    flex-basis: calc(50% - var(--jv-space-sm));
+  }
 }
 .journey,
 .state {

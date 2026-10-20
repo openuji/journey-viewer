@@ -10,6 +10,7 @@ import type {
   InspectorPanelProps,
 } from "../src/index.js";
 import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
+import type { SearchFieldProps } from "../src/index.js";
 
 const button: ButtonProps = { children: "Select", selected: false };
 // @ts-expect-error Component props are immutable snapshots.
@@ -67,3 +68,9 @@ panel.sections[0]!.items[0]!.details.push("Changed");
 // @ts-expect-error Contract controls require their explicit selection callback.
 const uncontrolledContracts: JourneyContractControlsProps = { entries: [], exits: [], selection: null };
 void uncontrolledContracts;
+declare const search: SearchFieldProps;
+// @ts-expect-error Search presentation is controlled and readonly.
+search.value = "other";
+// @ts-expect-error Search keyboard callbacks must be supplied explicitly.
+const uncontrolledSearch: SearchFieldProps = { label: "Search", value: "" };
+void uncontrolledSearch;

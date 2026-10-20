@@ -6,5 +6,5 @@ export type JourneyContractControlsFixture = Readonly<Omit<JourneyContractContro
 export function createJourneyContractControlsFixture(
   overrides: Readonly<Partial<JourneyContractControlsFixture>> = {},
 ): JourneyContractControlsFixture {
-  return { ...createJourneyContractsFixture(), selection: null, ...overrides };
+  return { ...createJourneyContractsFixture(), selection: null, filtered: false, ...overrides };
 }

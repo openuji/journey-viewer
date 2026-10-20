@@ -11,6 +11,7 @@ export interface JourneyHeadProps {
   readonly count?: string;
   readonly touchpoint?: Readonly<Pick<TouchpointDotProps, "label" | "color">>;
   readonly level?: HeadingLevel;
+  readonly filtered?: boolean;
 }
 
 export function JourneyHead({
@@ -18,9 +19,10 @@ export function JourneyHead({
   count,
   touchpoint,
   level = 2,
+  filtered = false,
 }: JourneyHeadProps) {
   return (
-    <header className={styles.head}>
+    <header className={styles.head} data-filtered={filtered || undefined}>
       {touchpoint && <TouchpointDot {...touchpoint} decorative />}
       <div className={styles.title}>
         <Heading level={level} size="sm">

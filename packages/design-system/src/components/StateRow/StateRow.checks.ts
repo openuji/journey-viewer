@@ -1,4 +1,4 @@
-import { boolean, count, object, text } from "../../dev/checks.ts";
+import { boolean, choice, count, object, text } from "../../dev/checks.ts";
 import type { FixtureCheck } from "../../dev/checks.ts";
 
 export const checkStateRowFixture: FixtureCheck = (value) => [
@@ -8,6 +8,7 @@ export const checkStateRowFixture: FixtureCheck = (value) => [
   ...boolean(value, "expanded"),
   ...boolean(value, "selected"),
   ...boolean(value, "filtered"),
+  ...(object(value) && value.relation !== undefined ? choice(value, "relation", ["incoming", "outgoing", "both"]) : []),
   ...count(value, "entryCount"),
   ...count(value, "exitCount"),
   ...(object(value) && value.expanded === true && value.composite === false

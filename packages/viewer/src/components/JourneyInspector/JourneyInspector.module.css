@@ -4,3 +4,16 @@
   padding: var(--jv-space-md);
   min-inline-size: 0;
 }
+.navigation,
+.targets {
+  display: grid;
+  gap: var(--jv-space-xs);
+  min-inline-size: 0;
+}
+.targets {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.targets > li { min-inline-size: 0; }
+.detail { display: block; }

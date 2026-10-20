@@ -1,0 +1,29 @@
+.navigation {
+  display: grid;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.controls,
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-xs);
+  min-inline-size: 0;
+}
+.summary { margin: 0; }
+.detail { display: block; }
+.filters {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.list,
+.crumbs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.list > li,
+.crumbs > li { min-inline-size: 0; }

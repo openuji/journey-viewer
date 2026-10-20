@@ -1,0 +1,179 @@
+{
+  "@context": "https://example.test/ujg",
+  "@id": "urn:test:navigation-review",
+  "@type": "UJGDocument",
+  "nodes": [
+    {
+      "@id": "urn:test:first",
+      "@type": "Journey",
+      "label": "First root",
+      "entryRefs": [
+        "urn:test:entry"
+      ],
+      "defaultEntryRef": "urn:test:entry",
+      "stateRefs": [
+        "urn:test:missing-state",
+        "urn:test:compose",
+        "urn:test:terminal"
+      ],
+      "exitRefs": [
+        "urn:test:exit"
+      ],
+      "transitionRefs": [
+        "urn:test:leave"
+      ]
+    },
+    {
+      "@id": "urn:test:second",
+      "@type": [
+        "Journey"
+      ],
+      "label": "Second root",
+      "entryRefs": [],
+      "stateRefs": [
+        "urn:test:compose-again"
+      ]
+    },
+    {
+      "@id": "urn:test:compose",
+      "@type": [
+        "CompositeState"
+      ],
+      "label": "Several child journeys",
+      "subjourneyRefs": [
+        "urn:test:missing-child",
+        "urn:test:shared",
+        "urn:test:other",
+        "urn:test:shared",
+        "urn:test:missing"
+      ]
+    },
+    {
+      "@id": "urn:test:compose-again",
+      "@type": "CompositeState",
+      "label": "A second call site",
+      "subjourneyRefs": [
+        "urn:test:shared"
+      ]
+    },
+    {
+      "@id": "urn:test:terminal",
+      "@type": "State",
+      "label": "Averylongunbrokenstatelabelthatmustwrapwithoutoverflowingtheavailablemobilewidth"
+    },
+    {
+      "@id": "urn:test:entry",
+      "@type": "JourneyEntry",
+      "label": "Begin first root",
+      "stateRef": "urn:test:compose"
+    },
+    {
+      "@id": "urn:test:exit",
+      "@type": "JourneyExit",
+      "label": "Finish first root"
+    },
+    {
+      "@id": "urn:test:leave",
+      "@type": "Transition",
+      "from": "urn:test:terminal",
+      "to": "urn:test:exit"
+    },
+    {
+      "@id": "urn:test:shared",
+      "@type": "Journey",
+      "label": "Repeated child",
+      "entryRefs": [
+        "urn:test:child-entry"
+      ],
+      "stateRefs": [
+        "urn:test:repeat"
+      ]
+    },
+    {
+      "@id": "urn:test:repeat",
+      "@type": "CompositeState",
+      "label": "Recurse here",
+      "subjourneyRefs": [
+        "urn:test:shared"
+      ]
+    },
+    {
+      "@id": "urn:test:child-entry",
+      "@type": "JourneyEntry",
+      "label": "Begin repeated child",
+      "stateRef": "urn:test:repeat"
+    },
+    {
+      "@id": "urn:test:other",
+      "@type": "Journey",
+      "label": "Other child",
+      "entryRefs": [],
+      "stateRefs": []
+    },
+    {
+      "@id": "urn:test:cycle-a",
+      "@type": "Journey",
+      "label": "Cycle A",
+      "entryRefs": [],
+      "stateRefs": [
+        "urn:test:cycle-a-state"
+      ]
+    },
+    {
+      "@id": "urn:test:cycle-a-state",
+      "@type": "CompositeState",
+      "label": "Call B",
+      "subjourneyRefs": [
+        "urn:test:cycle-b"
+      ]
+    },
+    {
+      "@id": "urn:test:cycle-b",
+      "@type": "Journey",
+      "label": "Cycle B",
+      "entryRefs": [],
+      "stateRefs": [
+        "urn:test:cycle-b-state"
+      ]
+    },
+    {
+      "@id": "urn:test:cycle-b-state",
+      "@type": "CompositeState",
+      "label": "Call A",
+      "subjourneyRefs": [
+        "urn:test:cycle-a"
+      ]
+    },
+    {
+      "@id": "urn:test:unowned",
+      "@type": "CompositeState",
+      "label": "Outside journey membership",
+      "subjourneyRefs": [
+        "urn:test:first"
+      ]
+    },
+    {
+      "@id": "urn:test:web",
+      "@type": "Touchpoint",
+      "label": "Web",
+      "journeyRefs": [
+        "urn:test:first"
+      ]
+    },
+    {
+      "@id": "urn:test:phone",
+      "@type": "Touchpoint",
+      "label": "Web",
+      "journeyRefs": [
+        "urn:test:second"
+      ]
+    },
+    {
+      "@id": "urn:test:index",
+      "@type": "JourneyEntryIndex",
+      "entryRefs": [
+        "urn:test:child-entry"
+      ]
+    }
+  ]
+}

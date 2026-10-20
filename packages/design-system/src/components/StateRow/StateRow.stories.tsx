@@ -21,6 +21,11 @@ export const Notice: Story = {
 export const Filtered: Story = {
   args: createStateRowFixture({ filtered: true }),
 };
+export const Relations: Story = {
+  render: () => <div className="story-stack">{(["incoming", "outgoing", "both"] as const).map((relation) => (
+    <StateRow key={relation} {...createStateRowFixture({ label: relation, relation })} />
+  ))}</div>,
+};
 export const Boundaries: Story = {
   render: () => (
     <div className="story-stack">

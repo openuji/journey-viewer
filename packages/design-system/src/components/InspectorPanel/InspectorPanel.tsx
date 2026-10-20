@@ -4,6 +4,7 @@ import type { HeadingLevel } from "../Heading/Heading.js";
 import { Surface } from "../Surface/Surface.js";
 import { Text } from "../Text/Text.js";
 import styles from "./InspectorPanel.module.css";
+import type { ReactNode } from "react";
 
 export interface InspectorItem {
   readonly id: string;
@@ -24,9 +25,10 @@ export interface InspectorPanelProps {
   readonly touchpoints: readonly string[];
   readonly sections: readonly InspectorSection[];
   readonly level?: HeadingLevel;
+  readonly children?: ReactNode;
 }
 
-export function InspectorPanel({ title, kind, identity, context, touchpoints, sections, level = 2 }: InspectorPanelProps) {
+export function InspectorPanel({ title, kind, identity, context, touchpoints, sections, level = 2, children }: InspectorPanelProps) {
   return (
     <Surface as="aside" aria-label="Selection inspector" className={styles.panel}>
       <header className={styles.header}>
@@ -58,6 +60,7 @@ export function InspectorPanel({ title, kind, identity, context, touchpoints, se
           </ul>
         </div>
       ))}
+      {children}
     </Surface>
   );
 }

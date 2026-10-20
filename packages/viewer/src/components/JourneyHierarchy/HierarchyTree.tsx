@@ -17,9 +17,13 @@ import {
 } from "@journey-viewer/ujg-jsonld";
 import type { UjgCompositeState, UjgState, UjgDocument, UjgJourney } from "@journey-viewer/ujg-jsonld";
 import { getJourneyStarts } from "../../journey-starts.js";
+import { childOccurrence, getOccurrenceTrail } from "../../occurrence.js";
+import type { ViewerOccurrence } from "../../occurrence.js";
 import styles from "./JourneyHierarchy.module.css";
 
 export interface StateContent {
+  readonly occurrence: ViewerOccurrence;
+  readonly stateIndex: number;
   readonly journey: UjgJourney;
   readonly state: UjgState | UjgCompositeState;
   readonly childJourneys: readonly UjgJourney[];
@@ -32,14 +36,18 @@ export interface HierarchyTreeProps {
   readonly document: UjgDocument;
   readonly level?: HeadingLevel;
   readonly renderState: (content: StateContent) => ReactNode;
-  readonly renderContracts: (journey: UjgJourney, contracts: JourneyContractsProps) => ReactNode;
-  readonly renderJourneyAction?: (journey: UjgJourney) => ReactNode;
+  readonly renderContracts: (journey: UjgJourney, contracts: JourneyContractsProps, occurrence: ViewerOccurrence) => ReactNode;
+  readonly renderJourneyAction?: (journey: UjgJourney, occurrence: ViewerOccurrence) => ReactNode;
+  /** Explicit finite branches for focus columns; omitted by static/overview presentations. */
+  readonly occurrences?: readonly ViewerOccurrence[];
+  readonly isJourneyFiltered?: (journey: UjgJourney) => boolean;
 }
 
 type JourneyBranchProps = Readonly<Omit<HierarchyTreeProps, "level"> & {
   journey: UjgJourney;
   ancestors: readonly string[];
   level: HeadingLevel;
+  occurrence: ViewerOccurrence;
 }>;
 
 function JourneyBranch(props: JourneyBranchProps) {
@@ -68,6 +76,7 @@ function JourneyBranch(props: JourneyBranchProps) {
   const transitions = getJourneyTransitions(document, journey);
   const touchpoints = getJourneyTouchpoints(document, ref);
   const head = {
+    filtered: props.isJourneyFiltered?.(journey) ?? false,
     title,
     count: `${states.length} ${states.length === 1 ? "state" : "states"}`,
     level,
@@ -79,7 +88,7 @@ function JourneyBranch(props: JourneyBranchProps) {
   const nextLevel = Math.min(level + 1, 6) as HeadingLevel;
   const content = (
     <>
-      {props.renderJourneyAction?.(journey)}
+      {props.renderJourneyAction?.(journey, props.occurrence)}
       {states.length === 0 && (
         <Text as="p" variant="caption" tone="subtle" className={styles.notice}>
           No states.
@@ -95,6 +104,8 @@ function JourneyBranch(props: JourneyBranchProps) {
             data-state-ref={state["@id"]}
           >
             {props.renderState({
+              occurrence: props.occurrence,
+              stateIndex: index,
               journey,
               state,
               childJourneys: children,
@@ -111,6 +122,7 @@ function JourneyBranch(props: JourneyBranchProps) {
                       journey={child}
                       ancestors={path}
                       level={nextLevel}
+                      occurrence={childOccurrence(props.occurrence, index, childIndex)}
                     />
                   ))}
                   {children.length === 0 && (
@@ -134,7 +146,7 @@ function JourneyBranch(props: JourneyBranchProps) {
           id: exit["@id"],
           label: exit.label ?? exit["@id"],
         })),
-      })}
+      }, props.occurrence)}
     </>
   );
   return (
@@ -155,6 +167,16 @@ function JourneyBranch(props: JourneyBranchProps) {
 export function HierarchyTree(props: HierarchyTreeProps) {
   const { document, level = 2 } = props;
   const { roots, rootless } = getJourneyStarts(document);
+  if (props.occurrences) return (
+    <div className={styles.focus} role="group" aria-label="Focused journey path">
+      {props.occurrences.map((occurrence, index) => {
+        const trail = getOccurrenceTrail(document, occurrence);
+        const journey = trail.at(-1)?.journey;
+        return journey ? <JourneyBranch {...props} key={index} journey={journey} ancestors={[]}
+          occurrence={occurrence} level={level} /> : null;
+      })}
+    </div>
+  );
   return (
     <div className={styles.hierarchy}>
       {(roots.length > 0 || rootless.length > 0) && (
@@ -170,6 +192,7 @@ export function HierarchyTree(props: HierarchyTreeProps) {
           journey={journey}
           ancestors={[]}
           level={level}
+          occurrence={{ startJourneyRef: journey["@id"], steps: [] }}
         />
       ))}
       {rootless.length > 0 && (
@@ -188,6 +211,7 @@ export function HierarchyTree(props: HierarchyTreeProps) {
               journey={journey}
               ancestors={[]}
               level={level}
+              occurrence={{ startJourneyRef: journey["@id"], steps: [] }}
             />
           ))}
         </div>

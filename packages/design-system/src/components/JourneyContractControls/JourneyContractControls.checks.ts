@@ -1,4 +1,4 @@
-import { object } from "../../dev/checks.ts";
+import { boolean, object } from "../../dev/checks.ts";
 import type { FixtureCheck } from "../../dev/checks.ts";
 import { checkJourneyContractsFixture } from "../JourneyContracts/JourneyContracts.checks.ts";
 
@@ -12,6 +12,7 @@ export const checkJourneyContractControlsFixture: FixtureCheck = (value) => {
       .some((item) => object(item) && item.id === selection.id));
   return [
     ...checkJourneyContractsFixture(value),
+    ...(object(value) && value.filtered !== undefined ? boolean(value, "filtered") : []),
     ...(valid ? [] : [{ path: ["selection"], message: "Expected null or a selection naming a listed contract of the same kind." }]),
   ];
 };

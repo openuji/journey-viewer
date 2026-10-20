@@ -1,8 +1,8 @@
 import type { InspectorPanelProps } from "./InspectorPanel.js";
 
 export function createInspectorPanelFixture(
-  overrides: Readonly<Partial<Required<InspectorPanelProps>>> = {},
-): Readonly<Required<InspectorPanelProps>> {
+  overrides: Readonly<Partial<Required<Omit<InspectorPanelProps, "children">>>> = {},
+): Readonly<Required<Omit<InspectorPanelProps, "children">>> {
   return {
     title: "Sign-in required", kind: "state", identity: "urn:example:sign-in", context: "Account access",
     level: 2, touchpoints: ["Web"],

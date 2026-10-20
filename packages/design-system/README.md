@@ -33,6 +33,7 @@ message and decide whether a disclosure control is meaningful.
 | --- | --- |
 | `Button` | Single native button implementation, explicit variants/sizes, focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
 | `IconButton` | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`. |
+| `SearchField` | Labeled native search input, inherited `Text` typography, token-driven field/focus styles and explicit change/submit/clear callbacks. Enter submits and Escape clears through the caller. |
 | `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`sm`, `md`, `lg`). |
 | `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit tones. Native `span`, `p`, or `code`. |
 | `Badge` | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips. |
@@ -149,11 +150,19 @@ and a required `onSelect(kind, id)` callback. It composes `Button` and `Text`;
 static contract lists remain noninteractive. Fixture checks reject selections
 that do not name a listed contract of the same kind.
 
-`InspectorPanel` receives only readonly display strings, touchpoint captions and
+`InspectorPanel` receives readonly display strings, touchpoint captions and
 sections of `{ id, label, details }` items. It composes `Surface`, `Heading`,
-`Text` and `Badge` without UJG queries, selection state, navigation or effects.
+`Text` and `Badge` without UJG queries, selection state or effects. Its optional
+`children` slot always renders caller-supplied content, including explicit
+navigation controls. The panel owns no navigation behavior.
 Both components have colocated fixtures, independent checks and stories.
 These development checks are not runtime React-prop validators.
+
+`StateRow.relation` presents incoming/outgoing/both marks and its `onHover`
+callback reports pointer entry/leave for the caller to interpret. `JourneyHead`,
+`JourneyContractControls` and `StateRow` accept readonly `filtered` presentation.
+Only a row's own content is dimmed; nested children retain their own presentation.
+The design system derives none of these values from graph data.
 
 Package exports are built ESM/declarations, `styles.css` (compiled components and
 production theme variables), `tokens.css` (theme variables only), `tailwind.css`

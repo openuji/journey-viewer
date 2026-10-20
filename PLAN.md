@@ -2,17 +2,20 @@
 
 ## Current checkpoint
 
-- Current stage: **6 — Selection and inspection (complete, uncommitted)**.
-- Next stage: **7 — Navigation controls**. Do not start it in the stage-6 request.
-- Stage-6 deliverable: pure immutable selection/expansion transitions, controlled
-  explorer/inspector composition, an instance-local React snapshot boundary,
-  same-ID document replacement reset, design-system presentation and Storybook.
-- Changed modules/interfaces: viewer `ViewerSelection`/`ViewerInteraction`,
-  transition functions, `JourneyExplorer`, `JourneyInspector`, `JourneyViewer`,
-  a shared pure hierarchy traversal; design-system `JourneyContractControls` and
-  `InspectorPanel` and the persistent `StateRow.notice` content slot;
-  fixtures/checks/stories/consumer/browser tests, build tooling,
-  README files and this checkpoint. Static `JourneyHierarchy` retains its API.
+- Current stage: **7 — Navigation controls (complete, uncommitted)**.
+- Next stage: **8 — Screens and presentation**. Do not start it in the stage-7 request.
+- Stage-7 deliverable: overview/focus columns with explicit occurrence paths,
+  bounded search, touchpoint identity filtering, graph/entry/exit navigation,
+  derived breadcrumbs, summaries and hover/selection highlights.
+- Changed modules/interfaces: viewer `ViewerOccurrence`, `ViewerNavigation`,
+  `ViewerSnapshot`, navigation queries/transitions and `JourneyNavigation`;
+  explicit `pickSearchResult` / `JourneyNavigation.onSearchPick` actions;
+  `JourneyExplorer` occurrence callbacks, optional inspector navigation,
+  `JourneyViewer` snapshot composition and private hierarchy traversal;
+  design-system `SearchField`, row relations/hover, local filtered presentation
+  and an inspector content slot; colocated fixtures/checks/stories, readonly,
+  unit/browser tests, README files and this checkpoint.
+  Static `JourneyHierarchy` and stage-6 transition contracts retain their APIs.
   Existing data/lint packages, app and captured example stay unchanged.
 - The viewer owns its Storybook and UJG examples. It may reuse the design system's
   internal Storybook configuration/catalog in development. The design-system
@@ -707,6 +710,149 @@ static-mode and local traversal-set implementation details and verification coun
   `pnpm build` and `git diff --check` passed. No files are staged or committed;
   stage 7 remains unstarted.
 
+## Stage-7 evidence
+
+- Started from a clean working tree at user-created commit
+  `7337595ebc2271e9330f06bb4203584738022d45`. Implemented navigation only;
+  screenshots, presentation mappings, extension descriptors, application wiring
+  and deployment remain unstarted. No dependencies or packages were added.
+- Added readonly `ViewerOccurrence` paths: a root/rootless starting journey and
+  ordered state/child query-result indices. Repeated child references at positions
+  1 and 3 retain distinct contexts, as do shared children under different roots.
+  `getOccurrenceTrail` returns original journey nodes. Traversal and resolution
+  terminate at current-path recursion; invalid, unresolved and recursive-terminal
+  navigation targets are no-ops. No parent map or alternate graph is retained.
+- Added `ViewerSnapshot` / `ViewerNavigation` and pure creation, navigation,
+  focus/overview, search-query, touchpoint-toggle and hover transitions. The
+  original selection/expansion contracts remain unchanged. `JourneyViewer`
+  remains the only production React state boundary and resets the entire
+  snapshot on document-object replacement, including same-ID replacements.
+  Useful navigation/hover no-ops retain identity; frozen inputs are unchanged.
+- `JourneyNavigation`, explorer and inspector remain controlled. Explorer
+  selection callbacks now receive explicit occurrence context as a second
+  argument; single-argument callers remain compatible. Optional inspector
+  navigation couples occurrence context with its callback. Focus shows columns
+  along an explicit path, offers every child reference separately and retains
+  native horizontal overflow. Breadcrumbs distinguish composite and child
+  positions. Overview reuses the existing tree expansion snapshot.
+- Search matches labels, full IDs and tags for journeys, states, entries and
+  exits, case-insensitively, in traversal order. Blank queries return no results;
+  results stop at 18 and preserve distinct occurrences. Enter picks the first
+  result; Escape clears. Search picks clear the query and update selection/context.
+  Screenshot availability remains scoped to stage 8.
+- Touchpoint filters retain individual IDs, including equal labels and multiple
+  assignments. Selected IDs use OR; no selection matches every journey. Filtering
+  marks each scope's own header/rows/contracts and constrains search, without
+  removing boundaries or dimming matching descendants through parent opacity.
+  Summaries, breadcrumbs, search results and local incoming/outgoing row marks
+  are computed per render. Hover overrides selection and pointer leave restores
+  selection-derived marks. No derived values are synchronized or cached.
+- Inspector navigation follows explicit local endpoints, entry start states,
+  child journeys, `toEntryRef` / `fromExitRef`, every parent call site and every
+  continuation handler. Unresolved, wrongly owned and unrelated mappings yield
+  no target. Repeated child boundary targets retain their occurrence indices.
+- Added design-system `SearchField` with colocated fixtures/checks/stories;
+  `StateRow.relation` / `onHover`, local filtered presentation on headers/contracts,
+  and the always-rendered `InspectorPanel.children` slot. Controls reuse `Button`,
+  typography reuses `Text`/`Heading`, and styles consume existing DTCG tokens.
+  No graph queries, viewer dependencies or local state enter the design system.
+- `pnpm test`: **112 tests passed** (45 design-system, 34 viewer, 17 lint,
+  13 query, 3 baseline). Readonly declaration checks and **15 independent fixture
+  checks** pass. New frozen-input/SSR regressions cover repeated call sites,
+  rootless cycles, finite occurrence paths, invalid targets, focus/overview,
+  search limits, multiple/equal-label touchpoints, summary type overlap,
+  hover precedence, explicit entry/exit boundaries and all parent callers.
+- `pnpm build`, `pnpm build:storybook` and `pnpm build:storybook:viewer` passed.
+  Viewer Storybook builds/loads **63 stories: 42 inherited + 21 viewer**; the
+  standalone design-system Storybook independently builds/loads **42 stories**.
+  Package boundaries and built ESM/declarations/CSS consumer checks pass, with
+  development examples/stories/fixtures/checks excluded from production output.
+- Final built-Storybook `pnpm --filter @journey-viewer/viewer test:browser`:
+  **17 Chromium checks passed**, including all 11 stage-6 regressions. New checks
+  cover native search keyboard/focus, repeated/rootless focus/breadcrumbs,
+  touchpoint OR filtering and descendant opacity, explicit inspector navigation,
+  hover precedence, independent instances and full navigation replacement/reset.
+  Overview and focus wrap without page overflow at **320, 859, 860, 861, 1099,
+  1100 and 1101px**; search results also pass at **320px**.
+  `pnpm test:design-system:browser`: **8 checks passed**.
+  Browser runners used approved local verification servers and closed their
+  browsers/servers on completion.
+- Visually inspected ignored screenshots under `packages/viewer/.test-output/`:
+  `stage7-navigation-320.png`, `stage7-focus-320.png`, `stage7-focus-1280.png` and
+  `stage7-search-320.png`. Static OIDC rendering remains **10 journeys / 47 states /
+  20 entries / 24 exits**, with the **10/47/120/37** source baseline unchanged.
+  The app bundle remains `index-Dzl6dVgS.js`. Data/lint packages, app sources,
+  captured OIDC data, dependency manifests and lockfile remain unchanged. The
+  original source repository remains clean. `git diff --check` passes; no files
+  were staged or committed. Stage 7 has no unresolved acceptance failures.
+
+### Stage-7 review corrections
+
+- Continued the existing uncommitted Stage-7 work in response to review. Applied
+  items **1 and 4–7**, documented the policies/costs in **2, 8 and 9**, and kept
+  **3 and 10** as explicit nonblocking design follow-ups below. No later stage,
+  dependency, cache or additional state owner was introduced.
+- Ordinary `navigateViewer` calls now preserve the query. Added the explicit pure
+  `pickSearchResult` transition and required `JourneyNavigation.onSearchPick`
+  callback for result clicks and Enter. Search picks clear the query only after
+  validating selection and occurrence; invalid picks remain no-ops. Row,
+  breadcrumb, inspector and scope-focus navigation preserve search text. Valid
+  unchanged operations retain snapshot identity, including search picks after
+  their query is already clear. Controlled callers must wire the separate actions.
+- Occurrence identities still use typed query indices internally. Breadcrumbs,
+  search contexts and focus headers now use journey/composite labels. Only
+  repeated sibling references get a qualifier such as “reference 2 of 2”; these
+  are counts of the same identity, not query or source positions. Distinct sibling
+  identities with equal labels include their IDs. Unambiguous child links say
+  “Open Other child” instead of “Open child 2”. A fixture with leading unresolved
+  state/child references verifies stable, readable disambiguation.
+- Touchpoint buttons with equal labels now include their full IDs in visible
+  text and accessible names, with separate pressed state and unchanged OR
+  semantics. Renamed the reset action to **Reset view**. At the search limit,
+  status says **Showing first 18 matches** and asks the user to refine the query.
+  Search remains per occurrence; repeated hits can still occupy the result cap.
+  The message does not claim there are more matches without checking for them.
+- Kept logical-ID selection highlights across reused occurrences; documented
+  that breadcrumbs and inspector navigation represent the last chosen call site.
+  A browser regression checks all three reused state rows remain pressed while
+  breadcrumbs identify the second reference. Documented that snapshot selection
+  must use `navigateViewer` / `pickSearchResult`, rather than compose the raw
+  interaction-only `selectNode` result with stale occurrence context. Extended
+  the deferred performance note to root hover renders, relation scans and
+  unbounded no-match search traversal on shared diamonds.
+- `pnpm test`: **115 tests passed** (45 design-system, 37 viewer, 17 lint,
+  13 query, 3 baseline), including readonly compile checks and the existing
+  **15 independent fixture checks**. Frozen-input/SSR regressions now cover
+  query preservation versus search picks, invalid/same-selection picks,
+  ambiguous roots/states/children, unresolved references, accessible touchpoint
+  names and the search-cap message.
+- `pnpm build` and `pnpm build:storybook:viewer` passed. The compiled consumer
+  still uses built ESM/declarations/CSS. Viewer Storybook builds and loads
+  **65 stories: 42 inherited + 23 viewer**, including new equal-label touchpoint
+  and capped-result stories. No design-system source changed in these corrections;
+  its independent Stage-7 Storybook/browser evidence above remains applicable.
+- Re-ran `pnpm --filter @journey-viewer/viewer test:browser` against the final
+  built Storybook: **19 Chromium checks passed**. This includes all 17 prior
+  checks plus direct-navigation/search-pick separation and a combined review
+  case covering equal accessible names, independent touchpoint toggles, search
+  limits, unresolved references, readable focus labels and logical-ID highlights.
+  Existing responsive checks remain green; the new review cases also fit at
+  **320px and 1280px**. Browser/server cleanup remains in the runner.
+- Visually inspected ignored `stage7-review-filters-320.png` and
+  `stage7-review-contexts-320.png` under `packages/viewer/.test-output/` (desktop
+  variants were also captured). Data/lint packages, application source, captured
+  OIDC data, package manifests and lockfile remain unchanged; the application
+  bundle remains `index-Dzl6dVgS.js`. `git diff --check` passes. All Stage-7 changes
+  remain unstaged and uncommitted; Stage 8 is unstarted.
+
+- Guarded `referenceLabel`'s indexed lookup: a missing node now returns an empty
+  string instead of relying on a non-null assertion. An isolated check of the
+  actual helper verified frozen empty lists, negative/out-of-range/fractional,
+  NaN and infinite indices, plus unchanged valid/repeated-reference wording.
+  `pnpm --filter @journey-viewer/viewer test` passed **37 tests**, package build
+  and TypeScript/readonly checks; `git diff --check` passes. This small Stage-7
+  correction remains uncommitted; Stage 8 is unstarted.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -719,10 +865,22 @@ static-mode and local traversal-set implementation details and verification coun
   profiling and per-call lookup improvements until scoped; local temporary
   collections can preserve purity, but add no retained cache, hierarchy model or
   arbitrary truncation in these corrections.
+  Hover also replaces the root snapshot, re-rendering the hierarchy and repeating
+  search, summary, path and per-row relation queries/linear selection scans.
+  A no-match search walks every finite occurrence and can grow exponentially on
+  shared diamonds despite the 18-result cap. Per-render local lookups are a
+  possible optimization; moving hover to another state owner needs an explicit
+  change to the agreed React state boundary.
 - Selection and expansion intentionally follow logical IDs across all reused
-  occurrences within one instance. Stage 7 must represent occurrence context
-  explicitly for focus and breadcrumbs rather than assign an arbitrary parent;
-  stage 6 adds no per-call-site state.
+  occurrences within one instance. Stage 7 now records explicit occurrence
+  context for focus and breadcrumbs; it assigns no arbitrary parent and adds no
+  per-call-site expansion state. Occurrence paths belong to one document object
+  and must be reset on replacement by externally controlled consumers.
+  All occurrences of the selected logical identity remain highlighted, while
+  breadcrumbs/inspector navigation use the last chosen occurrence. This is now
+  explicit in the README. Snapshot consumers must use `navigateViewer` or
+  `pickSearchResult` for selection; the interaction-only `selectNode` API does not
+  update occurrence context and must not be spread into a snapshot on its own.
 - Collapse intentionally preserves selection even when its row becomes hidden;
   the inspector continues to show that item, without automatic reveal or
   clearing. A new selection reveals its explicit ancestor paths. This behavior is
@@ -730,12 +888,21 @@ static-mode and local traversal-set implementation details and verification coun
 - `JourneyViewer.document` must stay referentially stable between actual input
   replacements. Stage 10's local-file loading must retain each parsed object
   until the next load rather than reconstruct it during parent renders.
-- Stage 7 must keep individual touchpoint identities when adding filtering. The
-  current joined caption with one dot is only a static-stage presentation, not a
-  primary-touchpoint selection or identity contract.
-- All stages after 6 remain unstarted. Navigation, screenshots, extensions,
-  routing, reporting UI, and deployment
-  are not implemented. Syntax
+- Touchpoint filtering now retains individual source identities. Joined captions
+  remain presentation text, without a primary-touchpoint identity contract.
+- Two nonblocking review proposals remain separate design work: introduce a
+  distinct focus-row presentation rather than adapting `StateRow`'s disclosure
+  contract, and review which current helper exports (notably `getRowRelation`
+  and `occurrenceLabel`) should remain public before stage-9 extensions or app
+  wiring. Current focus presentation and existing exports are retained in the
+  Stage-7 UX corrections; no later stage is started by these proposals.
+- Focus columns use native horizontal overflow; programmatic reveal/scrolling
+  and global keyboard shortcuts stay at a browser/application boundary. Stage 10
+  may compose those effects explicitly without moving them into pure queries or
+  controlled renderer components. Search screenshot-availability markers await
+  stage 8's explicit mappings.
+- All stages after 7 remain unstarted. Screenshots, extensions, routing,
+  reporting UI and deployment are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and
   target existence/classes. IRI grammar, context meaning, ownership, transition
