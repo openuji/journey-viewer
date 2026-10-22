@@ -18,6 +18,7 @@ import type { ScreenshotMap } from "../../screens.js";
 import type { TouchpointPresentation } from "../../presentation.js";
 import { JourneyLightbox } from "../JourneyLightbox/JourneyLightbox.js";
 import styles from "./JourneyViewer.module.css";
+import type { ViewerExtensions } from "../../extensions.js";
 
 export interface JourneyViewerProps {
   /** Keep this reference stable between actual replacements; every new object resets interaction. */
@@ -26,6 +27,8 @@ export interface JourneyViewerProps {
   /** Independent replaceable map; updates never reset document interaction. */
   readonly screenshots?: ScreenshotMap;
   readonly touchpoints?: TouchpointPresentation;
+  /** Explicit readonly composition; replacing descriptors preserves the current snapshot. */
+  readonly extensions?: ViewerExtensions;
 }
 
 interface DocumentInteraction {
@@ -34,7 +37,7 @@ interface DocumentInteraction {
 }
 
 /** The sole graph-interaction state boundary; every update replaces an immutable snapshot. */
-export function JourneyViewer({ document, level = 2, screenshots = {}, touchpoints = {} }: JourneyViewerProps) {
+export function JourneyViewer({ document, level = 2, screenshots = {}, touchpoints = {}, extensions }: JourneyViewerProps) {
   const [session, setSession] = useState<DocumentInteraction>(() => ({ document, snapshot: createViewerSnapshot(document) }));
   if (session.document !== document) {
     // Reset by input object identity, including replacements with the same @id.
@@ -83,12 +86,14 @@ export function JourneyViewer({ document, level = 2, screenshots = {}, touchpoin
         <JourneyExplorer
           document={document} interaction={session.snapshot.interaction} navigation={session.snapshot.navigation} level={level}
           media={media} touchpoints={touchpoints}
+          {...(extensions ? { extensions } : {})}
           onSelect={(selection, occurrence) => navigate({ selection, occurrence })}
           onToggleChildren={(journeyRef, stateRef) => updateInteraction((current) => toggleChildJourneys(document, current, journeyRef, stateRef))}
           onHover={(selection, occurrence) => update((current) => hoverNode(document, current, selection, occurrence))}
           onFocusJourney={focus}
         />
         <JourneyInspector document={document} selection={session.snapshot.interaction.selection} level={level}
+          {...(extensions ? { extensions } : {})}
           touchpoints={touchpoints} media={{ ...media, target: preview }}
           navigation={{ occurrence: session.snapshot.navigation.occurrence, onNavigate: navigate }} />
       </div>

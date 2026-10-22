@@ -2,6 +2,7 @@ import type { JourneyHierarchyProps, JourneyExplorerProps, ViewerInteraction, Vi
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import type { JourneyNavigationProps, JourneyInspectorProps, ViewerSnapshot, ViewerOccurrence } from "../dist/index.js";
 import type { ScreenshotMap, TouchpointPresentation, JourneyScreenControls } from "../dist/index.js";
+import type { ViewerExtensions, ViewerStateRenderProps, ViewerInspectorPanelProps } from "../dist/index.js";
 
 declare const document: UjgDocument;
 const props: JourneyHierarchyProps = { document, level: 2 };
@@ -57,3 +58,25 @@ if (snapshot.lightbox) {
   // @ts-expect-error Resolved paths do not belong in interaction state.
   snapshot.lightbox.source = "./cached.png";
 }
+declare const extensions: ViewerExtensions;
+// @ts-expect-error Descriptor arrays are readonly.
+extensions.annotations?.push({});
+// @ts-expect-error Descriptor fields are readonly.
+extensions.inspectorPanels![0]!.title = "Changed";
+// @ts-expect-error Configuration is a readonly input.
+extensions.stateOverrides = [];
+// @ts-expect-error No runtime registration contract exists.
+extensions.register({});
+declare const stateRender: ViewerStateRenderProps;
+// @ts-expect-error Rendering props remain owned by the design system and readonly.
+stateRender.row.onSelect = () => {};
+// @ts-expect-error Original canonical state nodes stay readonly.
+stateRender.context.node.label = "Changed";
+// @ts-expect-error Call-site context cannot be patched in place.
+stateRender.context.occurrence.steps.push({ stateIndex: 0, childIndex: 0 });
+declare const panelProps: ViewerInspectorPanelProps;
+// @ts-expect-error Source extension payloads remain deeply readonly JSON.
+panelProps.node.extensions!["urn:custom"]!["note"] = "Changed";
+// @ts-expect-error Static hierarchy keeps its separate, unextended contract.
+const extendedStatic: JourneyHierarchyProps = { document, extensions };
+void extendedStatic;

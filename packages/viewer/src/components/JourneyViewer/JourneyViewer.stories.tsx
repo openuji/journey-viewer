@@ -5,6 +5,7 @@ import { JourneyViewer } from "./JourneyViewer.js";
 import { emptyCompositesDocument, emptyDocument, oidcDocument, screensDocument, topologyDocument } from "../../../.storybook/documents.js";
 import { oidcScreenshots, oidcTouchpoints, missingScreenshots } from "../../../.storybook/screenshots.js";
 import { ScreenshotInputs } from "../../../.storybook/ScreenshotInputs.js";
+import { exampleExtensions } from "../../../.storybook/extensions.js";
 
 const meta = {
   title: "Viewer/JourneyViewer",
@@ -44,3 +45,12 @@ export const SeveralSurfaces: Story = { args: { document: screensDocument, scree
   "opaque:11": oidcScreenshots["urn:ujg:solid-oidc:app-sign-in-required-surface"]!,
   "opaque:15": oidcScreenshots["urn:ujg:solid-oidc:mfa-sms-message-surface"]!,
 } } };
+export const BuildTimeExtensions: Story = { args: { document: topologyDocument, extensions: exampleExtensions } };
+function ExtensionInputs() {
+  const [enabled, setEnabled] = useState(true);
+  return <div className="story-stack">
+    <Button aria-pressed={enabled} onClick={() => setEnabled((current) => !current)}>Toggle example extensions</Button>
+    <JourneyViewer document={topologyDocument} {...(enabled ? { extensions: exampleExtensions } : {})} />
+  </div>;
+}
+export const RemovableExtensions: Story = { render: () => <ExtensionInputs /> };

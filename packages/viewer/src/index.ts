@@ -27,3 +27,7 @@ export { JourneyScreens } from "./components/JourneyScreens/JourneyScreens.js";
 export type { JourneyScreensProps, JourneyScreenControls } from "./components/JourneyScreens/JourneyScreens.js";
 export { JourneyLightbox } from "./components/JourneyLightbox/JourneyLightbox.js";
 export type { JourneyLightboxProps } from "./components/JourneyLightbox/JourneyLightbox.js";
+export type {
+  ViewerExtensions, ViewerNodeContext, ViewerInspectorPanel, ViewerInspectorPanelProps,
+  ViewerAnnotation, ViewerStateContext, ViewerStateOverride, ViewerStateRenderProps,
+} from "./extensions.js";

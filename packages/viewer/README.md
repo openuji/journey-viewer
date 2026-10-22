@@ -133,7 +133,7 @@ design system's readonly `InspectorPanel`; contract selection uses the separate
 The informational inspector remains available through its original props. Supply
 the complete optional `navigation: { occurrence, onNavigate }` contract to add
 graph-navigation controls. Optional screenshot controls are described below;
-extension descriptors remain in stage 9.
+explicit extension descriptors are described below.
 
 ## Navigation
 
@@ -339,19 +339,97 @@ Only `browser/BrowserScreenImage` owns per-URL image load status, and only
 handling. They receive no UJG document or viewer snapshot. Business transitions
 stay pure; no global listeners, body locks, graph refs or shared state are added.
 
-Two design follow-ups remain separate from these Stage-7 corrections. Focus
-currently reuses the selectable row without a disclosure and offers explicit
-child links; a distinct focus-row presentation should be considered before
-extending its semantics. The package also still exports presentation helpers such
-as `getRowRelation` and `occurrenceLabel`. Their public/private status needs an
-API review before stage-9 extensions or application wiring; no existing exports
-are removed in this correction.
-That review also needs to cover the five screen functions, controlled screen
-components and snapshot construction. Stage 8 made `ViewerSnapshot.lightbox`
-and `ViewerNavigation.hoverOccurrence` required; callers constructing snapshots
-by hand must include them. Prefer `createViewerSnapshot(document)` for defaults.
-The optional fourth `hoverNode` argument supplies call-site context and defaults
-to null. This correction adds no further public fields, arguments or exports.
+The Stage-9 API review retains `getRowRelation` for custom controlled row
+presentations and `occurrenceLabel` for readable call-site captions. The five
+screen functions and controlled screen components remain public for hosts that
+own their snapshot/media controls. No existing exports or arguments are removed.
+`ViewerSnapshot.lightbox` and `ViewerNavigation.hoverOccurrence` remain required;
+prefer `createViewerSnapshot(document)` over hand-built snapshots to obtain all
+defaults. The optional fourth `hoverNode` argument supplies call-site context and
+defaults to null. Focus continues to reuse `StateRow` without disclosure and with
+explicit child links; a distinct built-in focus row remains separate design work.
+
+## Build-time extensions
+
+Pass a readonly `ViewerExtensions` object through `JourneyViewer.extensions`.
+Descriptors are imported functions/components in the caller's build. Matching
+reads the current original document nodes; no registration, discovery, setup/
+dispose lifecycle, parser selection or shared runtime state is involved.
+
+```tsx
+import { Badge, StateRow, Text } from "@journey-viewer/design-system";
+import { JourneyViewer } from "@journey-viewer/viewer";
+import type {
+  ViewerExtensions, ViewerInspectorPanelProps, ViewerStateRenderProps,
+} from "@journey-viewer/viewer";
+
+function SourceNote({ node }: ViewerInspectorPanelProps) {
+  return <Text as="p">Source identity: {node["@id"]}</Text>;
+}
+function ReviewedRow({ row }: ViewerStateRenderProps) {
+  return <StateRow {...row} description="Review this step" />;
+}
+const extensions = {
+  inspectorPanels: [{
+    id: "source-note", title: "Source note",
+    matches: () => true, Component: SourceNote,
+  }],
+  annotations: [{
+    id: "review", matches: ({ selection }) => selection.kind === "state",
+    Component: () => <Badge>Needs review</Badge>,
+  }],
+  stateOverrides: [{
+    id: "reviewed-row", matches: ({ node }) => node.tags?.includes("review") ?? false,
+    Component: ReviewedRow,
+  }],
+} as const satisfies ViewerExtensions;
+
+<JourneyViewer document={document} extensions={extensions} />
+```
+
+All matching inspector panels append in array order after built-in sections and
+navigation. The viewer owns each panel's title and semantic heading; the component
+receives the next heading `level`, capped at 6. All matching annotations render in
+array order for journeys/states in the explorer and for the selected journey,
+state, entry or exit in the inspector. They are separate content beside controls,
+so custom annotation controls do not become nested buttons. Inspector annotations
+appear after the built-in sections and before “Navigate graph”. Annotation lists
+keep native list semantics without a repeated accessible label.
+
+Descriptor IDs must be unique within each supplied array; they serve only as
+React keys. Uniqueness is the caller's responsibility and is not checked by the
+viewer. Duplicate IDs are unsupported input with undefined rendering behavior.
+
+`ViewerNodeContext` contains the original `document`, `journey` and `node`, the
+readonly `selection` identity, and an explicit `occurrence`. Repeated journeys
+receive each finite call-site occurrence independently. An informational inspector
+without navigation receives `occurrence: null`; invalid or absent selections
+evaluate no inspector descriptors. Panel props additionally include an optional
+`onNavigate` only when the controlled inspector supplies it. Hover previews do
+not change the inspector's selected-node extension context.
+
+The first matching `stateOverrides` descriptor wins; unmatched rows use the
+ordinary `StateRow`. `ViewerStateRenderProps` contains the original state context
+and the complete design-system `row` contract: selection/filter/relation marks,
+counts, selection/hover/disclosure callbacks, screenshot actions, focus/empty-child
+notices and nested content. Compose `<StateRow {...row} />` to preserve these
+behaviors. A replacement that omits controls or children takes responsibility for
+their presentation and accessibility; returning null deliberately hides that row's
+content. It does not alter canonical membership, queries or selection state.
+Annotations remain independent of the row override. Components follow normal
+React composition; predicates and rendering must leave caller inputs unchanged.
+Errors propagate to the host's error boundary.
+
+Replacing/removing `extensions` recomputes presentation and preserves the viewer
+snapshot, including selection, expansion, focus, query, filters, hover and lightbox.
+Removing descriptors restores built-in content. Only replacing `document` resets
+interaction. For externally controlled hosts, `JourneyExplorer.extensions` takes
+annotations/state overrides and `JourneyInspector.extensions` takes panels/
+annotations. `JourneyHierarchy` keeps its separate static contract.
+
+File reading, native `JSON.parse`, rule policy and choosing the imported viewer
+component remain explicit caller operations. Stage 10 wires these into the app;
+descriptors introduce no parser/view resolver or extra package dependency.
 
 From the workspace root:
 
@@ -379,6 +457,9 @@ references to check that UI wording does not expose query-result positions.
 Screen stories include all 37 OIDC assets, several opaque surface IDs, a missing
 file and independent map/path replacement. The live-input story and compiled
 consumer have caller-owned replace/remove/clear/restore controls.
+Extension stories and the compiled consumer demonstrate an additive source panel,
+boundary annotation and state-row override, with caller-owned replace/remove
+controls alongside an independent default viewer.
 
 The compiled-consumer iframe reads built ESM/declarations/CSS without Tailwind
 processing or source aliases. `tests/consumer` is a build-only smoke fixture,
@@ -395,6 +476,7 @@ consumer, then loads the full inherited catalog, both iframes and viewer stories
 It checks inherited light/dark/alternate theme globals, source-story wrapping,
 native keyboard selection/disclosure, instance independence and document reset,
 all 37 PNG decodes, live map changes, image failure/recovery, modal focus/keys,
+extension matching/removal, preserved call-site state and custom-row keyboard controls,
 and closes its temporary server/browser. Screenshots remain in ignored `.test-output`.
 Install Chromium once with
 `pnpm --filter @journey-viewer/viewer exec playwright install chromium`, or set
@@ -402,5 +484,4 @@ Install Chromium once with
 
 Production exports contain only the renderer and compiled layout CSS. Fixtures,
 Storybook, consumer fixtures, tests, example assets and tooling stay outside `dist`.
-Extensions, app composition and deployment retain their later stage
-boundaries in the root plan.
+App composition and deployment retain their later stage boundaries in the root plan.

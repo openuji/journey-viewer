@@ -2,23 +2,20 @@
 
 ## Current checkpoint
 
-- Current stage: **8 — Screens and presentation (complete, uncommitted)**.
-- Next stage: **9 — Build-time extensions**. Do not start it in the stage-8 request.
-- Stage-8 deliverable: standalone exact-surface-ID screenshot JSON, all 37 copied
-  OIDC assets, selection/hover previews, native keyboard lightbox, live mapping
-  replacement and separate touchpoint short labels/token colors. Mapping updates
-  preserve the loaded graph object and all interaction state.
-- Changed modules/interfaces: viewer `ScreenshotMap`, screen queries/transitions,
-  `ViewerSnapshot.lightbox`, `ViewerNavigation.hoverOccurrence`, optional media
-  and presentation props, `JourneyScreens`, `JourneyLightbox`, and named image/
-  modal browser adapters; design-system `ScreenImage`, `ScreenPreview`,
-  `ScreenLightbox`, row/inspector content slots and multi-touchpoint headers;
-  DTCG category/scrim/screen-size tokens; explicit example inputs, development
-  stories, readonly/unit/browser checks and documentation.
-  Static `JourneyHierarchy` and existing stage-6 transition APIs remain intact.
-  Data/lint packages, application source, canonical UJG bytes, `baseline.json`,
-  dependency manifests and lockfile remain unchanged.
-  `BASELINE.md` prose was updated to record the completed asset copy.
+- Current stage: **9 — Build-time extensions (complete, uncommitted)**.
+- Next stage: **10 — Standalone application**. Do not start it in the stage-9 request.
+- Stage-9 deliverable: readonly inspector-panel, annotation and state-rendering
+  descriptors passed through explicit props. Matching uses original canonical
+  nodes and call-site context. Replacement/removal preserves viewer interaction;
+  removal restores built-ins. No registration, lifecycle or shared runtime state.
+- Changed modules/interfaces: viewer extension types, optional `extensions` on
+  `JourneyViewer`, controlled explorer/inspector extension props, a private
+  annotation outlet, development examples/stories, compiled consumer, readonly/
+  unit/browser checks and documentation. The public API review retains current
+  navigation/screen helpers and snapshot construction contracts.
+  Static `JourneyHierarchy`, transitions, snapshots and browser adapters remain
+  intact. Design-system/data/lint packages, application source, canonical UJG,
+  captured baselines/assets, dependency manifests and lockfile remain unchanged.
 - The viewer owns its Storybook and UJG examples. It may reuse the design system's
   internal Storybook configuration/catalog in development. The design-system
   package retains its independent Storybook and imports no viewer/UJG code.
@@ -87,6 +84,45 @@ packages or changing the existing site.
 | 9. Build-time extensions | Readonly descriptors for inspector panels, annotations, and rendering overrides; parser/view selection stays explicit in the app. | Small custom panel and annotation work without changing built-ins; removal restores defaults; no registration, lifecycle, or shared runtime state. |
 | 10. Standalone application | Journey Viewer brand, landing page, catalog, routes, local-file loading, finding presentation; compose reading/parsing/checking/rendering explicitly. | OIDC and local files open; syntax failures/findings displayed separately; blocking policy only in app; no upload/persistence. Routes: `/`, `/examples/solid-oidc`, `/viewer`. |
 | 11. Distribution and Cloudflare | Finish independent ESM/declaration/CSS exports and app-local Cloudflare config; separate package/app builds, Storybook, and deploy commands. | External-consumer smoke check; Cloudflare dry run and deep-link refresh; no development fixtures/Storybook in deployment; no package publication. |
+
+## Stage-9 extension contract
+
+- `ViewerExtensions` contains readonly `inspectorPanels`, `annotations` and
+  `stateOverrides` arrays of explicit predicate/component descriptors. All
+  matching panels/annotations render in supplied order; the first matching state
+  override wins. Unmatched rows use the default. A matching component returning
+  null intentionally suppresses its content. Descriptor IDs are caller-owned
+  React keys, unique within each array, with no dispatch or registration meaning.
+  Callers ensure uniqueness; the viewer does not check it. Duplicate IDs are
+  unsupported input with undefined rendering behavior.
+- Context references original document/journey/node objects, selection identity
+  and the explicit occurrence. Informational inspectors without navigation get
+  null occurrence; invalid/empty selections evaluate no inspector descriptors.
+  Panels append after built-in content and get bounded heading levels plus the
+  caller's navigation callback when supplied. Annotations appear beside journey/
+  state controls and for every valid inspector selection kind. Inspector
+  annotations follow the built-in sections and precede “Navigate graph”. Native
+  annotation lists have no repeated accessible label.
+- State overrides receive the design-system's complete readonly `StateRowProps`:
+  controls/callbacks, marks, screenshot actions, focus/empty notices and children.
+  Custom components can compose `StateRow` directly. Replacing those semantics
+  is the caller's presentation/accessibility responsibility. The viewer still
+  owns graph queries and interaction; no mirrored model, cache or state is added.
+- `JourneyViewer.extensions` composes both outlets. Controlled explorer accepts
+  annotations/state overrides; controlled inspector accepts panels/annotations.
+  The static hierarchy keeps its existing distinct contract. Descriptors are
+  not retained in snapshots, so replacement/removal changes only presentation.
+  Predicate/render errors propagate to the host's error boundary.
+- The API review retains `getRowRelation` for custom controlled rows and
+  `occurrenceLabel` for human-readable call-site captions. The five screen
+  functions and controlled screen components remain supported composition APIs.
+  `ViewerSnapshot.lightbox` / `ViewerNavigation.hoverOccurrence` stay required;
+  `createViewerSnapshot` supplies defaults. `hoverNode`'s optional fourth
+  occurrence argument remains compatible and defaults to null. No exports are
+  removed or existing state/transition contracts changed.
+- Native parsing, rule policy and selection of imported parser/view components
+  remain explicit caller/application operations. App wiring stays in Stage 10;
+  descriptors add no parser adapters, resolver runtime, package or dependency.
 
 ## Stage-8 refinement: independent screenshot document
 
@@ -1020,6 +1056,89 @@ static-mode and local traversal-set implementation details and verification coun
   passes. All Stage-8 work remains unstaged and uncommitted; later stages remain
   unstarted.
 
+## Stage-9 verification evidence
+
+- Implemented only Stage 9 from clean user-created checkpoint
+  `2937e52e7b72cb0503cd76c985d0206e8c1f6a37`. Added readonly inspector-panel,
+  annotation and state-rendering descriptors, explicitly supplied to the viewer
+  and controlled outlets. Built-in presentation stays unchanged when descriptors
+  are absent, empty or unmatched. Static hierarchy retains its original contract.
+  No runtime registration, lifecycle API, discovery, shared state, package,
+  dependency, parser/view resolver or application/deployment work was introduced.
+- Panels append to built-in inspection/navigation; annotations use separate
+  content beside controls. Every context references the original canonical nodes
+  and explicit finite call site. First-match state overrides receive the complete
+  readonly design-system row contract, including callbacks, marks, media,
+  focus/empty-child notices and children. The development example composes
+  `StateRow`, `Text` and `Badge` without changing design-system components.
+- Completed the navigation/screen public API review, retaining current exports
+  for controlled compositions. Documented snapshot creation, selection/context
+  rules and the existing optional hover occurrence argument. Existing snapshot,
+  transition, media and static interfaces remain compatible; only optional
+  extension props and their readonly descriptor/context types were added.
+- Final `pnpm test`: **135 tests passed** (**53 viewer, 49 design-system,
+  17 lint, 13 query, 3 baseline**), including readonly declaration checks,
+  token checks and all **18 independent fixture contracts**. Eight new frozen-
+  input/SSR tests cover unchanged defaults, ordered/matching panels and annotations,
+  every inspector selection kind, original node identity, repeated occurrences,
+  heading bounds, complete override callbacks/content, screenshots/focus/notices,
+  removal, intentional null rendering, invalid selections and error propagation.
+- `pnpm build` and final `pnpm build:storybook:viewer` passed. The latter builds
+  the packages and both ESM/declaration/CSS consumer fixtures without consumer
+  Tailwind processing. Viewer Storybook builds/loads **80 stories: 51 inherited
+  + 29 viewer**, including new build-time and removable-extension examples.
+  The compiled consumer imports the new public descriptor type and demonstrates
+  replacement/removal alongside an independent default viewer. Package output
+  contains no example descriptors, stories, fixtures or PNGs.
+- Final `pnpm --filter @journey-viewer/viewer test:browser`: **28 Chromium
+  checks passed**, including all 25 earlier checks and three extension cases.
+  Native Space/Enter retain custom-row disclosure/selection and all shared-ID
+  child occurrences. Panels work for journey/state/entry/exit selections. Replacing
+  descriptors and removing/re-adding them preserve the second repeated call site,
+  focus, query and touchpoint filters; removal also preserves collapsed shared
+  children and restores default rows/panels/annotations. A separate viewer remains
+  independent, and same-ID document-object replacement still resets interaction.
+- Extension examples fit **320, 859, 860, 861, 1099, 1100, 1101 and 1280px**
+  without page overflow. Visually inspected final ignored
+  `packages/viewer/.test-output/stage9-extensions-320.png`,
+  `stage9-extensions-1280.png`, `stage9-panel-320.png` and
+  `stage9-panel-1280.png`. The browser runner closed its server/browser. The
+  unchanged standalone design-system Storybook/browser suite was not rerun;
+  its full inherited catalog and compiled consumer passed in the viewer suite.
+- Static OIDC still renders **10 journeys / 47 states / 20 entries / 24 exits**;
+  the **10/47/120/37** baseline and all 37 image checks remain green. Design-system,
+  data/lint packages, application sources, captured UJG/baseline/assets, manifests
+  and lockfile are unchanged. The app bundle remains `index-Dzl6dVgS.js`.
+  `git diff --check` passes. No files were staged or committed. Stage 9 has no
+  unresolved acceptance failures; Stage 10 remains unstarted.
+
+### Stage-9 review corrections — 2026-10-22
+
+- Addressed the nonblocking feedback within Stage 9. Documented descriptor-ID
+  uniqueness as the caller's responsibility: duplicates are unsupported input
+  with undefined rendering behavior. No runtime checker or public API was added.
+- Removed the repeated “Annotations” accessible label from annotation lists,
+  retaining native list markup and visible annotation content. Clarified that
+  inspector annotations follow built-in sections and precede “Navigate graph”.
+  Existing SSR/browser regressions now check the absent repeated list name,
+  available annotation text and inspector ordering.
+- Preserved all four unrelated scratch files (`tmp/animation.html`, `image.png`,
+  `logo.png`, `landing_page.png`) and added an anchored `/tmp/` ignore rule.
+  `git check-ignore` confirms all four are excluded; no scratch file was changed
+  or deleted, and none is part of the Stage-9 deliverable.
+- Re-ran `pnpm test` and inspected every suite summary: **135/135 passed**
+  (**53 viewer + 49 design-system + 17 lint + 13 query + 3 baseline**), plus
+  readonly/token checks and all **18 independent fixture contracts**. This
+  confirms the complete count, rather than only the trailing baseline suite.
+- Rebuilt `pnpm build:storybook:viewer`: **80 stories (51 inherited + 29 viewer)**
+  and both compiled consumers passed. Re-ran the final viewer browser suite:
+  **28/28 Chromium checks passed**, including annotation accessibility/content,
+  extension removal/state preservation and all prior screenshot/navigation gates.
+  The runner closed its temporary browser/server. The independent design-system
+  browser suite was not rerun; its source remains unchanged.
+- `git diff --check` passes. Changes remain unstaged and uncommitted. Stage 9
+  still has no unresolved acceptance failures; Stage 10 remains unstarted.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -1065,18 +1184,11 @@ static-mode and local traversal-set implementation details and verification coun
   explicit separate captions/dots and caller-supplied short labels/colors for
   interactive journeys, without selecting a primary touchpoint. Static hierarchy
   presentation retains its existing contract.
-- Two nonblocking review proposals remain separate design work: introduce a
-  distinct focus-row presentation rather than adapting `StateRow`'s disclosure
-  contract, and review which current helper exports (notably `getRowRelation`
-  and `occurrenceLabel`) should remain public before stage-9 extensions or app
-  wiring. Current focus presentation and existing exports are retained in the
-  Stage-7 UX corrections; no later stage is started by these proposals.
-- The stage-9/stage-10 API pass must also review Stage 8's five exported screen
-  functions and controlled screen components, the required `ViewerSnapshot.lightbox`
-  and `ViewerNavigation.hoverOccurrence` fields, and `hoverNode`'s optional fourth
-  occurrence argument (default null). Hand-built snapshots must include new
-  fields; `createViewerSnapshot` supplies the complete defaults. This correction
-  adds no new public fields, arguments or exports.
+- A distinct built-in focus-row presentation remains separate design work.
+  Stage 9 retains the existing `StateRow` focus contract and supplies it intact
+  to state overrides. The navigation/screen export review is complete: the
+  decisions and snapshot-construction guidance are recorded in the Stage-9
+  extension contract above and the viewer README. There are no breaking changes.
 - Native modal focus restoration captures `activeElement` at mount. On Safari,
   clicking a button need not focus it, so the captured element may differ from
   the opener. Review explicit opener handoff at the browser boundary when scoped.
@@ -1089,7 +1201,7 @@ static-mode and local traversal-set implementation details and verification coun
   may compose those effects explicitly without moving them into pure queries or
   controlled renderer components. Stage 8's modal-only keyboard/focus behavior is
   isolated in `BrowserLightbox`; it adds no global shortcut listeners.
-- All stages after 8 remain unstarted. Extensions, routing,
+- All stages after 9 remain unstarted. Routing,
   reporting UI and deployment are not implemented. Syntax
   parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
 - The initial rules check compact field shapes, node identity uniqueness, and

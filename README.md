@@ -1,11 +1,12 @@
 # Journey Viewer
 
 A standalone workspace for viewing User Journey Graph documents. This is the
-stage-7 checkpoint: a minimal React application, a captured Solid-OIDC baseline,
+stage-9 checkpoint: a minimal React application, a captured Solid-OIDC baseline,
 readonly document types/pure queries, independently selected lint rules, a
 DTCG-driven design system with internal Storybook, static and interactive hierarchy
 components, immutable selection/navigation snapshots, an inspector, and controls
-for occurrence-aware focus, search, touchpoint filtering and graph navigation.
+for occurrence-aware focus, search, touchpoint filtering and graph navigation,
+screenshot previews/lightbox, and explicit readonly extension descriptors.
 
 ## Run
 
@@ -91,6 +92,10 @@ lightbox, and live screenshot-map replacement. The example's
 to independent image paths; [touchpoints.json](examples/solid-oidc/touchpoints.json)
 supplies separate short labels and token colors. Callers can replace the screenshot
 map while retaining the loaded UJG object and its interaction state.
-The app remains minimal until its application stage.
+Stage 9 adds caller-supplied inspector panels, annotations and state-row rendering
+overrides. Replacing/removing descriptors preserves interaction; removal restores
+built-ins. Examples live in the viewer Storybook and compiled consumer. Parsing
+and view selection stay explicit in the caller. The app remains minimal until
+Stage 10, its application stage.
 
 Only the user may commit. Agent changes remain uncommitted for review.

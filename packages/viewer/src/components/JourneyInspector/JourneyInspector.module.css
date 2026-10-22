@@ -17,3 +17,9 @@
 }
 .targets > li { min-inline-size: 0; }
 .detail { display: block; }
+.extension {
+  display: grid;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

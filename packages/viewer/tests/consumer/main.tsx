@@ -8,6 +8,7 @@ import { oidcDocument, topologyDocument } from "../../.storybook/documents.js";
 import "./consumer.css";
 import { InteractionExamples } from "./InteractionExamples.js";
 import { ScreenshotExamples } from "./ScreenshotExamples.js";
+import { ExtensionExamples } from "./ExtensionExamples.js";
 
 createRoot(document.getElementById("root")!).render(
   <main className="consumer" data-jv-theme="light">
@@ -19,5 +20,6 @@ createRoot(document.getElementById("root")!).render(
     <div data-jv-theme="dark" data-testid="dark"><JourneyHierarchy document={topologyDocument} level={3} /></div>
     <InteractionExamples />
     <ScreenshotExamples />
+    <ExtensionExamples />
   </main>,
 );

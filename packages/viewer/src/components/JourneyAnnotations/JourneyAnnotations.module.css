@@ -1,0 +1,10 @@
+.annotations {
+  display: grid;
+  gap: var(--jv-space-xs);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--jv-space-xs) 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+.annotations > li { min-inline-size: 0; }

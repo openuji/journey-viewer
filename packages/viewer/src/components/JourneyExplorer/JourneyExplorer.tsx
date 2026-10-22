@@ -1,5 +1,5 @@
 import { Button, JourneyContractControls, StateRow, Text } from "@journey-viewer/design-system";
-import type { HeadingLevel } from "@journey-viewer/design-system";
+import type { HeadingLevel, StateRowProps } from "@journey-viewer/design-system";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import type { ViewerInteraction, ViewerSelection } from "../../interaction.js";
 import { sameSelection } from "../../interaction.js";
@@ -12,6 +12,8 @@ import { HierarchyTree } from "../JourneyHierarchy/HierarchyTree.js";
 import type { JourneyScreenControls } from "../JourneyScreens/JourneyScreens.js";
 import type { TouchpointPresentation } from "../../presentation.js";
 import { getNodeScreens } from "../../screens.js";
+import type { ViewerExtensions, ViewerStateContext } from "../../extensions.js";
+import { JourneyAnnotations } from "../JourneyAnnotations/JourneyAnnotations.js";
 
 export interface JourneyExplorerProps {
   readonly document: UjgDocument;
@@ -24,10 +26,11 @@ export interface JourneyExplorerProps {
   readonly level?: HeadingLevel;
   readonly media?: JourneyScreenControls;
   readonly touchpoints?: TouchpointPresentation;
+  readonly extensions?: Pick<ViewerExtensions, "annotations" | "stateOverrides">;
 }
 
 /** Controlled UJG composition; callers own the immutable snapshot and its transitions. */
-export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChildren, onHover, onFocusJourney, media, touchpoints, ...props }: JourneyExplorerProps) {
+export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChildren, onHover, onFocusJourney, media, touchpoints, extensions, ...props }: JourneyExplorerProps) {
   const focus = navigation?.focus;
   return (
     <HierarchyTree
@@ -49,6 +52,8 @@ export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChi
             onClick={() => onSelect(target, occurrence)}
           ><Text variant="caption">Inspect {journey.label ?? journey["@id"]}</Text></Button>
           {onFocusJourney && <Button variant="outline" onClick={() => onFocusJourney(occurrence)}>Focus {journey.label ?? journey["@id"]}</Button>}
+          {extensions?.annotations && <JourneyAnnotations annotations={extensions.annotations}
+            context={{ document: props.document, journey, node: journey, selection: target, occurrence }} />}
           </div>
         );
       }}
@@ -56,37 +61,41 @@ export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChi
         const target: ViewerSelection = { kind: "state", journeyRef: journey["@id"], nodeRef: state["@id"] };
         const expanded = childJourneys.some((child) => interaction.expandedJourneys.includes(child["@id"]));
         const relation = getRowRelation(props.document, interaction, navigation, journey["@id"], state["@id"]);
-        return (
-          <StateRow
-            label={state.label}
-            composite={childJourneys.length > 0 && !focus}
-            expanded={expanded && !focus}
-            selected={sameSelection(interaction.selection, target)}
-            filtered={!matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? [])}
-            {...(relation ? { relation } : {})}
-            entryCount={entryCount}
-            exitCount={directExitCount}
-            onSelect={() => onSelect(target, occurrence)}
-            onHover={(hovered) => onHover?.(hovered ? target : null, hovered ? occurrence : null)}
-            actions={media && getNodeScreens(props.document, media.screenshots, state["@id"]).filter((screen) => screen.source).map((screen) => (
-              <Button key={screen.surface["@id"]} variant="outline" aria-label={`Open screenshot: ${state.label} (${screen.surface["@id"]})`}
-                onClick={() => media.onOpen({ selection: target, occurrence }, screen.surface["@id"])}><Text variant="caption">Screen</Text></Button>
-            ))}
-            notice={childJourneys.length === 0 ? renderChildren?.({ visibleJourneyRefs: [] }) : focus && onFocusJourney ? (
-              <div>{childJourneys.map((child, childIndex) => {
-                const path = childOccurrence(occurrence, stateIndex, childIndex);
-                return getOccurrenceTrail(props.document, path).length ? <Button key={childIndex} variant="outline"
-                  onClick={() => onFocusJourney(path)}>Open {referenceLabel(childJourneys, childIndex)}</Button>
-                  : <Text as="p" variant="caption" tone="muted" key={childIndex}>Recursive journey reference: {child.label ?? child["@id"]}</Text>;
-              })}</div>
-            ) : null}
-            {...(childJourneys.length > 0 && !focus ? {
-              onToggle: () => onToggleChildren(journey["@id"], state["@id"]),
-            } : {})}
-          >
-            {!focus && expanded && renderChildren?.({ visibleJourneyRefs: interaction.expandedJourneys })}
-          </StateRow>
-        );
+        const context: ViewerStateContext = { document: props.document, journey, node: state, selection: target, occurrence };
+        const row: StateRowProps = {
+          label: state.label,
+          composite: childJourneys.length > 0 && !focus,
+          expanded: expanded && !focus,
+          selected: sameSelection(interaction.selection, target),
+          filtered: !matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? []),
+          ...(relation ? { relation } : {}),
+          entryCount,
+          exitCount: directExitCount,
+          onSelect: () => onSelect(target, occurrence),
+          onHover: (hovered) => onHover?.(hovered ? target : null, hovered ? occurrence : null),
+          actions: media && getNodeScreens(props.document, media.screenshots, state["@id"]).filter((screen) => screen.source).map((screen) => (
+            <Button key={screen.surface["@id"]} variant="outline" aria-label={`Open screenshot: ${state.label} (${screen.surface["@id"]})`}
+              onClick={() => media.onOpen({ selection: target, occurrence }, screen.surface["@id"])}><Text variant="caption">Screen</Text></Button>
+          )),
+          notice: childJourneys.length === 0 ? renderChildren?.({ visibleJourneyRefs: [] }) : focus && onFocusJourney ? (
+            <div>{childJourneys.map((child, childIndex) => {
+              const path = childOccurrence(occurrence, stateIndex, childIndex);
+              return getOccurrenceTrail(props.document, path).length ? <Button key={childIndex} variant="outline"
+                onClick={() => onFocusJourney(path)}>Open {referenceLabel(childJourneys, childIndex)}</Button>
+                : <Text as="p" variant="caption" tone="muted" key={childIndex}>Recursive journey reference: {child.label ?? child["@id"]}</Text>;
+            })}</div>
+          ) : null,
+          ...(childJourneys.length > 0 && !focus ? {
+            onToggle: () => onToggleChildren(journey["@id"], state["@id"]),
+          } : {}),
+          children: !focus && expanded && renderChildren?.({ visibleJourneyRefs: interaction.expandedJourneys }),
+        };
+        const override = extensions?.stateOverrides?.find((candidate) => candidate.matches(context));
+        const Component = override?.Component;
+        return <>
+          {extensions?.annotations && <JourneyAnnotations context={context} annotations={extensions.annotations} />}
+          {Component ? <Component key={override.id} context={context} row={row} /> : <StateRow {...row} />}
+        </>;
       }}
       renderContracts={(journey, contracts, occurrence) => (
         <JourneyContractControls

@@ -8,3 +8,4 @@ packages/design-system/src/styles/generated/
 packages/design-system/.storybook/generated/
 packages/design-system/.test-output/
 packages/viewer/.test-output/
+/tmp/

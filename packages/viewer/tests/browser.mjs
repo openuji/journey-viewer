@@ -112,7 +112,7 @@ try {
     const index = await (await fetch(`${url}/index.json`)).json();
     const stories = Object.values(index.entries).filter((entry) => entry.type === "story");
     assert.equal(stories.filter((entry) => entry.title.startsWith("Design system/")).length, 51);
-    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 27);
+    assert.equal(stories.filter((entry) => entry.title.startsWith("Viewer/")).length, 29);
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
       await page.waitForFunction(() => document.querySelector("#storybook-root")?.childElementCount > 0);
@@ -742,6 +742,106 @@ try {
       await preview.screenshot({ path: `${evidence}/stage8-preview-${width}.png` });
       await screensFirst().getByRole("group", { name: "Touchpoint filter" }).screenshot({ path: `${evidence}/stage8-touchpoints-${width}.png` });
     }
+    assert.deepEqual(errors, []);
+  });
+  const extensionsFirst = () => page.getByTestId("extensions-first");
+  const extensionsSecond = () => page.getByTestId("extensions-second");
+  const extensionState = () => extensionsFirst().evaluate((element) => ({
+    identity: element.querySelector('aside[aria-label="Selection inspector"] header code')?.textContent,
+    query: element.querySelector('input[type="search"]')?.value,
+    breadcrumbs: element.querySelector('nav[aria-label="Selection breadcrumbs"]')?.textContent,
+    focus: element.querySelector('[aria-label="Focused journey path"]') !== null,
+    journeys: [...element.querySelectorAll("[data-journey-ref]")].map((node) => node.getAttribute("data-journey-ref")),
+    disclosure: [...element.querySelectorAll("button[aria-expanded]")].map((node) => node.getAttribute("aria-expanded")),
+    filters: [...element.querySelectorAll("button[data-touchpoint-ref]")].map((node) => node.getAttribute("aria-pressed")),
+  }));
+
+  await test("compiled descriptors add panels/annotations and override rows while retaining native controls and children", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const scope = extensionsFirst();
+    await inspector(scope).getByRole("heading", { name: "Source note", exact: true }).waitFor();
+    assert.equal(await scope.getByText("Review nested boundary", { exact: true }).count(), 2);
+    assert.equal(await scope.getByRole("list", { name: "Annotations", exact: true }).count(), 0);
+    assert.match(await inspector(scope).ariaSnapshot(), /Review nested boundary/);
+    assert.equal(await scope.getByText("Custom boundary presentation", { exact: true }).count(), 1);
+    assert.equal(await inspector(scope).getByRole("heading", { name: "Incoming transitions", exact: true }).count(), 1);
+    assert.equal(await scope.locator('[data-journey-ref="urn:test:shared"]').count(), 3);
+    assert.equal(await extensionsSecond().getByText("Review nested boundary", { exact: true }).count(), 0);
+    assert.equal(await inspector(extensionsSecond()).getByRole("heading", { name: "Source note", exact: true }).count(), 0);
+    const state = scope.locator('[data-state-ref="urn:test:compose"]');
+    await state.getByRole("button", { name: "Collapse Several child journeys", exact: true }).focus();
+    await page.keyboard.press("Space");
+    assert.equal(await scope.locator('[data-journey-ref="urn:test:shared"]').count(), 0);
+    await page.getByRole("button", { name: "Toggle example extensions", exact: true }).click();
+    assert.equal(await scope.locator('[data-journey-ref="urn:test:shared"]').count(), 0);
+    await page.getByRole("button", { name: "Toggle example extensions", exact: true }).click();
+    assert.equal(await scope.locator('[data-journey-ref="urn:test:shared"]').count(), 0);
+    const row = state.getByRole("button", { name: /^Several child journeys Custom boundary presentation$/ });
+    await row.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await identity(scope), "urn:test:compose");
+    assert.equal(await scope.locator('[data-journey-ref="urn:test:shared"]').count(), 3);
+    await scope.getByRole("button", { name: "Inspect First root", exact: true }).click();
+    assert.equal(await identity(scope), "urn:test:first");
+    assert.equal(await inspector(scope).getByRole("heading", { name: "Source note", exact: true }).count(), 1);
+    await scope.getByRole("button", { name: /^Begin first root/ }).click();
+    assert.equal(await identity(scope), "urn:test:entry");
+    await scope.getByRole("button", { name: "Finish first root", exact: true }).click();
+    assert.equal(await identity(scope), "urn:test:exit");
+    assert.match(await inspector(scope).textContent(), /This exit is read directly from/);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("descriptor replacement/removal preserves repeated occurrence, focus, query, filters and disclosure in one instance", async () => {
+    await page.goto(`${url}/viewer-consumer/`);
+    const scope = extensionsFirst();
+    await scope.locator('[data-journey-ref="urn:test:shared"]').nth(1).getByRole("button", { name: "Recurse here", exact: true }).click();
+    await scope.getByRole("button", { name: "Focus selected scope", exact: true }).click();
+    await scope.getByRole("searchbox").fill("Recurse");
+    await scope.getByRole("group", { name: "Touchpoint filter" }).getByRole("button", { name: "Web", exact: true }).click();
+    const active = await extensionState();
+    assert.equal(active.identity, "urn:test:repeat");
+    assert.equal(active.focus, true);
+    assert.deepEqual(active.filters, ["true", "false"]);
+    assert.match(active.breadcrumbs, /reference 2 of 2/);
+    await page.getByRole("button", { name: "Replace example extensions", exact: true }).click();
+    assert.deepEqual(await extensionState(), active);
+    assert.equal(await scope.getByText("Review nested boundary", { exact: true }).count(), 0);
+    assert.equal(await scope.getByText("Custom boundary presentation", { exact: true }).count(), 1);
+    await page.getByRole("button", { name: "Toggle example extensions", exact: true }).click();
+    assert.deepEqual(await extensionState(), active);
+    assert.equal(await scope.getByText("Custom boundary presentation", { exact: true }).count(), 0);
+    assert.equal(await inspector(scope).getByRole("heading", { name: "Source note", exact: true }).count(), 0);
+    assert.equal(await scope.getByRole("button", { name: "Several child journeys", exact: true }).count(), 1);
+    assert.equal(await identity(extensionsSecond()), "urn:test:compose");
+    assert.equal(await extensionsSecond().getByRole("searchbox").inputValue(), "");
+    await page.getByRole("button", { name: "Toggle example extensions", exact: true }).click();
+    assert.deepEqual(await extensionState(), active);
+    await page.getByRole("button", { name: "Replace extension viewer document", exact: true }).click();
+    assert.equal(await identity(scope), "urn:test:compose");
+    assert.equal(await scope.getByRole("searchbox").inputValue(), "");
+    assert.equal(await scope.getByRole("group", { name: "Focused journey path" }).count(), 0);
+    assert.equal(await inspector(scope).getByRole("heading", { name: "Source note", exact: true }).count(), 1);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("extension content fits mobile and shared thresholds and restores the default presentation on removal", async () => {
+    await page.goto(`${url}/iframe.html?id=viewer-journeyviewer--removable-extensions&viewMode=story`);
+    await page.getByRole("heading", { name: "Source note", exact: true }).waitFor();
+    for (const width of [320, 859, 860, 861, 1099, 1100, 1101, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, `extensions overflow at ${width}`);
+      if (width === 320 || width === 1280) {
+        await page.getByRole("button", { name: "Toggle example extensions", exact: true }).scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${evidence}/stage9-extensions-${width}.png` });
+        await page.getByRole("complementary", { name: "Selection inspector" }).screenshot({ path: `${evidence}/stage9-panel-${width}.png` });
+      }
+    }
+    await page.getByRole("button", { name: "Toggle example extensions", exact: true }).click();
+    assert.equal(await page.getByText("Custom boundary presentation", { exact: true }).count(), 0);
+    assert.equal(await page.getByText("Review nested boundary", { exact: true }).count(), 0);
+    assert.equal(await page.getByRole("heading", { name: "Source note", exact: true }).count(), 0);
+    assert.equal(await page.locator('[data-journey-ref="urn:test:shared"]').count(), 3);
     assert.deepEqual(errors, []);
   });
 } finally {
