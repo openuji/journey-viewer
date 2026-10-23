@@ -1,29 +1,40 @@
-.panel {
-  box-sizing: border-box;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--jv-space-sm);
-  padding: var(--jv-space-sm);
+  margin: 0;
   min-inline-size: 0;
-  block-size: calc(100dvh - 2 * var(--jv-space-lg));
 }
-.header,
-.controls {
+.body {
+  --jv-screen-image-height: min(calc(100dvh - 8rem), var(--jv-size-lightbox));
+  --jv-screen-image-shadow: var(--jv-shadow-lightbox);
+  display: flex;
+  justify-content: center;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+.caption {
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--jv-space-sm);
+  inline-size: min(var(--jv-size-lightbox-caption), calc(100vw - 2 * var(--jv-space-lg)));
+  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-md);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+}
+.text {
+  flex: 1 1 8rem;
   min-inline-size: 0;
 }
-.caption {
-  display: grid;
-  flex: 1;
-  gap: var(--jv-space-2xs);
-  min-inline-size: 0;
+.context {
+  display: block;
 }
-.body {
-  --jv-screen-image-height: 100%;
-  min-inline-size: 0;
-  min-block-size: 0;
-  overflow: auto;
+.count {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }

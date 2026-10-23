@@ -1,24 +1,34 @@
 import { useState } from "react";
-import { Button, Text } from "@journey-viewer/design-system";
+import type { ReactNode } from "react";
 import type { HeadingLevel } from "@journey-viewer/design-system";
+import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import {
-  collapseAllJourneys, expandAllJourneys, toggleChildJourneys,
+  collapseAllJourneys, expandAllJourneys, resolveSelection, toggleChildJourneys, toggleContracts,
 } from "../../interaction.js";
 import type { ViewerInteraction } from "../../interaction.js";
-import { createViewerSnapshot, focusJourney, hoverNode, navigateViewer, pickSearchResult, setSearchQuery, showOverview, toggleTouchpoint } from "../../navigation.js";
+import {
+  createViewerSnapshot, hoverNode, navigateViewer, pickSearchResult, selectTouchpoint, setSearchQuery, setViewMode,
+} from "../../navigation.js";
 import type { ViewerSnapshot, ViewerTarget } from "../../navigation.js";
-import { getOccurrenceTrail } from "../../occurrence.js";
-import type { ViewerOccurrence } from "../../occurrence.js";
+import { occurrenceKey } from "../../occurrence.js";
 import { JourneyExplorer } from "../JourneyExplorer/JourneyExplorer.js";
 import { JourneyInspector } from "../JourneyInspector/JourneyInspector.js";
 import { JourneyNavigation } from "../JourneyNavigation/JourneyNavigation.js";
-import { closeScreenshot, openScreenshot, stepScreenshot } from "../../screens.js";
+import { closeScreenshot, getNodeScreens, getScreens, openScreenshot, stepScreenshot } from "../../screens.js";
 import type { ScreenshotMap } from "../../screens.js";
 import type { TouchpointPresentation } from "../../presentation.js";
+import { touchpointLabel } from "../../presentation.js";
 import { JourneyLightbox } from "../JourneyLightbox/JourneyLightbox.js";
-import styles from "./JourneyViewer.module.css";
 import type { ViewerExtensions } from "../../extensions.js";
+import type { PreviewAnchor } from "../../preview-placement.js";
+import { BrowserViewerShell } from "../../browser/BrowserViewerShell.js";
+import type { RevealRequest } from "../../browser/BrowserViewerShell.js";
+import { BrowserScrollPanel } from "../../browser/BrowserScrollPanel.js";
+import { BrowserScreenPreview } from "../../browser/BrowserScreenPreview.js";
+import { BrowserScreenPreload } from "../../browser/BrowserScreenPreload.js";
+import { BrowserScreenImage } from "../../browser/BrowserScreenImage.js";
+import styles from "./JourneyViewer.module.css";
 
 export interface JourneyViewerProps {
   /** Keep this reference stable between actual replacements; every new object resets interaction. */
@@ -29,77 +39,155 @@ export interface JourneyViewerProps {
   readonly touchpoints?: TouchpointPresentation;
   /** Explicit readonly composition; replacing descriptors preserves the current snapshot. */
   readonly extensions?: ViewerExtensions;
+  /** Leading explorer-bar content; defaults to a document summary. */
+  readonly headerStart?: ReactNode;
+  /** Trailing explorer-bar content, such as source links. */
+  readonly headerEnd?: ReactNode;
+}
+
+interface ScreenPreviewState {
+  readonly target: ViewerTarget;
+  readonly surfaceRef: string;
+  readonly anchor: PreviewAnchor;
+  readonly visible: boolean;
+}
+
+/** Browser presentation state that is not part of the graph interaction snapshot. */
+interface ViewerPresentation {
+  readonly preview: ScreenPreviewState | null;
+  readonly searchOpen: boolean;
+  readonly reveal: RevealRequest | null;
 }
 
 interface DocumentInteraction {
   readonly document: UjgDocument;
   readonly snapshot: ViewerSnapshot;
+  readonly presentation: ViewerPresentation;
 }
 
+const initialPresentation: ViewerPresentation = { preview: null, searchOpen: false, reveal: null };
+const revealOf = (target: ViewerTarget, seq: number): RevealRequest => ({
+  seq, kind: target.selection.kind, occurrence: occurrenceKey(target.occurrence), ref: target.selection.nodeRef,
+});
+
 /** The sole graph-interaction state boundary; every update replaces an immutable snapshot. */
-export function JourneyViewer({ document, level = 2, screenshots = {}, touchpoints = {}, extensions }: JourneyViewerProps) {
-  const [session, setSession] = useState<DocumentInteraction>(() => ({ document, snapshot: createViewerSnapshot(document) }));
+export function JourneyViewer({ document, level = 2, screenshots = {}, touchpoints = {}, extensions, headerStart, headerEnd }: JourneyViewerProps) {
+  const [session, setSession] = useState<DocumentInteraction>(() => ({
+    document, snapshot: createViewerSnapshot(document), presentation: initialPresentation,
+  }));
   if (session.document !== document) {
     // Reset by input object identity, including replacements with the same @id.
     // React retries this component before rendering its children; no stale selection is committed.
-    setSession({ document, snapshot: createViewerSnapshot(document) });
+    setSession({ document, snapshot: createViewerSnapshot(document), presentation: initialPresentation });
     return null;
   }
-  const update = (transition: (current: ViewerSnapshot) => ViewerSnapshot) => {
-    setSession((current) => {
-      if (current.document !== document) return current;
-      const snapshot = transition(current.snapshot);
-      return snapshot === current.snapshot ? current : { ...current, snapshot };
-    });
+  const change = (transition: (current: DocumentInteraction) => DocumentInteraction) => {
+    setSession((current) => current.document !== document ? current : transition(current));
   };
+  const update = (transition: (current: ViewerSnapshot) => ViewerSnapshot) => change((current) => {
+    const snapshot = transition(current.snapshot);
+    return snapshot === current.snapshot ? current : { ...current, snapshot };
+  });
+  const present = (transition: (current: ViewerPresentation) => ViewerPresentation) => change((current) => {
+    const presentation = transition(current.presentation);
+    return presentation === current.presentation ? current : { ...current, presentation };
+  });
   const updateInteraction = (transition: (current: ViewerInteraction) => ViewerInteraction) => update((current) => {
     const interaction = transition(current.interaction);
     return interaction === current.interaction ? current : { ...current, interaction };
   });
-  const navigate = (target: ViewerTarget) => update((current) => navigateViewer(document, current, target));
-  const media = { screenshots, onOpen: (target: ViewerTarget, surfaceRef: string) => update((current) => openScreenshot(document, screenshots, current, target, surfaceRef)) };
-  const preview = session.snapshot.navigation.hover && session.snapshot.navigation.hoverOccurrence
-    ? { selection: session.snapshot.navigation.hover, occurrence: session.snapshot.navigation.hoverOccurrence }
-    : session.snapshot.interaction.selection && session.snapshot.navigation.occurrence
-      ? { selection: session.snapshot.interaction.selection, occurrence: session.snapshot.navigation.occurrence } : null;
-  const focus = (occurrence: ViewerOccurrence) => update((current) => {
-    const journey = getOccurrenceTrail(document, occurrence).at(-1)?.journey;
-    if (!journey) return current;
-    const selected = navigateViewer(document, current, { selection: { kind: "journey", journeyRef: journey["@id"], nodeRef: journey["@id"] }, occurrence });
-    return focusJourney(document, selected, occurrence);
+  /** Inspector and search navigation also bring the target into view. */
+  const reveal = (target: ViewerTarget, transition: (current: ViewerSnapshot) => ViewerSnapshot, searchOpen?: boolean) => change((current) => {
+    const snapshot = transition(current.snapshot);
+    if (snapshot === current.snapshot && searchOpen === undefined) return current;
+    return { ...current, snapshot, presentation: {
+      ...current.presentation, ...(searchOpen === undefined ? {} : { searchOpen }),
+      reveal: revealOf(target, (current.presentation.reveal?.seq ?? 0) + 1),
+    } };
   });
+  const navigate = (target: ViewerTarget) => update((current) => navigateViewer(document, current, target));
+  const navigateAndReveal = (target: ViewerTarget) => reveal(target, (current) => navigateViewer(document, current, target));
+  const openScreen = (target: ViewerTarget, surfaceRef: string) => change((current) => {
+    const snapshot = openScreenshot(document, screenshots, current.snapshot, target, surfaceRef);
+    const preview = current.presentation.preview && { ...current.presentation.preview, visible: false };
+    return { ...current, snapshot, presentation: { ...current.presentation, preview } };
+  });
+  const { snapshot, presentation } = session;
+  const selection = snapshot.interaction.selection;
+  const selected = selection && snapshot.navigation.occurrence ? { selection, occurrence: snapshot.navigation.occurrence } : null;
+  const preview = presentation.preview;
+  const previewNode = preview ? resolveSelection(document, preview.target.selection) : undefined;
+  const previewSource = preview
+    ? getNodeScreens(document, screenshots, preview.target.selection.nodeRef).find((screen) => screen.surface["@id"] === preview.surfaceRef)?.source
+    : undefined;
+  const previewTouchpoint = preview ? getJourneyTouchpoints(document, preview.target.selection.journeyRef)[0] : undefined;
+  const previewTitle = previewNode && typeof previewNode.node.label === "string" ? previewNode.node.label : preview?.target.selection.nodeRef ?? "";
+  const sources = getScreens(document, screenshots).flatMap((screen) => screen.source ? [screen.source] : [])
+    .filter((source, index, all) => all.indexOf(source) === index);
+  const media = { screenshots, onOpen: openScreen };
   return (
-    <div className={styles.viewer}>
-      <JourneyNavigation document={document} snapshot={session.snapshot} screenshots={screenshots} touchpoints={touchpoints} onNavigate={navigate}
-        onSearchPick={(target) => update((current) => pickSearchResult(document, current, target))}
-        onQuery={(query) => update((current) => setSearchQuery(current, query))}
-        onTouchpoint={(ref) => update((current) => toggleTouchpoint(document, current, ref))}
-        onOverview={() => update(showOverview)}
-        onFocus={() => update((current) => current.navigation.occurrence ? focusJourney(document, current, current.navigation.occurrence) : current)} />
-      <div className={styles.controls}>
-        <Button variant="outline" onClick={() => updateInteraction((current) => expandAllJourneys(document, current))}>Expand all</Button>
-        <Button variant="outline" onClick={() => updateInteraction(collapseAllJourneys)}>Collapse all</Button>
-        <Button onClick={() => update(() => createViewerSnapshot(document))}>Reset view</Button>
-        <Text variant="caption" tone="muted">Select an item to inspect its explicit graph relationships.</Text>
+    <BrowserViewerShell className={styles.viewer} reveal={presentation.reveal}
+      searchOpen={presentation.searchOpen && snapshot.navigation.query.trim() !== ""}
+      onSearchDismiss={() => present((current) => current.searchOpen ? { ...current, searchOpen: false } : current)}>
+      <JourneyNavigation document={document} snapshot={snapshot} screenshots={screenshots} touchpoints={touchpoints}
+        start={headerStart} end={headerEnd} searchOpen={presentation.searchOpen}
+        onMode={(mode) => update((current) => setViewMode(document, current, mode))}
+        onExpandAll={() => updateInteraction((current) => expandAllJourneys(document, current))}
+        onCollapseAll={() => updateInteraction(collapseAllJourneys)}
+        onTouchpoint={(ref) => update((current) => selectTouchpoint(document, current, ref))}
+        onQuery={(query) => change((current) => {
+          const next = setSearchQuery(current.snapshot, query);
+          return next === current.snapshot && current.presentation.searchOpen ? current
+            : { ...current, snapshot: next, presentation: { ...current.presentation, searchOpen: true } };
+        })}
+        onSearchFocus={() => present((current) => current.searchOpen ? current : { ...current, searchOpen: true })}
+        onSearchPick={(target) => reveal(target, (current) => pickSearchResult(document, current, target), false)}
+        onReset={() => change((current) => ({
+          ...current, snapshot: createViewerSnapshot(document),
+          presentation: { ...initialPresentation, reveal: { seq: (current.presentation.reveal?.seq ?? 0) + 1, kind: "top", occurrence: "", ref: "" } },
+        }))} />
+      <div className={styles.content}>
+        <div className={styles.layout}>
+          <section aria-label="Journey graph" className={styles.stage}>
+            <div className={snapshot.navigation.mode === "tree" ? styles.tree : styles.columns}>
+              <JourneyExplorer
+                document={document} interaction={snapshot.interaction} navigation={snapshot.navigation} level={level}
+                media={{
+                  ...media,
+                  onPreview: (target, surfaceRef, anchor) => present((current) => anchor
+                    ? { ...current, preview: { target, surfaceRef, anchor, visible: true } }
+                    : current.preview?.visible ? { ...current, preview: { ...current.preview, visible: false } } : current),
+                }}
+                touchpoints={touchpoints}
+                {...(extensions ? { extensions } : {})}
+                onSelect={(target, occurrence) => navigate({ selection: target, occurrence })}
+                onToggleChildren={(journeyRef, stateRef) => updateInteraction((current) => toggleChildJourneys(document, current, journeyRef, stateRef))}
+                onToggleContracts={(journeyRef) => updateInteraction((current) => toggleContracts(document, current, journeyRef))}
+                onHover={(hovered, occurrence) => update((current) => hoverNode(document, current, hovered, occurrence))}
+              />
+            </div>
+          </section>
+          <BrowserScrollPanel className={styles.inspector}
+            resetKey={selection ? `${selection.kind} ${selection.journeyRef} ${selection.nodeRef}` : ""}>
+            <JourneyInspector document={document} selection={selection} level={level}
+              {...(extensions ? { extensions } : {})}
+              touchpoints={touchpoints} media={{ ...media, target: selected }}
+              navigation={{ occurrence: snapshot.navigation.occurrence, onNavigate: navigateAndReveal }} />
+          </BrowserScrollPanel>
+        </div>
       </div>
-      <div className={styles.layout}>
-        <JourneyExplorer
-          document={document} interaction={session.snapshot.interaction} navigation={session.snapshot.navigation} level={level}
-          media={media} touchpoints={touchpoints}
-          {...(extensions ? { extensions } : {})}
-          onSelect={(selection, occurrence) => navigate({ selection, occurrence })}
-          onToggleChildren={(journeyRef, stateRef) => updateInteraction((current) => toggleChildJourneys(document, current, journeyRef, stateRef))}
-          onHover={(selection, occurrence) => update((current) => hoverNode(document, current, selection, occurrence))}
-          onFocusJourney={focus}
-        />
-        <JourneyInspector document={document} selection={session.snapshot.interaction.selection} level={level}
-          {...(extensions ? { extensions } : {})}
-          touchpoints={touchpoints} media={{ ...media, target: preview }}
-          navigation={{ occurrence: session.snapshot.navigation.occurrence, onNavigate: navigate }} />
-      </div>
-      {session.snapshot.lightbox && <JourneyLightbox document={document} screenshots={screenshots} lightbox={session.snapshot.lightbox}
+      {preview && <BrowserScreenPreview anchor={preview.anchor} visible={preview.visible} title={previewTitle}
+        context={[previewNode ? previewNode.journey.label ?? previewNode.journey["@id"] : preview.target.selection.journeyRef,
+          ...(previewTouchpoint ? [touchpointLabel(previewTouchpoint, touchpoints)] : [])].join(" · ")}
+        {...(previewTouchpoint ? { touchpoint: { label: touchpointLabel(previewTouchpoint, touchpoints),
+          ...(touchpoints[previewTouchpoint["@id"]]?.color ? { color: touchpoints[previewTouchpoint["@id"]]!.color! } : {}) } } : {})}
+        onDismiss={() => present((current) => current.preview?.visible ? { ...current, preview: { ...current.preview, visible: false } } : current)}>
+        <BrowserScreenImage source={previewSource} label={previewTitle} />
+      </BrowserScreenPreview>}
+      <BrowserScreenPreload sources={sources} />
+      {snapshot.lightbox && <JourneyLightbox document={document} screenshots={screenshots} lightbox={snapshot.lightbox} touchpoints={touchpoints}
         onClose={() => update(closeScreenshot)} onPrevious={() => update((current) => stepScreenshot(document, screenshots, current, -1))}
         onNext={() => update((current) => stepScreenshot(document, screenshots, current, 1))} />}
-    </div>
+    </BrowserViewerShell>
   );
 }

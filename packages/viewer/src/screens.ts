@@ -3,6 +3,7 @@ import type { UjgDocument, UjgSurface } from "@journey-viewer/ujg-jsonld";
 import { resolveSelection, sameSelection, selectScreenNode } from "./interaction.js";
 import type { ViewerSelection } from "./interaction.js";
 import { getOccurrenceTrail, journeyOccurrences, sameOccurrence } from "./occurrence.js";
+import { getLanePath } from "./navigation.js";
 import type { ViewerSnapshot, ViewerTarget } from "./navigation.js";
 
 /** Independent JSON input: exact UJG Surface IDs to caller-resolved image URLs. */
@@ -65,13 +66,17 @@ export function openScreenshot(
   // Reveals ancestors but never expands a composite's children as a side effect of opening its image.
   const interaction = selectScreenNode(document, current.interaction, target.selection);
   const navigation = current.navigation;
-  const focus = navigation.focus === null ? null : target.occurrence;
-  const unchangedContext = sameOccurrence(navigation.occurrence, target.occurrence) && sameOccurrence(navigation.focus, focus) && navigation.hover === null;
+  // Columns follow the screen's call path without opening a composite's children.
+  const lanes = navigation.mode === "columns" ? getLanePath(document, target.occurrence, target.selection, false) : navigation.lanes;
+  const unchangedLanes = lanes.length === navigation.lanes.length && lanes.every((lane, index) => sameOccurrence(lane, navigation.lanes[index] ?? null));
+  const unchangedContext = sameOccurrence(navigation.occurrence, target.occurrence) && unchangedLanes && navigation.hover === null;
   if (interaction === current.interaction && unchangedContext && current.lightbox?.surfaceRef === surfaceRef
     && sameSelection(current.lightbox.target.selection, target.selection) && sameOccurrence(current.lightbox.target.occurrence, target.occurrence)) return current;
   return {
     ...current, interaction,
-    navigation: unchangedContext ? navigation : { ...navigation, occurrence: target.occurrence, focus, hover: null, hoverOccurrence: null },
+    navigation: unchangedContext ? navigation : {
+      ...navigation, occurrence: target.occurrence, lanes: unchangedLanes ? navigation.lanes : lanes, hover: null, hoverOccurrence: null,
+    },
     lightbox: { surfaceRef, target: { selection: { ...target.selection }, occurrence: target.occurrence } },
   };
 }
@@ -94,4 +99,9 @@ export function stepScreenshot(
     if (next?.source) return openScreenshot(document, screenshots, current, next.target, next.surface["@id"]);
   }
   return current;
+}
+
+/** Distinct mapped surfaces reachable from rendered graph nodes. */
+export function countMappedScreens(document: UjgDocument, screenshots: ScreenshotMap): number {
+  return new Set(getScreens(document, screenshots).filter((screen) => screen.source).map((screen) => screen.surface["@id"])).size;
 }

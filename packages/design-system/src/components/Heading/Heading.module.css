@@ -5,6 +5,9 @@
   color: var(--jv-color-foreground);
   overflow-wrap: anywhere;
 }
+.heading[data-size="xs"] {
+  @apply text-caption;
+}
 .heading[data-size="sm"] {
   @apply text-heading-sm;
 }

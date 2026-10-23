@@ -82,7 +82,7 @@ test("expansion transitions and independent snapshots preserve frozen inputs and
 });
 
 test("empty documents and empty/rootless journeys have explicit initial-selection policies", () => {
-  assert.deepEqual(createViewerInteraction(freeze({ "@context": "urn:c", "@type": "UJGDocument", "@id": "urn:d" })), { selection: null, expandedJourneys: [] });
+  assert.deepEqual(createViewerInteraction(freeze({ "@context": "urn:c", "@type": "UJGDocument", "@id": "urn:d" })), { selection: null, expandedJourneys: [], openContracts: [] });
   const emptyJourney = freeze({ "@context": "urn:c", "@type": "UJGDocument", "@id": "urn:d", nodes: [{ "@id": "urn:j", "@type": "Journey", stateRefs: [], entryRefs: [] }] });
   assert.deepEqual(createViewerInteraction(emptyJourney).selection, { kind: "journey", journeyRef: "urn:j", nodeRef: "urn:j" });
   const rootless = freeze({ ...fixture, nodes: fixture.nodes.filter((node) => node["@id"].startsWith("urn:test:cycle")) });

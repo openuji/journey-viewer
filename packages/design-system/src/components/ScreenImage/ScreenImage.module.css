@@ -3,21 +3,48 @@
   display: grid;
   place-items: center;
   min-inline-size: 0;
-  min-block-size: 0;
-  block-size: var(--jv-screen-image-height, var(--jv-size-screen-preview));
   overflow: hidden;
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+  box-shadow: var(--jv-screen-image-shadow, var(--jv-shadow-screen));
+}
+.frame[data-fit="width"] {
+  inline-size: 100%;
+}
+.frame[data-fit="height"] {
+  display: inline-grid;
+}
+.image,
+.status {
+  grid-area: 1 / 1;
 }
 .image {
-  position: absolute;
-  inset: 0;
   display: block;
   min-inline-size: 0;
+}
+.frame[data-fit="width"] .image {
   inline-size: 100%;
-  block-size: 100%;
-  object-fit: contain;
+  block-size: auto;
+}
+/* Both maxima scale the replaced image proportionally; viewport units avoid a cyclic percentage. */
+.frame[data-fit="height"] .image {
+  inline-size: auto;
+  block-size: auto;
+  max-block-size: var(--jv-screen-image-height, var(--jv-size-lightbox));
+  max-inline-size: var(--jv-screen-image-width, calc(100vw - 2 * var(--jv-space-lg)));
+}
+.frame:not([data-image-status="ready"]) {
+  aspect-ratio: 9 / 16;
+}
+.frame[data-fit="height"]:not([data-image-status="ready"]) {
+  block-size: min(var(--jv-screen-image-height, var(--jv-size-lightbox)),
+    calc(var(--jv-screen-image-width, calc(100vw - 2 * var(--jv-space-lg))) * 16 / 9));
+}
+.frame:not([data-image-status="ready"]) .image {
+  position: absolute;
+  opacity: 0;
 }
 .status {
-  position: absolute;
   padding: var(--jv-space-sm);
   text-align: center;
 }

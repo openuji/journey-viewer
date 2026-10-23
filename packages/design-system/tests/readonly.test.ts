@@ -63,9 +63,9 @@ void [selectedSummary, callbackSummary, expandedSummary, filteredSummary, static
 
 declare const panel: InspectorPanelProps;
 // @ts-expect-error Inspector presentation collections are readonly.
-panel.sections.push({ title: "Other", items: [] });
-// @ts-expect-error Nested inspector details are readonly.
-panel.sections[0]!.items[0]!.details.push("Changed");
+panel.sections.push({ title: "Other" });
+// @ts-expect-error Nested inspector transition tags are readonly.
+panel.sections[0]!.groups![0]!.items[0]!.tags.push("Changed");
 // @ts-expect-error Contract controls require their explicit selection callback.
 const uncontrolledContracts: JourneyContractControlsProps = { entries: [], exits: [], selection: null };
 void uncontrolledContracts;

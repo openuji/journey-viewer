@@ -1,19 +1,8 @@
 import type { StateRowProps } from "./StateRow.js";
 
 export type StateRowFixture = Readonly<
-  Required<
-    Pick<
-      StateRowProps,
-      | "label"
-      | "description"
-      | "composite"
-      | "expanded"
-      | "selected"
-      | "filtered"
-      | "entryCount"
-      | "exitCount"
-    >
-  > & Pick<StateRowProps, "relation">
+  Required<Pick<StateRowProps, "label" | "description" | "composite" | "expanded" | "selected" | "filtered">>
+  & Pick<StateRowProps, "tone" | "marks" | "crossing">
 >;
 
 export function createStateRowFixture(
@@ -26,8 +15,6 @@ export function createStateRowFixture(
     expanded: false,
     selected: false,
     filtered: false,
-    entryCount: 1,
-    exitCount: 2,
     ...overrides,
   };
 }

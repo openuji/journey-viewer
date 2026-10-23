@@ -1,22 +1,52 @@
 @reference "@journey-viewer/design-system/tailwind.css";
 .viewer {
-  display: grid;
-  gap: var(--jv-space-md);
-  min-inline-size: 0;
-}
-.controls {
+  --jv-explorer-offset: 0px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--jv-space-sm);
+  flex-direction: column;
   min-inline-size: 0;
+  background: var(--jv-color-background);
+  color: var(--jv-color-foreground);
+}
+.content {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: var(--jv-size-page);
+  margin-inline: auto;
+  padding: var(--jv-space-lg) var(--jv-space-lg) var(--jv-space-2xl);
 }
 .layout {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--jv-space-lg);
-  align-items: start;
   min-inline-size: 0;
+  @variant md {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--jv-size-inspector-compact);
+    align-items: start;
+  }
   @variant lg {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) var(--jv-size-inspector);
+  }
+}
+.stage {
+  min-inline-size: 0;
+}
+.tree {
+  max-inline-size: var(--jv-size-tree);
+}
+.columns {
+  min-inline-size: 0;
+}
+.inspector {
+  order: -1;
+  min-inline-size: 0;
+  @variant md {
+    order: 0;
+    position: sticky;
+    inset-block-start: calc(var(--jv-explorer-offset) + var(--jv-space-lg));
+    max-block-size: calc(100dvh - var(--jv-explorer-offset) - 2 * var(--jv-space-lg));
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-radius: var(--jv-radius-lg);
   }
 }

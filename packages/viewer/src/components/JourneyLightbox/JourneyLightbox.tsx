@@ -1,4 +1,5 @@
 import { ScreenLightbox } from "@journey-viewer/design-system";
+import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import { BrowserLightbox } from "../../browser/BrowserLightbox.js";
 import { BrowserScreenImage } from "../../browser/BrowserScreenImage.js";
@@ -7,17 +8,20 @@ import type { ScreenshotMap, ViewerLightbox } from "../../screens.js";
 import { resolveSelection, sameSelection } from "../../interaction.js";
 import { sameOccurrence } from "../../occurrence.js";
 import { occurrenceLabel } from "../../navigation.js";
+import type { TouchpointPresentation } from "../../presentation.js";
+import { touchpointColor, touchpointLabel } from "../../presentation.js";
 
 export interface JourneyLightboxProps {
   readonly document: UjgDocument;
   readonly screenshots: ScreenshotMap;
   readonly lightbox: ViewerLightbox;
+  readonly touchpoints?: TouchpointPresentation;
   readonly onClose: () => void;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
 }
 
-export function JourneyLightbox({ document, screenshots, lightbox, onClose, onPrevious, onNext }: JourneyLightboxProps) {
+export function JourneyLightbox({ document, screenshots, lightbox, touchpoints = {}, onClose, onPrevious, onNext }: JourneyLightboxProps) {
   const resolved = resolveSelection(document, lightbox.target.selection);
   const title = typeof resolved?.node.label === "string" ? resolved.node.label : lightbox.target.selection.nodeRef;
   const screen = getNodeScreens(document, screenshots, lightbox.target.selection.nodeRef).find((item) => item.surface["@id"] === lightbox.surfaceRef);
@@ -32,11 +36,16 @@ export function JourneyLightbox({ document, screenshots, lightbox, onClose, onPr
   const position = index < 0
     ? `Screenshot unavailable · ${configured.length} mapped ${unit}${configured.length === 1 ? "" : "s"}`
     : `${index + 1} / ${configured.length}${hasRepeatedScreens ? " views" : ""}${callSites.length > 1 ? ` · ${callSiteIndex + 1} of ${callSites.length} call sites` : ""}`;
+  const touchpoint = getJourneyTouchpoints(document, lightbox.target.selection.journeyRef)[0];
+  const color = touchpoint ? touchpointColor(touchpoint, touchpoints) : undefined;
+  const short = touchpoint ? touchpointLabel(touchpoint, touchpoints) : undefined;
+  const journeyLabel = resolved ? resolved.journey.label ?? resolved.journey["@id"] : lightbox.target.selection.journeyRef;
+  const context = [callSites.length > 1 ? occurrenceLabel(document, lightbox.target.occurrence) : journeyLabel, ...(short ? [short] : [])].join(" · ");
   return <BrowserLightbox onClose={onClose} onPrevious={onPrevious} onNext={onNext}>
-    <ScreenLightbox title={title} identity={lightbox.surfaceRef} context={occurrenceLabel(document, lightbox.target.occurrence)}
-      position={position}
+    <ScreenLightbox title={title} context={context} position={position}
+      {...(touchpoint && short ? { touchpoint: { label: short, ...(color ? { color } : {}) } } : {})}
       canStep={configured.length > 0} onPrevious={onPrevious} onNext={onNext} onClose={onClose}>
-      <BrowserScreenImage source={screen?.source} label={title} />
+      <BrowserScreenImage source={screen?.source} label={title} fit="height" />
     </ScreenLightbox>
   </BrowserLightbox>;
 }

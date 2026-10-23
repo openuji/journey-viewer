@@ -1,6 +1,44 @@
 .preview {
-  display: grid;
-  gap: var(--jv-space-sm);
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 60;
+  box-sizing: border-box;
+  inline-size: var(--jv-size-screen-preview);
   padding: var(--jv-space-sm);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  box-shadow: var(--jv-shadow-overlay);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--jv-duration-fast), visibility 0s linear var(--jv-duration-fast);
+}
+.preview[data-visible] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--jv-duration-fast);
+}
+.caption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jv-space-sm);
+  padding: var(--jv-space-sm) var(--jv-space-xs) var(--jv-space-2xs);
+}
+.dot {
+  margin-block-start: var(--jv-space-xs);
+}
+.text {
   min-inline-size: 0;
+}
+.block {
+  display: block;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview,
+  .preview[data-visible] {
+    transition: none;
+  }
 }

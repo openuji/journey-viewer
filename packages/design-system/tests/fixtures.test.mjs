@@ -28,6 +28,11 @@ for (const name of [
   "InspectorPanel",
   "StateSummary",
   "JourneyContracts",
+  "Icon",
+  "JourneyNest",
+  "ScreenThumbnail",
+  "SegmentedControl",
+  "ExplorerBar",
 ]) {
   const { [`create${name}Fixture`]: generate } = await import(
     `../src/components/${name}/${name}.fixtures.ts`
@@ -88,8 +93,13 @@ test("search and row-relation fixtures distinguish valid empty text from malform
   assert.deepEqual(checkSearchFieldFixture(freeze(createSearchFieldFixture({ value: "" }))), []);
   assert.ok(checkSearchFieldFixture(freeze(createSearchFieldFixture({ value: null }))).length > 0);
   assert.ok(checkSearchFieldFixture(freeze(createSearchFieldFixture({ placeholder: false }))).length > 0);
-  for (const relation of ["incoming", "outgoing", "both"]) assert.deepEqual(checkStateRowFixture(freeze(createStateRowFixture({ relation }))), []);
-  assert.ok(checkStateRowFixture(freeze(createStateRowFixture({ relation: "other" }))).length > 0);
+  for (const tone of ["active", "incoming", "outgoing", "both", "dim"]) assert.deepEqual(checkStateRowFixture(freeze(createStateRowFixture({ tone }))), []);
+  assert.ok(checkStateRowFixture(freeze(createStateRowFixture({ tone: "other" }))).length > 0);
+  assert.deepEqual(checkStateRowFixture(freeze(createStateRowFixture({ marks: { incoming: 1, outgoing: 0, title: "Routes" } }))), []);
+  for (const marks of [{ incoming: -1, outgoing: 0 }, { incoming: 1 }, { incoming: 0, outgoing: 0, title: "" }]) {
+    assert.ok(checkStateRowFixture(freeze(createStateRowFixture({ marks }))).length > 0);
+  }
+  assert.ok(checkStateRowFixture(freeze(createStateRowFixture({ crossing: { label: "" } }))).length > 0);
 });
 
 test("contract fixture checks reject malformed items and conflicting defaults independently", async () => {
@@ -122,7 +132,12 @@ test("inspection and contract-control fixtures independently reject malformed ne
   }
   const { createInspectorPanelFixture } = await import("../src/components/InspectorPanel/InspectorPanel.fixtures.ts");
   const { checkInspectorPanelFixture } = await import("../src/components/InspectorPanel/InspectorPanel.checks.ts");
-  for (const sections of [null, [null], [{ title: "Section", items: [null] }], [{ title: "Section", items: [{ id: "x", label: "X", details: [null] }] }]]) {
+  for (const sections of [
+    null, [null], [{ title: "Section", groups: [null] }],
+    [{ title: "Section", direction: "sideways" }],
+    [{ title: "Section", direction: "incoming", groups: [{ id: "x", label: "X", exit: false, items: [{ id: "i", label: "I", tags: [null] }] }] }],
+    [{ title: "Section", details: [{ id: "d", label: "D" }] }],
+  ]) {
     assert.ok(checkInspectorPanelFixture(freeze(createInspectorPanelFixture({ sections }))).length > 0);
   }
 });
@@ -138,6 +153,10 @@ test("screen image status requires a source and journey touchpoint lists are che
   assert.deepEqual(checkScreenImageFixture(freeze(createScreenImageFixture({ source: undefined, status: "unavailable" }))), []);
   const { createJourneyHeadFixture } = await import("../src/components/JourneyHead/JourneyHead.fixtures.ts");
   const { checkJourneyHeadFixture } = await import("../src/components/JourneyHead/JourneyHead.checks.ts");
+  assert.ok(checkJourneyHeadFixture(freeze(createJourneyHeadFixture({ matched: true, filtered: true }))).length > 0);
+  const { createSegmentedControlFixture } = await import("../src/components/SegmentedControl/SegmentedControl.fixtures.ts");
+  const { checkSegmentedControlFixture } = await import("../src/components/SegmentedControl/SegmentedControl.checks.ts");
+  assert.ok(checkSegmentedControlFixture(freeze(createSegmentedControlFixture({ value: "missing" }))).length > 0);
   assert.deepEqual(checkJourneyHeadFixture(freeze(createJourneyHeadFixture({ touchpoints: [{ id: "tp:1", label: "App" }] }))), []);
   for (const touchpoints of [false, [null], [{ id: "tp:1", label: "App", color: false }]]) {
     assert.ok(checkJourneyHeadFixture(freeze(createJourneyHeadFixture({ touchpoints }))).length > 0);

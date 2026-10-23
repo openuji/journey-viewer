@@ -1,0 +1,8 @@
+.group {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--jv-space-2xs);
+  padding: var(--jv-space-2xs);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-muted-surface);
+}

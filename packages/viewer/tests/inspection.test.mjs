@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { JourneyInspector, JourneyExplorer, createViewerInteraction, collapseAllJourneys, selectNode, toggleChildJourneys } from "../dist/index.js";
+import { JourneyInspector, JourneyExplorer, createViewerInteraction, collapseAllJourneys, searchViewer, selectNode, toggleChildJourneys } from "../dist/index.js";
 const freeze = (value) => {
   if (value && typeof value === "object") { Object.values(value).forEach(freeze); Object.freeze(value); }
   return value;
@@ -12,51 +12,75 @@ const oidc = freeze(JSON.parse(await readFile(new URL("../../../examples/solid-o
 const fixture = freeze(JSON.parse(await readFile(new URL("fixtures/hierarchy.ujg.jsonld", import.meta.url), "utf8")));
 const inspect = (document, selection) => renderToStaticMarkup(h(JourneyInspector, { document, selection: freeze(selection) }));
 
-test("state inspection uses explicit local transitions and keeps boundary entry/exit annotations", () => {
+test("state inspection groups explicit local transitions and keeps boundary entry/exit annotations", () => {
   const html = inspect(oidc, { kind: "state", journeyRef: "urn:ujg:solid-oidc:app-auth-journey", nodeRef: "urn:ujg:solid-oidc:idp-auth-flow" });
-  assert.match(html, /Incoming transitions/);
-  assert.match(html, /Outgoing transitions/);
-  assert.match(html, /Nested journeys/);
-  assert.match(html, /Entry boundary:/);
-  assert.match(html, /Exit boundary:/);
-  assert.match(html, /urn:ujg:solid-oidc:idp-login-entry/);
-  assert.match(html, /urn:ujg:solid-oidc:idp-auth-failed/);
+  assert.match(html, /Composite state/);
+  assert.match(html, />Nested journey</);
+  assert.match(html, /IdP auth journey/);
+  assert.match(html, /12 states · 5 entries · 4 exits/);
+  assert.match(html, /Touchpoint change: App touchpoint → Identity provider touchpoint/);
+  assert.match(html, />Incoming</);
+  assert.match(html, />Outgoing</);
+  assert.match(html, /Start sign-in/);
+  assert.match(html, /enters at Start at login/);
+  assert.match(html, /on child exit: IdP auth failed/);
+  assert.match(html, /App auth journey · 1 entry · 0 exported exits/);
+  // Informational inspection without navigation has no controls or images.
   assert.doesNotMatch(html, /<button|<img|breadcrumb/i);
 });
 
-test("entry call sites and exit handlers follow explicit boundary fields across parents", () => {
-  const entry = inspect(oidc, { kind: "entry", journeyRef: "urn:ujg:solid-oidc:idp-auth-journey", nodeRef: "urn:ujg:solid-oidc:idp-login-entry" });
+test("entry call sites and exit handlers follow the explicit call site's parent", () => {
+  const occurrenceOf = (ref) => searchViewer(oidc, ref).find((item) => item.selection.nodeRef === ref);
+  const login = occurrenceOf("urn:ujg:solid-oidc:idp-login-entry");
+  const entry = renderToStaticMarkup(h(JourneyInspector, { document: oidc, selection: login.selection,
+    navigation: { occurrence: login.occurrence, onNavigate: () => assert.fail("render must not navigate") } }));
+  assert.match(entry, /Journey entry/);
   assert.match(entry, /Starts at/);
-  assert.match(entry, /Call sites/);
-  assert.match(entry, /urn:ujg:solid-oidc:app-starts-idp-auth/);
-  const exit = inspect(oidc, { kind: "exit", journeyRef: "urn:ujg:solid-oidc:idp-auth-journey", nodeRef: "urn:ujg:solid-oidc:idp-auth-failed" });
+  assert.match(entry, /Invoked from App auth journey/);
+  assert.match(entry, /Sign-in required/);
+  assert.match(entry, /Start sign-in/);
+  const failed = occurrenceOf("urn:ujg:solid-oidc:idp-auth-failed");
+  const exit = renderToStaticMarkup(h(JourneyInspector, { document: oidc, selection: failed.selection,
+    navigation: { occurrence: failed.occurrence, onNavigate: () => assert.fail("render must not navigate") } }));
+  assert.match(exit, /Journey exit/);
   assert.match(exit, /Produced by/);
-  assert.match(exit, /Parent continuation handlers/);
-  assert.match(exit, /urn:ujg:solid-oidc:app-continues-after-idp-failed/);
+  assert.match(exit, /Handled by parent/);
+  assert.match(exit, /Continue after failed login/);
+  assert.match(exit, /App auth journey \/ IdP auth journey/);
+  assert.ok((exit.match(/<button/g) ?? []).length > 0, "navigable inspection exposes group-head buttons");
+  const informational = inspect(oidc, failed.selection);
+  assert.doesNotMatch(informational, /Handled by parent/);
 });
 
-test("shared child contracts show all explicit callers, and exclude unrelated boundary references", () => {
+test("shared child entries show the callers at each explicit call site, excluding unrelated boundary references", () => {
   const document = freeze({ ...fixture, nodes: [...fixture.nodes,
-    { "@id": "urn:test:call1", "@type": "Transition", from: "urn:test:terminal", to: "urn:test:compose", toEntryRef: "urn:test:child-entry" },
-    { "@id": "urn:test:call2", "@type": "Transition", from: "urn:test:compose-again", to: "urn:test:compose-again", toEntryRef: "urn:test:child-entry" },
-    { "@id": "urn:test:wrong", "@type": "Transition", from: "urn:test:terminal", to: "urn:test:terminal", toEntryRef: "urn:test:child-entry" },
+    { "@id": "urn:test:call1", "@type": "Transition", label: "First call", from: "urn:test:terminal", to: "urn:test:compose", toEntryRef: "urn:test:child-entry" },
+    { "@id": "urn:test:call2", "@type": "Transition", label: "Second call", from: "urn:test:compose-again", to: "urn:test:compose-again", toEntryRef: "urn:test:child-entry" },
+    { "@id": "urn:test:wrong", "@type": "Transition", label: "Unrelated", from: "urn:test:terminal", to: "urn:test:terminal", toEntryRef: "urn:test:child-entry" },
   ].map((node) => node["@id"] === "urn:test:first" ? { ...node, transitionRefs: ["urn:test:call1", "urn:test:wrong"] }
     : node["@id"] === "urn:test:second" ? { ...node, transitionRefs: ["urn:test:call2"] } : node) });
   const before = JSON.stringify(document);
-  const html = inspect(document, { kind: "entry", journeyRef: "urn:test:shared", nodeRef: "urn:test:child-entry" });
-  assert.match(html, /urn:test:call1/);
-  assert.match(html, /urn:test:call2/);
-  assert.doesNotMatch(html, /urn:test:wrong/);
+  const selection = freeze({ kind: "entry", journeyRef: "urn:test:shared", nodeRef: "urn:test:child-entry" });
+  const at = (occurrence) => renderToStaticMarkup(h(JourneyInspector, { document, selection, navigation: { occurrence, onNavigate: () => {} } }));
+  const first = at({ startJourneyRef: "urn:test:first", steps: [{ stateIndex: 0, childIndex: 0 }] });
+  assert.match(first, /Invoked from First root/);
+  assert.match(first, /First call/);
+  assert.doesNotMatch(first, /Second call|Unrelated/);
+  const second = at({ startJourneyRef: "urn:test:second", steps: [{ stateIndex: 0, childIndex: 0 }] });
+  assert.match(second, /Invoked from Second root/);
+  assert.match(second, /Second call/);
+  assert.doesNotMatch(second, /First call|Unrelated/);
   assert.equal(JSON.stringify(document), before);
 });
 
 test("journey inspection and empty/unresolved selections render from readonly presentation only", () => {
   const html = inspect(fixture, { kind: "journey", journeyRef: "urn:test:first", nodeRef: "urn:test:first" });
-  assert.match(html, /States/);
-  assert.match(html, /Transitions/);
+  assert.match(html, />Journey</);
+  assert.match(html, /Entries/);
+  assert.match(html, /Exits/);
   assert.match(html, /Default entry/);
-  assert.match(html, /Web/);
-  assert.match(html, /Phone/);
+  assert.match(html, /Begin first root/);
+  assert.match(html, /Finish first root/);
   assert.match(inspect(fixture, null), /Select a journey, state, entry or exit/);
   assert.match(inspect(fixture, { kind: "state", journeyRef: "urn:test:missing", nodeRef: "urn:test:terminal" }), /Select a journey/);
 });
@@ -104,7 +128,9 @@ test("empty and unresolved composites keep notices inside selectable rows even w
     assert.equal((html.match(/<div class="[^"]*nested[^"]*"><div[^>]*><p[^>]*>No child journeys\.<\/p><\/div><\/div><\/div><\/div>/g) ?? []).length, 2);
     assert.equal((html.match(/data-state-ref=/g) ?? []).length, 3);
     assert.match(html, /aria-pressed="true"[^>]*><span[^>]*>No child references/);
-    assert.doesNotMatch(html, /aria-expanded|data-journey-ref="urn:test:missing"/);
+    // Only the collapsed entry/exit summary is a disclosure; empty composites have no child toggle.
+    assert.equal((html.match(/aria-expanded/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /aria-label="(?:Expand|Collapse) |data-journey-ref="urn:test:missing"/);
   }
   assert.equal(JSON.stringify(document), before);
 });

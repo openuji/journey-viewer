@@ -15,7 +15,8 @@
     "build:consumer": "tsc -p tests/consumer/tsconfig.json && vite build --config tests/consumer/vite.config.ts",
     "storybook": "pnpm --filter @journey-viewer/viewer... build && pnpm --filter @journey-viewer/design-system build:consumer && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6007 --no-open",
     "build:storybook": "pnpm --filter @journey-viewer/viewer... build && pnpm --filter @journey-viewer/design-system build:consumer && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "test:parity": "node tests/parity.mjs"
   },
   "dependencies": {
     "@journey-viewer/ujg-jsonld": "workspace:*",

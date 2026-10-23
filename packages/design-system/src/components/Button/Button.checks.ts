@@ -3,8 +3,8 @@ import type { FixtureCheck } from "../../dev/checks.ts";
 
 export const checkButtonFixture: FixtureCheck = (value) => [
   ...text(value, "children"),
-  ...choice(value, "variant", ["solid", "outline", "ghost", "row"]),
-  ...choice(value, "size", ["sm", "md"]),
+  ...choice(value, "variant", ["solid", "outline", "ghost", "row", "bare", "pill", "segment", "chip", "panel"]),
+  ...choice(value, "size", ["xs", "sm", "md"]),
   ...boolean(value, "disabled"),
   ...boolean(value, "selected"),
 ];

@@ -8,14 +8,17 @@ const meta = {
   title: "Hierarchy/JourneyContractControls",
   component: JourneyContractControls,
   tags: ["autodocs"],
-  args: { ...createJourneyContractControlsFixture(), onSelect: () => {} },
+  args: { ...createJourneyContractControlsFixture(), onSelect: () => {}, onToggle: () => {} },
 } satisfies Meta<typeof JourneyContractControls>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
+export const Closed: Story = { args: { open: false } };
 export const Selected: Story = { args: { selection: { kind: "entry", id: "entry:start" } } };
 function ControlledExample() {
   const [selection, setSelection] = useState<ContractSelection | null>(null);
-  return <JourneyContractControls {...createJourneyContractControlsFixture()} selection={selection} onSelect={(kind, id) => setSelection({ kind, id })} />;
+  const [open, setOpen] = useState(false);
+  return <JourneyContractControls {...createJourneyContractControlsFixture()} open={open} onToggle={() => setOpen((value) => !value)}
+    selection={selection} onSelect={(kind, id) => setSelection({ kind, id })} />;
 }
 export const Controlled: Story = { render: () => <ControlledExample /> };

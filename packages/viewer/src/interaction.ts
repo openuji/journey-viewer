@@ -17,6 +17,8 @@ export interface ViewerSelection {
 export interface ViewerInteraction {
   readonly selection: ViewerSelection | null;
   readonly expandedJourneys: readonly string[];
+  /** Journeys whose entry/exit lists are shown; selecting an entry or exit opens its journey's list. */
+  readonly openContracts: readonly string[];
 }
 
 /** Resolves only the selected journey's explicit, correctly typed members. */
@@ -73,6 +75,7 @@ export function createViewerInteraction(document: UjgDocument): ViewerInteractio
       nodeRef: state?.["@id"] ?? journey["@id"],
     } : null,
     expandedJourneys: getNodesByType(document, "Journey").map((node) => node["@id"]),
+    openContracts: [],
   };
 }
 
@@ -91,9 +94,12 @@ function select(
   const expandedJourneys = mergeRefs(current.expandedJourneys, [
     ...ancestorRefs(document, selection.journeyRef), ...children,
   ]);
+  const openContracts = selection.kind === "entry" || selection.kind === "exit"
+    ? mergeRefs(current.openContracts, [selection.journeyRef]) : current.openContracts;
   return sameSelection(current.selection, selection) && expandedJourneys === current.expandedJourneys
+    && openContracts === current.openContracts
     ? current
-    : { selection: { ...selection }, expandedJourneys };
+    : { selection: { ...selection }, expandedJourneys, openContracts };
 }
 
 export function selectNode(document: UjgDocument, current: ViewerInteraction, selection: ViewerSelection): ViewerInteraction {
@@ -131,4 +137,15 @@ export function expandAllJourneys(document: UjgDocument, current: ViewerInteract
 
 export function collapseAllJourneys(current: ViewerInteraction): ViewerInteraction {
   return current.expandedJourneys.length === 0 ? current : { ...current, expandedJourneys: [] };
+}
+
+/** Shows or hides one journey's entry/exit list. Unknown journeys are no-ops. */
+export function toggleContracts(document: UjgDocument, current: ViewerInteraction, journeyRef: string): ViewerInteraction {
+  if (!getNodesByType(document, "Journey").some((node) => node["@id"] === journeyRef)) return current;
+  return {
+    ...current,
+    openContracts: current.openContracts.includes(journeyRef)
+      ? current.openContracts.filter((ref) => ref !== journeyRef)
+      : [...current.openContracts, journeyRef],
+  };
 }

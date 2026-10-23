@@ -2,7 +2,7 @@ import type { TextProps } from "./Text.js";
 
 export type TextFixture = Readonly<
   Omit<
-    Required<Pick<TextProps, "children" | "as" | "variant" | "tone">>,
+    Required<Pick<TextProps, "children" | "as" | "variant" | "tone" | "weight">>,
     "children"
   > & { readonly children: string }
 >;
@@ -15,6 +15,7 @@ export function createTextFixture(
     as: "span",
     variant: "body",
     tone: "default",
+    weight: "regular",
     ...overrides,
   };
 }

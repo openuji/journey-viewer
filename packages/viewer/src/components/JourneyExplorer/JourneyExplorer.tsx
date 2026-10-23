@@ -1,94 +1,126 @@
-import { Button, JourneyContractControls, StateRow, Text } from "@journey-viewer/design-system";
+import { JourneyContractControls, JourneyNest, StateRow } from "@journey-viewer/design-system";
 import type { HeadingLevel, StateRowProps } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { UjgDocument, UjgJourney } from "@journey-viewer/ujg-jsonld";
 import type { ViewerInteraction, ViewerSelection } from "../../interaction.js";
 import { sameSelection } from "../../interaction.js";
-import type { ViewerNavigation } from "../../navigation.js";
-import { getRowRelation, matchesTouchpoints, occurrenceLabel } from "../../navigation.js";
-import { childOccurrence, getOccurrenceTrail } from "../../occurrence.js";
+import type { ViewerNavigation, ViewerTarget } from "../../navigation.js";
+import { getRouteDescription, getRowHighlight, matchesTouchpoints } from "../../navigation.js";
+import { childOccurrence, sameOccurrence } from "../../occurrence.js";
 import type { ViewerOccurrence } from "../../occurrence.js";
-import { referenceLabel } from "../../occurrence-presentation.js";
 import { HierarchyTree } from "../JourneyHierarchy/HierarchyTree.js";
 import type { JourneyScreenControls } from "../JourneyScreens/JourneyScreens.js";
 import type { TouchpointPresentation } from "../../presentation.js";
+import { touchpointColor, touchpointLabel } from "../../presentation.js";
 import { getNodeScreens } from "../../screens.js";
 import type { ViewerExtensions, ViewerStateContext } from "../../extensions.js";
 import { JourneyAnnotations } from "../JourneyAnnotations/JourneyAnnotations.js";
+import { BrowserColumns } from "../../browser/BrowserColumns.js";
+import { BrowserScreenButton } from "../../browser/BrowserScreenButton.js";
+import type { PreviewAnchor } from "../../preview-placement.js";
+import styles from "./JourneyExplorer.module.css";
+
+/** Screenshot actions for rows; `onPreview` receives the opener's viewport rectangle, then null. */
+export interface JourneyExplorerMedia extends JourneyScreenControls {
+  readonly onPreview?: (target: ViewerTarget, surfaceRef: string, anchor: PreviewAnchor | null) => void;
+}
 
 export interface JourneyExplorerProps {
   readonly document: UjgDocument;
   readonly interaction: ViewerInteraction;
   readonly onSelect: (selection: ViewerSelection, occurrence: ViewerOccurrence) => void;
   readonly onToggleChildren: (journeyRef: string, stateRef: string) => void;
+  /** Shows or hides a journey's entry/exit list; the list stays closed without it. */
+  readonly onToggleContracts?: (journeyRef: string) => void;
   readonly navigation?: ViewerNavigation;
   readonly onHover?: (selection: ViewerSelection | null, occurrence: ViewerOccurrence | null) => void;
-  readonly onFocusJourney?: (occurrence: ViewerOccurrence) => void;
   readonly level?: HeadingLevel;
-  readonly media?: JourneyScreenControls;
+  readonly media?: JourneyExplorerMedia;
   readonly touchpoints?: TouchpointPresentation;
   readonly extensions?: Pick<ViewerExtensions, "annotations" | "stateOverrides">;
 }
 
+const primaryTouchpoint = (document: UjgDocument, journey: UjgJourney, presentation: TouchpointPresentation) => {
+  const touchpoint = getJourneyTouchpoints(document, journey["@id"])[0];
+  if (!touchpoint) return undefined;
+  const color = touchpointColor(touchpoint, presentation);
+  return { id: touchpoint["@id"], label: touchpointLabel(touchpoint, presentation), ...(color ? { color } : {}) };
+};
+
 /** Controlled UJG composition; callers own the immutable snapshot and its transitions. */
-export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChildren, onHover, onFocusJourney, media, touchpoints, extensions, ...props }: JourneyExplorerProps) {
-  const focus = navigation?.focus;
+export function JourneyExplorer({
+  interaction, navigation, onSelect, onToggleChildren, onToggleContracts, onHover, media, touchpoints = {}, extensions, ...props
+}: JourneyExplorerProps) {
+  const { document } = props;
+  const columns = navigation?.mode === "columns";
+  const refs = navigation?.touchpointRefs ?? [];
+  const filtered = (journey: UjgJourney) => !matchesTouchpoints(document, journey["@id"], refs);
   return (
     <HierarchyTree
       {...props}
-      {...(touchpoints ? { touchpointPresentation: touchpoints } : {})}
-      isJourneyFiltered={(journey) => !matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? [])}
-      {...(focus ? { occurrences: getOccurrenceTrail(props.document, focus).map((crumb) => crumb.occurrence) } : {})}
-      renderJourneyAction={(journey, occurrence) => {
-        const target: ViewerSelection = { kind: "journey", journeyRef: journey["@id"], nodeRef: journey["@id"] };
-        return (
-          <div>
-          {focus && <Text as="p" variant="caption" tone="muted">{occurrenceLabel(props.document, occurrence)}</Text>}
-          {!matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? []) && (
-            <Text as="p" variant="caption" tone="muted">Does not match touchpoint filter.</Text>
-          )}
-          <Button
-            variant="row" selected={sameSelection(interaction.selection, target)}
-            aria-pressed={sameSelection(interaction.selection, target)}
-            onClick={() => onSelect(target, occurrence)}
-          ><Text variant="caption">Inspect {journey.label ?? journey["@id"]}</Text></Button>
-          {onFocusJourney && <Button variant="outline" onClick={() => onFocusJourney(occurrence)}>Focus {journey.label ?? journey["@id"]}</Button>}
-          {extensions?.annotations && <JourneyAnnotations annotations={extensions.annotations}
-            context={{ document: props.document, journey, node: journey, selection: target, occurrence }} />}
-          </div>
-        );
+      touchpointPresentation={touchpoints}
+      isJourneyFiltered={filtered}
+      isJourneyMatched={(journey) => refs.length > 0 && !filtered(journey)}
+      {...(columns ? {
+        occurrences: navigation.lanes,
+        renderColumns: (lanes) => <BrowserColumns count={navigation.lanes.length} className={styles.columns}>{lanes}</BrowserColumns>,
+      } : {})}
+      renderNested={(journey, _occurrence, content) => {
+        const touchpoint = primaryTouchpoint(document, journey, touchpoints);
+        return <JourneyNest matched={refs.length > 0 && !filtered(journey)} {...(touchpoint?.color ? { color: touchpoint.color } : {})}>
+          {content}
+        </JourneyNest>;
       }}
-      renderState={({ journey, state, stateIndex, occurrence, childJourneys, entryCount, directExitCount, renderChildren }) => {
+      {...(extensions?.annotations ? {
+        renderJourneyAction: (journey: UjgJourney, occurrence: ViewerOccurrence) => {
+          const target: ViewerSelection = { kind: "journey", journeyRef: journey["@id"], nodeRef: journey["@id"] };
+          return <JourneyAnnotations annotations={extensions.annotations!}
+            context={{ document, journey, node: journey, selection: target, occurrence }} />;
+        },
+      } : {})}
+      renderState={({ journey, state, stateIndex, occurrence, childJourneys, renderChildren }) => {
         const target: ViewerSelection = { kind: "state", journeyRef: journey["@id"], nodeRef: state["@id"] };
-        const expanded = childJourneys.some((child) => interaction.expandedJourneys.includes(child["@id"]));
-        const relation = getRowRelation(props.document, interaction, navigation, journey["@id"], state["@id"]);
-        const context: ViewerStateContext = { document: props.document, journey, node: state, selection: target, occurrence };
+        const childPaths = childJourneys.map((_, childIndex) => childOccurrence(occurrence, stateIndex, childIndex));
+        const expanded = columns
+          ? childPaths.some((path) => navigation.lanes.some((lane) => sameOccurrence(lane, path)))
+          : childJourneys.some((child) => interaction.expandedJourneys.includes(child["@id"]));
+        const highlight = getRowHighlight(document, interaction, navigation, journey["@id"], state["@id"]);
+        const parentTouchpoints = getJourneyTouchpoints(document, journey["@id"]).map((node) => node["@id"]);
+        const crossingJourney = childJourneys.find((child) => {
+          const first = getJourneyTouchpoints(document, child["@id"])[0];
+          return first !== undefined && !parentTouchpoints.includes(first["@id"]);
+        });
+        const crossing = crossingJourney ? primaryTouchpoint(document, crossingJourney, touchpoints) : undefined;
+        const color = primaryTouchpoint(document, journey, touchpoints)?.color;
+        const screens = media ? getNodeScreens(document, media.screenshots, state["@id"]).filter((screen) => screen.source) : [];
+        const context: ViewerStateContext = { document, journey, node: state, selection: target, occurrence };
         const row: StateRowProps = {
           label: state.label,
-          composite: childJourneys.length > 0 && !focus,
-          expanded: expanded && !focus,
+          ...(!columns && childJourneys.length ? { description: childJourneys.map((child) => child.label ?? child["@id"]).join(" · ") } : {}),
+          composite: childJourneys.length > 0,
+          expanded,
           selected: sameSelection(interaction.selection, target),
-          filtered: !matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? []),
-          ...(relation ? { relation } : {}),
-          entryCount,
-          exitCount: directExitCount,
+          filtered: filtered(journey),
+          ...(highlight ? {
+            tone: highlight.tone,
+            marks: { incoming: highlight.incoming, outgoing: highlight.outgoing,
+              title: getRouteDescription(document, navigation, interaction, journey["@id"], state["@id"]) },
+          } : {}),
+          ...(crossing ? { crossing: { label: crossing.label, ...(crossing.color ? { color: crossing.color } : {}) } } : {}),
           onSelect: () => onSelect(target, occurrence),
           onHover: (hovered) => onHover?.(hovered ? target : null, hovered ? occurrence : null),
-          actions: media && getNodeScreens(props.document, media.screenshots, state["@id"]).filter((screen) => screen.source).map((screen) => (
-            <Button key={screen.surface["@id"]} variant="outline" aria-label={`Open screenshot: ${state.label} (${screen.surface["@id"]})`}
-              onClick={() => media.onOpen({ selection: target, occurrence }, screen.surface["@id"])}><Text variant="caption">Screen</Text></Button>
+          actions: media && screens.map((screen) => (
+            <BrowserScreenButton key={screen.surface["@id"]}
+              label={screens.length > 1 ? `Screen mockup: ${state.label} (${screen.surface["@id"]})` : `Screen mockup: ${state.label}`}
+              {...(color ? { color } : {})}
+              onOpen={() => media.onOpen({ selection: target, occurrence }, screen.surface["@id"])}
+              onPreview={(anchor) => media.onPreview?.({ selection: target, occurrence }, screen.surface["@id"], anchor)} />
           )),
-          notice: childJourneys.length === 0 ? renderChildren?.({ visibleJourneyRefs: [] }) : focus && onFocusJourney ? (
-            <div>{childJourneys.map((child, childIndex) => {
-              const path = childOccurrence(occurrence, stateIndex, childIndex);
-              return getOccurrenceTrail(props.document, path).length ? <Button key={childIndex} variant="outline"
-                onClick={() => onFocusJourney(path)}>Open {referenceLabel(childJourneys, childIndex)}</Button>
-                : <Text as="p" variant="caption" tone="muted" key={childIndex}>Recursive journey reference: {child.label ?? child["@id"]}</Text>;
-            })}</div>
-          ) : null,
-          ...(childJourneys.length > 0 && !focus ? {
+          ...(childJourneys.length === 0 && renderChildren ? { notice: renderChildren({ visibleJourneyRefs: [] }) } : {}),
+          ...(childJourneys.length > 0 && !columns ? {
             onToggle: () => onToggleChildren(journey["@id"], state["@id"]),
+            children: expanded && renderChildren?.({ visibleJourneyRefs: interaction.expandedJourneys }),
           } : {}),
-          children: !focus && expanded && renderChildren?.({ visibleJourneyRefs: interaction.expandedJourneys }),
         };
         const override = extensions?.stateOverrides?.find((candidate) => candidate.matches(context));
         const Component = override?.Component;
@@ -100,7 +132,9 @@ export function JourneyExplorer({ interaction, navigation, onSelect, onToggleChi
       renderContracts={(journey, contracts, occurrence) => (
         <JourneyContractControls
           {...contracts}
-          filtered={!matchesTouchpoints(props.document, journey["@id"], navigation?.touchpointRefs ?? [])}
+          open={interaction.openContracts.includes(journey["@id"])}
+          onToggle={() => onToggleContracts?.(journey["@id"])}
+          filtered={filtered(journey)}
           selection={interaction.selection?.journeyRef === journey["@id"]
             && (interaction.selection.kind === "entry" || interaction.selection.kind === "exit")
             ? { kind: interaction.selection.kind, id: interaction.selection.nodeRef } : null}

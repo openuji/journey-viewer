@@ -56,7 +56,7 @@ test("matching panels append in supplied order for all selection kinds, using or
     const html = inspector(extensions, { selection: freeze({ kind, journeyRef: "urn:test:first", nodeRef }), level: 3,
       navigation: { occurrence: snapshot.navigation.occurrence, onNavigate: unexpected } });
     assert.match(html, new RegExp(`Custom ${kind}: ${nodeRef}`));
-    assert.ok(html.indexOf("Navigate graph") < html.indexOf("Source details"));
+    assert.ok(html.indexOf("exported exit") < html.indexOf("Source details"));
     assert.ok(html.indexOf("Source details") < html.indexOf("Additional note"));
     assert.match(html, /<h4[^>]*>Source details/);
     assert.doesNotMatch(html, /Skipped/);
@@ -101,7 +101,7 @@ test("annotations receive each finite call site and render for journey/state and
     });
     assert.match(inspected, new RegExp(`Note for ${kind}`));
     assert.doesNotMatch(inspected, /aria-label="Annotations"/);
-    assert.ok(inspected.indexOf(`Note for ${kind}`) < inspected.indexOf("Navigate graph"));
+    assert.ok(inspected.indexOf("exported exit") < inspected.indexOf(`Note for ${kind}`));
   }
 });
 
@@ -131,7 +131,8 @@ test("the first matching state override receives complete readonly row controls 
   assert.equal(received.row.selected, true);
   assert.equal(received.row.composite, true);
   assert.equal(received.row.expanded, true);
-  assert.equal(received.row.entryCount, 1);
+  assert.equal(received.row.tone, "active");
+  assert.equal(received.row.description, "Repeated child · Other child · Repeated child");
   assert.equal(selected.length + toggled.length + hovered.length, 0);
   received.row.onSelect(); received.row.onToggle(); received.row.onHover(true); received.row.onHover(false);
   assert.deepEqual(selected, [[snapshot.interaction.selection, snapshot.navigation.occurrence]]);
@@ -148,7 +149,7 @@ test("removing descriptors restores defaults, and a matching null override delib
   assert.equal(inspector({}), inspector());
 });
 
-test("state overrides retain screenshot actions, filtered relations, focus links and empty-composite notices", () => {
+test("state overrides retain screenshot actions, filtered relations, column carets and empty-composite notices", () => {
   const source = freeze({ ...document, nodes: [...document.nodes,
     { "@id": "opaque:screen", "@type": "Surface", graphNodeRef: "urn:test:compose" },
   ] });
@@ -158,20 +159,22 @@ test("state overrides retain screenshot actions, filtered relations, focus links
     captures.push({ context, row });
     return h(StateRow, row);
   } }] });
-  const navigation = freeze({ ...snapshot.navigation, focus: snapshot.navigation.occurrence, touchpointRefs: ["urn:test:phone"],
-    hover: { kind: "exit", journeyRef: "urn:test:first", nodeRef: "urn:test:exit" }, hoverOccurrence: snapshot.navigation.occurrence });
-  explorer(extensions, { document: source, navigation, onFocusJourney: unexpected,
+  const navigation = freeze({ ...snapshot.navigation, mode: "columns", lanes: [snapshot.navigation.occurrence], touchpointRefs: ["urn:test:phone"],
+    hover: { kind: "state", journeyRef: "urn:test:first", nodeRef: "urn:test:terminal" }, hoverOccurrence: snapshot.navigation.occurrence });
+  explorer(extensions, { document: source, navigation,
     media: { screenshots: freeze({ "opaque:screen": "./screen.png" }), onOpen: (...args) => opens.push(args) } });
   const compose = captures.find(({ context }) => context.node["@id"] === "urn:test:compose");
-  assert.equal(compose.row.composite, false);
+  assert.equal(compose.row.composite, true);
   assert.equal(compose.row.expanded, false);
-  assert.equal(compose.row.children, false);
-  assert.match(renderToStaticMarkup(compose.row.notice), /Open Repeated child \(reference 1 of 2\)/);
-  assert.match(renderToStaticMarkup(compose.row.actions), /Open screenshot:/);
+  assert.equal(compose.row.onToggle, undefined);
+  assert.equal(compose.row.children, undefined);
+  assert.equal(compose.row.description, undefined);
+  assert.equal(compose.row.tone, "dim");
+  assert.match(renderToStaticMarkup(compose.row.actions), /aria-label="Screen mockup: Several child journeys"/);
   assert.equal(opens.length, 0);
-  compose.row.actions[0].props.onClick();
+  compose.row.actions[0].props.onOpen();
   assert.deepEqual(opens, [[{ selection: snapshot.interaction.selection, occurrence: snapshot.navigation.occurrence }, "opaque:screen"]]);
-  assert.equal(captures.find(({ context }) => context.node["@id"] === "urn:test:terminal").row.relation, "incoming");
+  assert.equal(captures.find(({ context }) => context.node["@id"] === "urn:test:terminal").row.tone, "active");
 
   captures.length = 0;
   const empty = freeze({ ...source, nodes: source.nodes.map((node) => node["@id"] === "urn:test:compose" ? { ...node, subjourneyRefs: [] } : node) });

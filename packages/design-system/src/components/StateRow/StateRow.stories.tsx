@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StateRow } from "./StateRow.js";
+import { ScreenAction, StateRow } from "./StateRow.js";
 import { Text } from "../Text/Text.js";
 import { createStateRowFixture } from "./StateRow.fixtures.ts";
 
@@ -7,7 +7,7 @@ const meta = {
   title: "Hierarchy/StateRow",
   component: StateRow,
   tags: ["autodocs"],
-  args: createStateRowFixture(),
+  args: { ...createStateRowFixture(), onToggle: () => undefined },
 } satisfies Meta<typeof StateRow>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -21,26 +21,22 @@ export const Notice: Story = {
 export const Filtered: Story = {
   args: createStateRowFixture({ filtered: true }),
 };
-export const Relations: Story = {
-  render: () => <div className="story-stack">{(["incoming", "outgoing", "both"] as const).map((relation) => (
-    <StateRow key={relation} {...createStateRowFixture({ label: relation, relation })} />
-  ))}</div>,
+export const Tones: Story = {
+  render: () => <div className="story-stack">{(["active", "incoming", "outgoing", "both", "dim"] as const).map((tone) => (
+    <StateRow key={tone} {...createStateRowFixture({
+      label: tone, composite: false, tone,
+      marks: { incoming: tone === "incoming" || tone === "both" ? 1 : 0, outgoing: tone === "outgoing" || tone === "both" ? 2 : 0 },
+    })} />
+  ))}<StateRow {...createStateRowFixture({ label: "Selected", composite: false, selected: true })} /></div>,
 };
-export const Boundaries: Story = {
-  render: () => (
-    <div className="story-stack">
-      {(["entry", "exit", "both"] as const).map((boundary) => (
-        <StateRow
-          key={boundary}
-          {...createStateRowFixture({
-            label: boundary,
-            entryCount: boundary === "exit" ? 0 : 1,
-            exitCount: boundary === "entry" ? 0 : 2,
-          })}
-        />
-      ))}
-    </div>
-  ),
+export const LaneIndicator: Story = {
+  render: () => <div className="story-stack">
+    <StateRow {...createStateRowFixture({ label: "Closed lane child" })} />
+    <StateRow {...createStateRowFixture({ label: "Open lane child", expanded: true })} />
+  </div>,
+};
+export const Crossing: Story = {
+  args: { ...createStateRowFixture({ crossing: { label: "Identity provider", color: "var(--jv-color-category-blue)" } }), onToggle: () => undefined },
 };
 export const LongContent: Story = {
   args: createStateRowFixture({
@@ -49,4 +45,10 @@ export const LongContent: Story = {
     description: "Additional nested journey information",
     selected: true,
   }),
+};
+export const WithScreenAction: Story = {
+  args: {
+    ...createStateRowFixture({ composite: false, label: "Login" }),
+    actions: <ScreenAction label="Screen mockup: Login" color="var(--jv-color-category-blue)" />,
+  },
 };

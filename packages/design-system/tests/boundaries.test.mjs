@@ -22,6 +22,11 @@ const owners = [
   "InspectorPanel",
   "StateSummary",
   "JourneyContracts",
+  "Icon",
+  "JourneyNest",
+  "ScreenThumbnail",
+  "SegmentedControl",
+  "ExplorerBar",
 ];
 
 test("shared primitives have single owners and colocated public contracts, fixtures, checks, and stories", async () => {

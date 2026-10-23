@@ -26,6 +26,7 @@ export function BrowserLightbox({ children, onClose, onPrevious, onNext }: Brows
   }, []);
   return <dialog ref={dialogRef} aria-label="Screenshot viewer" className={styles.dialog}
     onCancel={(event) => { event.preventDefault(); onClose(); }}
+    onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     onKeyDown={(event) => {
       if (event.key === "Tab") {
         const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");

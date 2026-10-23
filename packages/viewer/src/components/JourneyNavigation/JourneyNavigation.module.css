@@ -1,29 +1,22 @@
-.navigation {
-  display: grid;
-  gap: var(--jv-space-sm);
-  min-inline-size: 0;
+@reference "@journey-viewer/design-system/tailwind.css";
+.tools {
+  display: flex;
+  gap: var(--jv-space-2xs);
 }
-.controls,
-.crumbs {
+.touchpoints {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--jv-space-2xs);
+  min-inline-size: 0;
+}
+.search {
+  display: flex;
+  flex: 1 1 100%;
   align-items: center;
   gap: var(--jv-space-xs);
   min-inline-size: 0;
+  @variant md {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
+  }
 }
-.summary { margin: 0; }
-.detail { display: block; }
-.filters {
-  min-inline-size: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.list,
-.crumbs {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.list > li,
-.crumbs > li { min-inline-size: 0; }

@@ -1,0 +1,34 @@
+@reference "../../styles/tailwind.css";
+.thumbnail {
+  position: relative;
+}
+.static {
+  display: block;
+  padding: var(--jv-space-md);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-hover);
+}
+.image {
+  display: block;
+  inline-size: var(--jv-size-screen-thumb-compact);
+  margin-inline: auto;
+  @variant md {
+    inline-size: var(--jv-size-screen-thumb);
+  }
+}
+.hint {
+  position: absolute;
+  inset-inline-end: var(--jv-space-sm);
+  inset-block-end: var(--jv-space-sm);
+  opacity: 0;
+  transition: opacity var(--jv-duration-fast);
+}
+.thumbnail:hover .hint,
+.thumbnail:focus-visible .hint {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hint {
+    opacity: 1;
+  }
+}

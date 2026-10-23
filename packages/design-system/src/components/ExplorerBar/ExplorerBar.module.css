@@ -1,0 +1,28 @@
+@reference "../../styles/tailwind.css";
+.bar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-sm) var(--jv-space-md);
+  min-inline-size: 0;
+  padding: var(--jv-space-sm) var(--jv-space-lg);
+  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
+  background: color-mix(in srgb, var(--jv-color-surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+  @variant md {
+    position: sticky;
+    inset-block-start: 0;
+  }
+}
+.title {
+  min-inline-size: 0;
+  margin-inline-end: var(--jv-space-xs);
+}
+.block {
+  display: block;
+}
+.spacer {
+  flex: 1 1 auto;
+}

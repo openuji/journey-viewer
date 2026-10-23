@@ -21,44 +21,60 @@ traversal or hidden hierarchy data. Counts and labels are caller-provided.
 `StateSummary` is the separate presentation component for static hierarchies. Its
 readonly contract contains `label`, `entryCount`, `directExitCount`, and nested
 `children`. It always renders supplied children and accepts no selection,
-expansion, filtering, callback, or mode props. `StateRow` retains its stage-4
-controlled button contract; it has no static mode. Its optional `notice` content
-slot stays visible in the row's nested layout independently of disclosure;
-`children` still appear only while expanded. Callers supply any empty-content
-message and decide whether a disclosure control is meaningful.
+expansion, filtering, callback, or mode props. `StateRow` is the controlled row
+ported from the original hierarchy: a composite with `onToggle` renders a
+disclosure button, and a composite without it renders a decorative caret that is
+accented while `expanded` (columns use this). `tone` (`active`, `incoming`,
+`outgoing`, `both`, `dim`) and `marks` (`{ incoming, outgoing, title? }`) present
+the caller's relation to the active state, with an accessible explanation of the
+marks; `selected` highlights the whole row. `description` shows faint secondary
+text (hidden below `md`), `crossing` a touchpoint dot, and `actions` caller
+controls such as `ScreenAction`, the phone button. Its optional `notice` content
+slot stays visible independently of disclosure; `children` appear only while
+expanded. Callers supply any empty-content message and decide whether a
+disclosure control is meaningful.
 
 ## Primitive ownership
 
 | Export | Owns |
 | --- | --- |
-| `Button` | Single native button implementation, explicit variants/sizes, focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
+| `Button` | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
 | `IconButton` | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`. |
-| `SearchField` | Labeled native search input, inherited `Text` typography, token-driven field/focus styles and explicit change/submit/clear callbacks. Enter submits and Escape clears through the caller. |
-| `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`sm`, `md`, `lg`). |
-| `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit tones. Native `span`, `p`, or `code`. |
+| `Icon` | Decorative chevron, phone, expand/collapse-all, reset, previous/next and close glyphs; the enclosing control supplies the name. |
+| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Columns. |
+| `SearchField` | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller. |
+| `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`). |
+| `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`. |
 | `Badge` | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips. |
 | `Surface` | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance. |
 
-Hierarchy compositions are `TouchpointDot`, `JourneyHead`, `JourneyCard`,
+Hierarchy compositions are `ExplorerBar` (with `ExplorerBarTitle` and
+`ExplorerBarSpacer`), `TouchpointDot`, `JourneyHead`, `JourneyCard`, `JourneyNest`,
 `StateRow`, `StateSummary`, `JourneyContracts`, and `JourneyContractControls`. They reuse these primitives
 and add arrangement and distinct journey decoration. A dot accepts a presentation color directly; the library has no
 example-specific palette or state-ID conventions. A standalone dot is named;
 `decorative` hides it from assistive technology. `JourneyHead` sets this when it
 also renders the visible touchpoint caption. Its optional readonly `touchpoints`
-array takes `{ id, label, color? }` items and renders every supplied caption/dot
-with an identity tooltip. The original singular `touchpoint` remains supported;
-if both props are supplied, both presentations render.
+array takes `{ id, label, color? }` items and renders a named dot for each. The
+original singular captioned `touchpoint` remains supported. `crumb` adds column
+context above the title, `matched` tints the head for a filter match, and
+`filtered` dims it. `JourneyNest` indents nested-journey content beneath a
+composite with a touchpoint guide line, solid when `matched`. `ExplorerBar` is
+the toolbar header (sticky from `md`, marked with `data-explorer-bar`).
 
-`ScreenImage` renders a bounded, contained image from explicit `source`, `label`,
-`status` (`loading`, `ready`, `unavailable`) and required load/error callbacks.
-The caller owns load status; the component has no state or effects. `ScreenPreview`
-composes a title, full identity, always-rendered image/content slot and a controlled
-open button. `available` controls that button's disabled presentation.
-`ScreenLightbox` owns only modal content: title, identity, context, position,
-previous/next/close controls and the image/content slot. The browser/caller owns
-the actual dialog lifecycle, keyboard handling and focus. Its heading is level 2
-within the independent dialog; it does not inherit a hierarchy heading level.
-All three have pure
+`ScreenImage` renders an image at its natural ratio from explicit `source`,
+`label`, `status` (`loading`, `ready`, `unavailable`), `fit` (`width` fills the
+container; `height` is bounded by `--jv-screen-image-height` and the viewport
+width) and required load/error callbacks. The caller owns load status; the
+component has no state or effects. `ScreenThumbnail` is the inspector's compact
+screenshot with an “Enlarge” hint; without `onOpen` it is not interactive.
+`ScreenPreview` is the floating, `aria-hidden` hover card (title, context, dot);
+its caller supplies placement through `style` and may pass a `ref` for
+measurement. `ScreenLightbox` owns only modal content: the phone-sized image slot
+and a caption with dot, title, context, position and previous/next/close icon
+buttons. The browser/caller owns the actual dialog lifecycle, keyboard handling
+and focus. Its heading is level 2 within the independent dialog; it does not
+inherit a hierarchy heading level. All four have pure
 fixtures, separate checks and stories; no UJG IDs or asset path conventions enter
 the design system.
 
@@ -162,28 +178,37 @@ The state-summary fixture contract rejects extra properties, including interacti
 and mode properties, and checks both counts independently.
 `JourneyContractControls` is the interactive counterpart to `JourneyContracts`:
 it receives the same readonly items, an explicit `{ kind, id } | null` selection,
-and a required `onSelect(kind, id)` callback. It composes `Button` and `Text`;
+a required `onSelect(kind, id)` callback, and an explicit `open` flag with
+`onToggle`. Closed, it shows only the “1 entry · 2 exits” summary toggle; open, it
+lists entry and exit chips (with a muted “default”). It composes `Button` and `Text`;
 static contract lists remain noninteractive. Fixture checks reject selections
 that do not name a listed contract of the same kind.
 
-`InspectorPanel` receives readonly display strings, touchpoint captions and
-sections of `{ id, label, details }` items. It composes `Surface`, `Heading`,
-`Text` and `Badge` without UJG queries, selection state or effects. Its optional
-`media` slot renders supplied previews between the header and details. Its
-`children` slot always renders caller-supplied content, including explicit
-navigation controls. The panel owns no navigation behavior.
+`InspectorPanel` receives a readonly head (`crumb`, `title`, `typeLabel`,
+`identity`, `touchpoints`), an optional `footnote` and `sections`. A section has a
+title, optional `direction` (`incoming`/`outgoing`, shown with ←/→ and color),
+`count` and `empty` text, plus `details` (detail buttons with a sub-line, dot and
+note) and/or transition `groups` (a head with label, `exit` tag and count, over
+items with label, annotation and tags). Supplying `onSelect` on a detail or group
+makes it a button; without it the entry is informational. It composes `Surface`,
+`Heading`, `Text`, `Badge`, `Button` and `TouchpointDot` without UJG queries,
+selection state or effects. Its optional `media` slot renders between the head
+and sections; `children` render after the sections and footnote.
 Both components have colocated fixtures, independent checks and stories.
 These development checks are not runtime React-prop validators.
 
-`StateRow.relation` presents incoming/outgoing/both marks and its `onHover`
-callback reports pointer entry/leave for the caller to interpret. `JourneyHead`,
+`StateRow.onHover` reports pointer entry/leave (and leaving for the marks) for the
+caller to interpret. `JourneyHead`,
 `JourneyContractControls` and `StateRow` accept readonly `filtered` presentation.
 Only a row's own content is dimmed; nested children retain their own presentation.
 The design system derives none of these values from graph data.
-`StateRow.actions` always renders supplied row controls beside selection/counts;
-it owns no screenshot behavior. Shared category colors, modal scrim and screen
-dimensions live in DTCG tokens, including `--jv-color-category-*`,
-`--jv-color-scrim`, `--jv-size-screen-preview` and `--jv-size-lightbox`.
+`StateRow.actions` always renders supplied row controls after the marks; it owns
+no screenshot behavior. Shared category colors, modal scrim and layout dimensions
+live in DTCG tokens, including `--jv-color-category-*`, `--jv-color-scrim`,
+`--jv-size-screen-preview` (hover card), `--jv-size-lightbox` (maximum lightbox
+image height), `--jv-size-lane`, `--jv-size-inspector(-compact)`,
+`--jv-size-screen-thumb(-compact)`, `--jv-size-search(-results)` and the
+`--jv-shadow-popover/overlay/screen/lightbox` effects.
 
 Package exports are built ESM/declarations, `styles.css` (compiled components and
 production theme variables), `tokens.css` (theme variables only), `tailwind.css`

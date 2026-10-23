@@ -1,22 +1,45 @@
 {
-  "name": "@journey-viewer/web",
+  "name": "journey-viewer-site",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "dev": "pnpm prepare:example && ASTRO_TELEMETRY_DISABLED=1 astro dev --host 127.0.0.1",
+    "check": "pnpm check:tokens && ASTRO_TELEMETRY_DISABLED=1 astro check && tsc -p tsconfig.tests.json",
+    "generate:tokens": "node scripts/tokens.mjs generate",
+    "check:tokens": "node scripts/tokens.mjs check",
+    "prepare:example": "node scripts/prepare-example.mjs",
+    "build": "pnpm prepare:example && pnpm generate:tokens && pnpm check && ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview --host 127.0.0.1",
+    "storybook": "pnpm prepare:example && pnpm generate:tokens && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6008 --host 127.0.0.1 --no-open",
+    "build:storybook": "pnpm prepare:example && pnpm generate:tokens && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
+    "test": "pnpm generate:tokens && pnpm check && node --experimental-strip-types --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:app:browser": "node tests/application.browser.mjs"
   },
   "dependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "astro": "7.3.0",
+    "@journey-viewer/design-system": "link:../../packages/design-system",
+    "@journey-viewer/lint": "link:../../packages/lint",
+    "@journey-viewer/ujg-jsonld": "link:../../packages/ujg-jsonld",
+    "@journey-viewer/viewer": "link:../../packages/viewer",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:"
+    "@astrojs/check": "0.9.12",
+    "@storybook-astro/framework": "1.13.0",
+    "@storybook/builder-vite": "10.4.6",
+    "@types/node": "24.13.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "playwright": "1.61.1",
+    "storybook": "10.4.6",
+    "typescript": "6.0.3",
+    "vite": "8.1.0"
   }
 }

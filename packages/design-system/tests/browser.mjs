@@ -208,47 +208,40 @@ try {
     }
   });
 
-  await test("entry/exit explanations appear in the accessibility tree and touchpoint captions occur once", async () => {
+  await test("row mark explanations appear in the accessibility tree and touchpoint captions occur once", async () => {
     await consumer();
     const article = light().locator("article");
     await article.waitFor();
     const snapshot = await article.ariaSnapshot();
-    assert.match(snapshot, /1 entry/);
-    assert.match(snapshot, /2 exits/);
+    assert.match(snapshot, /2 transitions from the active state/);
     assert.doesNotMatch(snapshot, /←|→/);
     assert.equal((snapshot.match(/\bWeb\b/g) ?? []).length, 1);
     assert.equal(await article.getByRole("img", { name: "Web" }).count(), 0);
   });
 
-  await test("state-row text inherits hover, active and selected colors in every theme", async () => {
+  await test("state-row labels inherit their button color and selection belongs to the whole row", async () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await consumer();
-    const color = (locator) =>
-      locator.evaluate((element) => getComputedStyle(element).color);
+    const color = (locator) => locator.evaluate((element) => getComputedStyle(element).color);
+    const rowBackground = (locator) => locator.evaluate((element) => getComputedStyle(element.closest("[data-row]")).backgroundColor);
     for (const theme of ["light", "dark", "alternate"]) {
-      const row = page
-        .getByTestId(theme)
-        .getByRole("button", { pressed: false })
-        .filter({ hasText: "Averylong" });
+      const row = page.getByTestId(theme).getByRole("button", { pressed: false }).filter({ hasText: "Averylong" });
       const label = row.locator('[data-role="label"]');
-      const baseline = await color(row);
-      assert.equal(await color(label), baseline);
+      const resting = await rowBackground(row);
+      assert.equal(await color(label), await color(row));
       await row.hover();
       assert.equal(await color(label), await color(row));
       await page.mouse.down();
-      const active = await color(row);
-      assert.notEqual(active, baseline);
-      assert.equal(await color(label), active);
+      assert.equal(await color(label), await color(row));
       await page.mouse.up();
       await page.mouse.move(0, 0);
-      const selected = page
-        .getByTestId(theme)
-        .getByRole("button", { pressed: true });
-      assert.notEqual(await color(selected), baseline);
-      assert.equal(
-        await color(selected.locator('[data-role="label"]')),
-        await color(selected),
-      );
+      // The click above toggled the consumer's controlled selection snapshot.
+      const selected = page.getByTestId(theme).getByRole("button", { pressed: true }).filter({ hasText: "Averylong" });
+      await selected.waitFor();
+      assert.notEqual(await rowBackground(selected), resting, "selection colors the whole row");
+      assert.equal(await color(selected.locator('[data-role="label"]')), await color(selected));
+      await selected.click();
+      await page.mouse.move(0, 0);
     }
   });
 

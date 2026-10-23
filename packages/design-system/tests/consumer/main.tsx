@@ -40,8 +40,8 @@ function Sample({ theme }: { readonly theme: string }) {
           composite
           selected={snapshot.selected}
           expanded={snapshot.expanded}
-          entryCount={1}
-          exitCount={2}
+          tone="outgoing"
+          marks={{ incoming: 0, outgoing: 2, title: "Two routes from the active state" }}
           onSelect={() =>
             setSnapshot((previous) => ({
               ...previous,

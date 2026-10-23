@@ -1,7 +1,7 @@
+import type { CSSProperties } from "react";
 import { Heading } from "../Heading/Heading.js";
 import type { HeadingLevel } from "../Heading/Heading.js";
 import { Text } from "../Text/Text.js";
-import { Badge } from "../Badge/Badge.js";
 import { TouchpointDot } from "../TouchpointDot/TouchpointDot.js";
 import type { TouchpointDotProps } from "../TouchpointDot/TouchpointDot.js";
 import styles from "./JourneyHead.module.css";
@@ -9,10 +9,16 @@ import styles from "./JourneyHead.module.css";
 export interface JourneyHeadProps {
   readonly title: string;
   readonly count?: string;
+  /** A single captioned touchpoint; the visible caption names it, so the dot is decorative. */
   readonly touchpoint?: Readonly<Pick<TouchpointDotProps, "label" | "color">>;
+  /** Individually named touchpoint dots without captions. */
   readonly touchpoints?: readonly Readonly<{ id: string; label: string; color?: string }>[];
+  /** Context above the title, such as the ancestor path of a column. */
+  readonly crumb?: string;
   readonly level?: HeadingLevel;
   readonly filtered?: boolean;
+  /** Tinted with the first touchpoint color when a filter matches this journey. */
+  readonly matched?: boolean;
 }
 
 export function JourneyHead({
@@ -20,13 +26,23 @@ export function JourneyHead({
   count,
   touchpoint,
   touchpoints = [],
+  crumb,
   level = 2,
   filtered = false,
+  matched = false,
 }: JourneyHeadProps) {
+  const tint = touchpoints[0]?.color ?? touchpoint?.color;
   return (
-    <header className={styles.head} data-filtered={filtered || undefined}>
-      {touchpoint && <TouchpointDot {...touchpoint} decorative />}
+    <header className={styles.head} data-filtered={filtered || undefined} data-matched={matched || undefined}
+      data-crumb={crumb !== undefined || undefined}
+      style={tint === undefined ? undefined : ({ "--jv-touchpoint-color": tint } as CSSProperties)}>
+      {touchpoint && <TouchpointDot {...touchpoint} decorative className={styles.dot ?? ""} />}
+      {touchpoints.map((item, index) => (
+        <TouchpointDot key={`${index}:${item.id}`} label={item.label} className={styles.dot ?? ""}
+          {...(item.color ? { color: item.color } : {})} />
+      ))}
       <div className={styles.title}>
+        {crumb !== undefined && <Text as="p" variant="caption" tone="subtle">{crumb}</Text>}
         <Heading level={level} size="sm">
           {title}
         </Heading>
@@ -35,13 +51,9 @@ export function JourneyHead({
             {touchpoint.label}
           </Text>
         )}
-        {touchpoints.map((item, index) => <span className={styles.touchpoint} key={`${index}:${item.id}`} title={item.id}>
-          <TouchpointDot label={item.label} {...(item.color ? { color: item.color } : {})} decorative />
-          <Text variant="caption" tone="muted">{item.label}</Text>
-        </span>)}
       </div>
       {count !== undefined && (
-        <Badge className={styles.count ?? ""}>{count}</Badge>
+        <Text variant="caption" tone="subtle" className={styles.count}>{count}</Text>
       )}
     </header>
   );

@@ -24,6 +24,12 @@
     min-block-size: var(--jv-size-control-sm);
   }
 }
+.button[data-size="xs"] {
+  @variant md {
+    min-inline-size: var(--jv-size-control-xs);
+    min-block-size: var(--jv-size-control-xs);
+  }
+}
 .button[data-size="md"] {
   @variant md {
     min-inline-size: var(--jv-size-control-md);
@@ -38,11 +44,39 @@
   border-color: var(--jv-color-border);
   background: var(--jv-color-surface);
 }
-.button[data-variant="row"] {
+.button[data-variant="row"],
+.button[data-variant="bare"] {
   inline-size: 100%;
   justify-content: flex-start;
   text-align: start;
   color: var(--jv-color-foreground);
+}
+.button[data-variant="bare"] {
+  color: inherit;
+}
+.button[data-variant="pill"] {
+  @apply text-caption font-regular;
+  gap: var(--jv-space-xs);
+  padding: var(--jv-space-xs) var(--jv-space-sm);
+  border-radius: var(--jv-radius-full);
+}
+.button[data-variant="segment"] {
+  @apply text-caption font-semibold;
+  padding: var(--jv-space-xs) var(--jv-space-md);
+}
+.button[data-variant="chip"] {
+  @apply text-caption font-regular;
+  gap: var(--jv-space-xs);
+  padding: var(--jv-space-2xs) var(--jv-space-sm);
+  border-color: var(--jv-color-border);
+  background: var(--jv-color-surface);
+}
+.button[data-variant="panel"] {
+  display: block;
+  inline-size: 100%;
+  padding: var(--jv-space-md);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-hover);
 }
 .button[data-icon-only] {
   flex: 0 0 auto;
@@ -52,14 +86,50 @@
   background: var(--jv-color-hover);
   color: var(--jv-color-foreground);
 }
+.button[data-variant="solid"]:enabled:hover,
+.button[data-variant="solid"]:enabled:active {
+  background: color-mix(in srgb, var(--jv-color-accent) 86%, var(--jv-color-foreground));
+  color: var(--jv-color-on-accent);
+}
+.button[data-variant="chip"]:enabled:hover {
+  border-color: var(--jv-color-border-strong);
+  background: var(--jv-color-surface);
+}
+.button[data-variant="bare"]:enabled:hover,
+.button[data-variant="bare"]:enabled:active,
+.button[data-variant="panel"]:enabled:hover,
+.button[data-variant="panel"]:enabled:active {
+  background: transparent;
+  color: inherit;
+}
+.button[data-variant="panel"]:enabled:hover,
+.button[data-variant="panel"]:enabled:active {
+  background: var(--jv-color-hover);
+}
 .button:enabled:active,
 .button[data-selected] {
   background: var(--jv-color-accent-soft);
   color: var(--jv-color-accent);
 }
+.button[data-variant="pill"][data-selected],
+.button[data-variant="segment"][data-selected] {
+  border-color: var(--jv-color-border);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  box-shadow: var(--jv-shadow-subtle);
+}
+.button[data-variant="segment"][data-selected] {
+  border-color: transparent;
+}
+.button[data-variant="chip"][data-selected] {
+  border-color: var(--jv-color-accent);
+}
 .button:focus-visible {
   outline: var(--jv-border-focus) solid var(--jv-color-accent);
   outline-offset: var(--jv-border-focus);
+}
+.button[data-variant="bare"]:focus-visible {
+  outline-offset: calc(-1 * var(--jv-border-focus));
 }
 .button:disabled {
   opacity: var(--jv-opacity-filtered);
@@ -67,6 +137,7 @@
 }
 @media (pointer: coarse) {
   .button,
+  .button[data-size="xs"],
   .button[data-size="md"] {
     min-inline-size: var(--jv-size-control-mobile);
     min-block-size: var(--jv-size-control-mobile);

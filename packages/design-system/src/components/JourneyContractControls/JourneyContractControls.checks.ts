@@ -13,6 +13,7 @@ export const checkJourneyContractControlsFixture: FixtureCheck = (value) => {
   return [
     ...checkJourneyContractsFixture(value),
     ...(object(value) && value.filtered !== undefined ? boolean(value, "filtered") : []),
+    ...boolean(value, "open"),
     ...(valid ? [] : [{ path: ["selection"], message: "Expected null or a selection naming a listed contract of the same kind." }]),
   ];
 };

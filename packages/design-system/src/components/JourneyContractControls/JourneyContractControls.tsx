@@ -1,4 +1,5 @@
 import { Button } from "../Button/Button.js";
+import { Icon } from "../Icon/Icon.js";
 import { Text } from "../Text/Text.js";
 import type { JourneyContractsProps } from "../JourneyContracts/JourneyContracts.js";
 import styles from "./JourneyContractControls.module.css";
@@ -11,50 +12,58 @@ export interface ContractSelection {
 export interface JourneyContractControlsProps extends JourneyContractsProps {
   readonly selection: ContractSelection | null;
   readonly onSelect: (kind: "entry" | "exit", id: string) => void;
+  /** Whether the entry/exit chips are shown below the summary toggle. */
+  readonly open: boolean;
+  readonly onToggle: () => void;
   readonly filtered?: boolean;
 }
 
-export function JourneyContractControls({ entries, exits, selection, onSelect, filtered = false }: JourneyContractControlsProps) {
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+export function JourneyContractControls({ entries, exits, selection, onSelect, open, onToggle, filtered = false }: JourneyContractControlsProps) {
+  const summary = `${plural(entries.length, "entry", "entries")} · ${exits.length ? plural(exits.length, "exit", "exits") : "no exits"}`;
   return (
-    <dl className={styles.contracts} data-filtered={filtered || undefined}>
-      <div className={styles.group}>
-        <dt><Text variant="caption" tone="subtle">Entries</Text></dt>
-        <dd className={styles.items}>
-          <ul className={styles.list}>
-            {entries.map((entry, index) => (
-              <li key={`${index}:${entry.id}`} data-contract-ref={entry.id} data-contract-kind="entry">
-                <Button
-                  variant="outline" title={entry.id}
-                  selected={selection?.kind === "entry" && selection.id === entry.id}
-                  aria-pressed={selection?.kind === "entry" && selection.id === entry.id}
-                  onClick={() => onSelect("entry", entry.id)}
-                >
-                  <Text variant="caption">{entry.label}{entry.default && " (default)"}</Text>
-                </Button>
-              </li>
-            ))}
-            {entries.length === 0 && <li><Text variant="caption" tone="subtle">No entries.</Text></li>}
-          </ul>
-        </dd>
-      </div>
-      <div className={styles.group}>
-        <dt><Text variant="caption" tone="subtle">Exits</Text></dt>
-        <dd className={styles.items}>
-          <ul className={styles.list}>
-            {exits.map((exit, index) => (
-              <li key={`${index}:${exit.id}`} data-contract-ref={exit.id} data-contract-kind="exit">
-                <Button
-                  variant="outline" title={exit.id}
-                  selected={selection?.kind === "exit" && selection.id === exit.id}
-                  aria-pressed={selection?.kind === "exit" && selection.id === exit.id}
-                  onClick={() => onSelect("exit", exit.id)}
-                ><Text variant="caption">{exit.label}</Text></Button>
-              </li>
-            ))}
-            {exits.length === 0 && <li><Text variant="caption" tone="subtle">No exits.</Text></li>}
-          </ul>
-        </dd>
-      </div>
-    </dl>
+    <div className={styles.contracts} data-filtered={filtered || undefined}>
+      <Button variant="ghost" size="xs" className={styles.toggle} aria-expanded={open} data-open={open || undefined} onClick={onToggle}>
+        <Icon name="chevron" />
+        <Text variant="caption" tone="subtle">{summary}</Text>
+      </Button>
+      {open && <dl className={styles.list}>
+        <div className={styles.group}>
+          <dt className={styles.term}><Text variant="caption" tone="subtle">Entries</Text></dt>
+          <dd className={styles.items}>
+            <ul className={styles.chips}>
+              {entries.map((entry, index) => (
+                <li key={`${index}:${entry.id}`} data-contract-ref={entry.id} data-contract-kind="entry">
+                  <Button variant="chip" size="xs" title={entry.id}
+                    selected={selection?.kind === "entry" && selection.id === entry.id}
+                    aria-pressed={selection?.kind === "entry" && selection.id === entry.id}
+                    onClick={() => onSelect("entry", entry.id)}>
+                    {entry.label}
+                    {entry.default && <Text variant="caption" tone="subtle">default</Text>}
+                  </Button>
+                </li>
+              ))}
+              {entries.length === 0 && <li><Text variant="caption" tone="subtle">No entries.</Text></li>}
+            </ul>
+          </dd>
+        </div>
+        {exits.length > 0 && <div className={styles.group}>
+          <dt className={styles.term}><Text variant="caption" tone="subtle">Exits</Text></dt>
+          <dd className={styles.items}>
+            <ul className={styles.chips}>
+              {exits.map((exit, index) => (
+                <li key={`${index}:${exit.id}`} data-contract-ref={exit.id} data-contract-kind="exit">
+                  <Button variant="chip" size="xs" title={exit.id}
+                    selected={selection?.kind === "exit" && selection.id === exit.id}
+                    aria-pressed={selection?.kind === "exit" && selection.id === exit.id}
+                    onClick={() => onSelect("exit", exit.id)}>{exit.label}</Button>
+                </li>
+              ))}
+            </ul>
+          </dd>
+        </div>}
+      </dl>}
+    </div>
   );
 }

@@ -1,0 +1,13 @@
+/* Inline-size containment keeps many columns from widening any containing layout. */
+.columns {
+  contain: inline-size;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jv-space-md);
+  min-inline-size: 0;
+  overflow-x: auto;
+  padding-block-end: var(--jv-space-md);
+}
+.columns > * {
+  flex: 0 0 min(var(--jv-size-lane), 100%);
+}

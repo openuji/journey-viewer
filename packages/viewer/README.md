@@ -69,11 +69,16 @@ import "@journey-viewer/viewer/styles.css";
 ```
 
 `JourneyViewer` owns a local immutable interaction snapshot and composes the
-controlled `JourneyNavigation`, `JourneyExplorer` and `JourneyInspector`. Each instance is independent,
-even when instances receive the same frozen document. The state boundary retains
-the original document reference only to detect replacement. A new document object,
-including one with the same `@id` and node objects, resets selection and expansion
-before children render, including focus, search, filters and hover. No effect, ref, mutable store or identity registry is used.
+controlled `JourneyNavigation` (the explorer bar), `JourneyExplorer` (tree or
+columns) and a sticky `JourneyInspector`, following the original Solid-OIDC
+hierarchy layout. Each instance is independent, even when instances receive the
+same frozen document. The state boundary retains the original document reference
+only to detect replacement. A new document object, including one with the same
+`@id` and node objects, resets selection, expansion, mode, search, filters, hover,
+the hover preview and the lightbox before children render. No mutable store or
+identity registry is used; DOM effects live only in the named `browser/` adapters.
+Optional `headerStart` / `headerEnd` content replaces the default document summary
+at the start of the explorer bar or is appended at its end.
 Keep `document` referentially stable between actual replacements. Parsing or
 rebuilding it inline, such as `<JourneyViewer document={JSON.parse(source)} />`,
 resets the entire viewer snapshot on every parent render. Parse once when loading
@@ -90,15 +95,20 @@ and no automatic reveal or selection clearing occurs. Selecting a descendant
 again reveals its ancestors.
 
 For externally owned state, `JourneyExplorer` takes `document`, `interaction`,
-`onSelect`, `onToggleChildren` and optional heading `level`. `JourneyInspector`
-takes `document`, `selection` and optional `level`. The controlled components hold
-no state; their caller owns document replacement and snapshot reset.
+`onSelect`, `onToggleChildren`, optional `onToggleContracts` and optional heading
+`level`. `JourneyInspector` takes `document`, `selection` and optional `level`.
+The controlled components hold no state; their caller owns document replacement
+and snapshot reset.
 
 The public pure functions are `createViewerInteraction(document)`,
 `selectNode(document, current, selection)`,
 `toggleChildJourneys(document, current, journeyRef, stateRef)`,
+`toggleContracts(document, current, journeyRef)`,
 `expandAllJourneys(document, current)` and `collapseAllJourneys(current)`.
-`ViewerInteraction` holds only a readonly selection and expanded-journey ID array.
+`ViewerInteraction` holds a readonly selection, an expanded-journey ID array and
+the `openContracts` journey IDs whose entry/exit lists are shown. Lists start
+closed behind a “1 entry · 2 exits” summary; selecting an entry or exit opens its
+journey's list.
 A selection is `{ kind, journeyRef, nodeRef }`, where kind is `journey`, `state`,
 `entry` or `exit`. Wrong owner/type and unresolved selections are no-ops. Useful
 selection/expansion no-ops retain snapshot identity, and frozen inputs are supported.
@@ -107,9 +117,9 @@ Expansion follows journey identity across repeated call sites within one viewer;
 collapsing a reused journey affects all its occurrences. A selected item is
 highlighted at every occurrence of its journey/state/contract identity. There is
 no per-call-site expansion. Navigation separately retains an explicit occurrence
-path for focus and breadcrumbs, without changing this logical selection policy.
-Every pressed row marks the same selected graph identity, wherever it is reused.
-Breadcrumbs and inspector navigation describe the last chosen call site. They
+path for columns and the inspector crumb, without changing this logical selection
+policy. Every selected row marks the same graph identity, wherever it is reused.
+The inspector crumb and its navigation describe the last chosen call site. They
 identify the active occurrence; the repeated row highlights identify the shared
 node. Consumers should keep this distinction when composing custom controls.
 
@@ -124,12 +134,19 @@ Composites with no resolvable child journeys keep an indented “No child journe
 notice inside their selectable row container, including after collapse-all. They
 have no disclosure control because there is no child journey to open.
 
-Inspection derives local incoming/outgoing transitions, entry start states,
-explicit entry/exit boundary annotations and commands, nested journeys, all entry
-call sites and all parent continuation handlers. No boundary associations are
-inferred. Inspector presentation data is computed per render and passed to the
-design system's readonly `InspectorPanel`; contract selection uses the separate
-`JourneyContractControls`. Static components have no interactive mode flags.
+Inspection follows the original inspector. The head shows the occurrence crumb,
+title, touchpoints, kind (“State”, “Composite state”, “Journey entry”, “Journey
+exit” or “Journey”) and full ID. A selected state's screenshot appears as a
+thumbnail. A composite lists each nested journey with its counts and an explicit
+touchpoint-change note. Incoming and outgoing transitions are grouped by the node
+at their other end; each group head navigates there, and items show the transition
+label, the explicit boundary annotation (“enters at Start at login”, “on child exit:
+IdP auth failed”) and tags. Entries show their start state and the call sites in
+the parent at the current occurrence; exits show their producers and the parent's
+continuation handlers. A footnote summarizes the journey's entries and exported
+exits. No boundary associations are inferred. Presentation data is computed per
+render and passed to the design system's readonly `InspectorPanel`; contract
+selection uses `JourneyContractControls`. Static components have no interactive mode flags.
 The informational inspector remains available through its original props. Supply
 the complete optional `navigation: { occurrence, onNavigate }` contract to add
 graph-navigation controls. Optional screenshot controls are described below;
@@ -137,52 +154,58 @@ explicit extension descriptors are described below.
 
 ## Navigation
 
-`JourneyViewer` starts in Overview with all journeys expanded. “Focus selected
-scope” shows one column for every journey on the selected occurrence path.
-Columns scroll horizontally inside the viewer; each keeps its own states and
-entry/exit contracts. Explicit “Open child” buttons address every child reference,
-including repeated references. Recursive calls remain labeled terminal references.
-Overview restores the tree using its existing expansion snapshot. Expand/collapse
-controls update that tree snapshot in either view. “Reset view” restores selection,
-expansion, overview, blank search, all touchpoints and no hover.
+The explorer bar holds the document summary (journeys, states, transitions and
+mapped screens), a Tree/Columns switch, expand/collapse-all icons (tree only),
+touchpoint chips, the search field and a reset icon. From the `md` breakpoint it
+sticks to the top of the viewport and its height is exposed as
+`--jv-explorer-offset`, which positions the sticky inspector and row scroll margins.
+Below `md` the inspector precedes the graph, as in the original hierarchy.
+
+`JourneyViewer` starts in the tree with all journeys expanded. Nested journeys
+render as indented row lists beneath their composite, with a touchpoint guide line;
+the composite row shows the child journey names and a dot when the child changes
+touchpoint. “Columns” shows fixed-width columns along the selected occurrence path
+plus the children of a selected composite: selecting a composite in a column opens
+its children to the right, and selecting elsewhere trims the columns. Each column
+has an ancestor crumb (“Root journey” for a starting point), its state count, rows
+with decorative carets (accented when open) and its collapsed entry/exit summary.
+The newest column scrolls into view. Opening a screenshot follows its call path
+without opening a composite's children. “Reset view” restores selection, expansion,
+the tree, blank search, all touchpoints and no hover, and scrolls the viewer into view.
+
+Rows show relations to the active state — the hovered state, else the selection —
+in the same journey: incoming rows are tinted green with ←n, outgoing rows purple
+with →n, both with a split stripe, unrelated rows are dimmed and the active row
+gets a dark stripe. The selected row is highlighted as a whole. Marks count
+explicit local transitions and their title lists them; hovering the marks shows
+relations to the selection. Entry/exit counts are not shown on rows.
 
 Search matches journey/state/entry/exit labels, full IDs and tags without case
-sensitivity, in hierarchy traversal order. Whitespace produces no results; at
-most 18 results are returned. At the limit, the status says “Showing first 18
-matches” and asks the user to refine the search. Repeated call sites remain
-separate results and may occupy much of this limit, so other matching identities
-may be omitted. Enter picks the first result, Escape clears the query, and each
-result is a native keyboard-operable button. A search pick clears the query,
-reveals the selection and updates the focused path when focus is active. Row,
-breadcrumb, inspector and scope-focus navigation preserve the query.
-Results show a Screenshot badge when an explicitly associated surface has a path
-in the current screenshot map. This reports mapping availability; browser image
-failures do not enter search/query state.
+sensitivity, in hierarchy traversal order. “/” focuses the field from outside a
+text input. Results appear in a popover with the touchpoint dot, the journey
+context and a phone icon when a screenshot is mapped; an outside click closes it,
+and focusing the field reopens it. Whitespace produces no results; at most 18
+results are returned, and at the limit the status says “Showing first 18 matches”.
+Repeated call sites remain separate results, distinguished by their occurrence
+path. Enter picks the first result, Escape clears the query and leaves the field.
+A search pick clears the query, selects and reveals the target. Row, inspector
+and column navigation preserve the query.
 
-Touchpoint buttons retain each source identity, even when labels coincide or a
-journey has several assignments. Colliding labels include their full touchpoint
-ID in the visible text and accessible name. Multiple selected touchpoints use OR; none
-selected means all journeys match. Assignments are never inherited. Nonmatching
-scope headers, own rows and contracts are dimmed while all topology stays present.
-A matching child is not dimmed by its parent. Search results follow the same
-filter; the summary counts matching journeys independently of expansion or focus.
+The touchpoint filter is single-select: “All” shows every journey, and selecting a
+chip replaces the previous one. Chips retain each source identity; colliding labels
+include the full touchpoint ID. Assignments are never inherited. Nonmatching scope
+headers, own rows and contracts are dimmed while all topology stays present; a
+matching nested journey gets a solid guide line and a matching card head a tint.
+A matching child is not dimmed by its parent. Search results follow the filter.
 
-Breadcrumbs show the actual starting point, composite call sites and journey
-labels. Repeated references within the same sibling list add “reference 1 of 2”
-or similar wording; equal labels on different identities add their IDs. These are
-counts of repeated references, independent of unresolved references in the input.
-Unambiguous paths and child buttons use labels without query-result positions.
-Selecting a breadcrumb navigates to that journey occurrence.
-The inspector's “Navigate graph” links follow local transition endpoints, entry
-start states, explicit `toEntryRef` / `fromExitRef` boundary mappings, nested
-journeys, and every explicit parent caller/continuation. An absent or unresolved
+Inspector group heads and detail buttons follow local transition endpoints, entry
+start states, nested journeys and the explicit parent call sites/continuations at
+the current occurrence, and bring the target into view. An absent or unresolved
 mapping produces no invented target. No journey acquires a preferred parent.
-Incoming/outgoing row marks are recomputed from local transitions; hover takes
-precedence over selection and pointer leave restores selection-derived marks.
 
-The readonly `ViewerSnapshot` contains the existing `interaction` plus a
-`navigation` snapshot (`focus`, selected `occurrence`, `query`, `touchpointRefs`,
-`hover`, `hoverOccurrence`) and a `lightbox` identity or null.
+The readonly `ViewerSnapshot` contains `interaction`, a `navigation` snapshot
+(`mode`, `lanes`, selected `occurrence`, `query`, `touchpointRefs` with at most one
+ID, `hover`, `hoverOccurrence`) and a `lightbox` identity or null.
 `ViewerOccurrence` is `{ startJourneyRef, steps }`, with each step
 holding zero-based `stateIndex` and `childIndex` into the typed query results.
 These indices preserve repeated reference positions. Paths only address finite
@@ -191,11 +214,12 @@ the current ancestry are rejected. Paths belong to their input object and must
 be reset when that input is replaced.
 
 Pure public operations are `createViewerSnapshot`, `navigateViewer`, `pickSearchResult`,
-`focusJourney`, `showOverview`, `setSearchQuery`, `toggleTouchpoint` and `hoverNode`.
-Queries include `getOccurrenceTrail` (original journey nodes), `searchViewer`,
-`getNavigationItems`, `getViewerSummary`, `matchesTouchpoints`, `getRowRelation`
-and `occurrenceLabel`. Nothing retains derived results between calls. Valid
-unchanged navigation/hover operations preserve snapshot identity.
+`setViewMode`, `setSearchQuery`, `selectTouchpoint` and `hoverNode`. Queries include
+`getOccurrenceTrail` (original journey nodes), `getLanePath`, `searchViewer`,
+`getNavigationItems`, `getViewerSummary`, `matchesTouchpoints`, `getRowHighlight`,
+`getRouteDescription` and `occurrenceLabel`; `getPreviewPosition` and
+`getPreviewWidth` place hover previews. Nothing retains derived results between
+calls. Valid unchanged navigation/hover operations preserve snapshot identity.
 
 Snapshot consumers must use `navigateViewer` or `pickSearchResult` for selection
 so the selected identity and its occurrence are validated and updated together.
@@ -207,16 +231,16 @@ can be composed without changing the navigation context; reset the whole snapsho
 through `createViewerSnapshot` when replacing the input.
 
 Externally controlled compositions can use `JourneyNavigation` with its snapshot
-and explicit callbacks: `onNavigate` handles breadcrumbs and `onSearchPick` handles
-result clicks and Enter. Connect those to the corresponding pure transitions.
-`JourneyExplorer.onSelect` now also receives the occurrence
-as its second argument; existing single-argument callbacks remain valid. Its
-optional `navigation`, `onHover` and `onFocusJourney` props supply navigation
-presentation/actions. `JourneyInspector.navigation` couples occurrence context
-with its required navigation callback. `JourneyViewer` remains the sole React
-graph-interaction state owner; controlled components invoke no callbacks during rendering.
-Programmatic scrolling, global shortcuts and DOM measurement remain caller/browser
-boundary responsibilities.
+and explicit callbacks (`onMode`, `onExpandAll`, `onCollapseAll`, `onTouchpoint`,
+`onQuery`, `onSearchPick`, `onReset`); `searchOpen` / `onSearchFocus` control the
+result popover. `JourneyExplorer.onSelect` receives the occurrence as its second
+argument. Its optional `navigation`, `onHover`, `onToggleContracts` and `media`
+props supply presentation and actions. `JourneyInspector.navigation` couples
+occurrence context with its required navigation callback. `JourneyViewer` remains
+the sole React graph-interaction state owner; controlled components invoke no
+callbacks during rendering. Scrolling, the “/” shortcut, outside clicks, DOM
+measurement and image preloading stay in the `browser/` adapters, which use their
+own elements' `ownerDocument`/`defaultView` and receive no graph types.
 
 The layout uses the design system's public Tailwind bridge during the viewer
 build to consume its shared `lg` breakpoint. Consumers only import compiled CSS;
@@ -278,15 +302,22 @@ colors use the design-system default. Short-label collisions retain full IDs in
 filter buttons. Multiple journey touchpoints remain separate captions and dots.
 The static `JourneyHierarchy` API retains its original presentation.
 
-Selection supplies the inspector preview. Pointer hover temporarily previews the
-hovered state and its call-site context; leaving restores the selected preview.
-Each mapped state has a row Screen button. Opening a screenshot updates selection
+The selection alone supplies the inspector thumbnail; hovering rows never changes
+it. Each mapped state has a row phone button that takes its journey's touchpoint
+color on hover or focus. Hovering it, or focusing it with the keyboard, shows a
+floating preview card beside the button (on the left when the right side would
+overflow), sized to the viewport height and dismissed on scroll or resize. The
+card is presentation only; the button remains the accessible control. Clicking
+the button or the thumbnail opens the lightbox. Opening a screenshot updates selection
 and occurrence, reveals ancestors, preserves search/filters/focus mode, and keeps
 the selected composite's child disclosure unchanged. The native modal has
 Previous/Next buttons, Left/Right keys, Escape/Close, forward/reverse Tab wrapping,
-and focus restoration to the opener. If that opener was removed or disabled,
-focus returns to the owning viewer's first enabled control. Closing retains the
-last selected screen's graph item. Ordinary graph navigation closes the modal.
+backdrop clicks and focus restoration to the opener. If that opener was removed
+or disabled, focus returns to the owning viewer's first enabled control. The
+screenshot is shown at phone size (at most 760px tall, within the viewport) above
+a compact caption with the touchpoint dot, title, context, position and
+previous/next/close icon buttons. Closing retains the last selected screen's graph
+item. Ordinary graph navigation closes the modal.
 The dialog uses an independent level-2 heading; `JourneyViewer.level` controls
 the hierarchy and inspector headings.
 
@@ -309,8 +340,9 @@ retains only `{ surfaceRef, target }` and resolves its URL from the latest prop.
 Removal clears the old image and displays Screenshot unavailable; adding/restoring
 the mapping or changing its URL can recover it. Clear-all disables stepping.
 Image error/loading state is local to the actual URL at the browser boundary,
-separate from the immutable graph snapshot. Loading is lazy and both preview and
-lightbox contain the complete image inside their bounded frames.
+separate from the immutable graph snapshot. After the page is idle, every mapped
+image is preloaded into the document's image cache, so previews and lightbox steps
+appear without blank frames. Images keep their natural aspect ratio.
 
 New image bytes at an unchanged URL follow the host/browser cache policy. Supply
 a revised URL, query revision, or blob URL through the same map when needed.
@@ -327,27 +359,30 @@ document nodes; none mutate the supplied graph, maps or snapshots.
 
 Controlled compositions can use `JourneyScreens` with a document, target, map and
 required `onOpen(target, surfaceRef)`. `JourneyExplorer.media` takes the complete
-`{ screenshots, onOpen }` contract; `JourneyInspector.media` additionally requires
-`target` (or null) so preview context and controls are supplied together.
+`{ screenshots, onOpen }` contract plus an optional `onPreview(target, surfaceRef,
+anchor | null)`; `JourneyInspector.media` additionally requires `target` (or null)
+so thumbnail context and controls are supplied together.
 `JourneyNavigation.screenshots` supplies availability markers. `JourneyLightbox`
 receives the current identity, map and explicit close/previous/next callbacks.
 `hoverNode` accepts an optional occurrence; `JourneyExplorer.onHover` reports it
 as a second argument. Existing single-argument callbacks remain compatible.
 
-Only `browser/BrowserScreenImage` owns per-URL image load status, and only
-`browser/BrowserLightbox` owns a dialog ref/effect and local DOM keyboard/focus
-handling. They receive no UJG document or viewer snapshot. Business transitions
-stay pure; no global listeners, body locks, graph refs or shared state are added.
+The `browser/` adapters own every DOM effect: `BrowserScreenImage` (per-URL load
+status), `BrowserLightbox` (native modal, keys, focus, backdrop), `BrowserScreenButton`
+(measures its own rectangle), `BrowserScreenPreview` (placement and dismissal),
+`BrowserScreenPreload`, `BrowserColumns` (scrolls to new columns),
+`BrowserScrollPanel` (inspector scroll reset) and `BrowserViewerShell` (sticky
+offset, “/”, outside clicks and reveal). They receive no UJG document or viewer
+snapshot and reach the page only through their own elements. Business transitions
+stay pure; no body locks, graph refs or shared state are added.
 
-The Stage-9 API review retains `getRowRelation` for custom controlled row
-presentations and `occurrenceLabel` for readable call-site captions. The five
-screen functions and controlled screen components remain public for hosts that
-own their snapshot/media controls. No existing exports or arguments are removed.
-`ViewerSnapshot.lightbox` and `ViewerNavigation.hoverOccurrence` remain required;
-prefer `createViewerSnapshot(document)` over hand-built snapshots to obtain all
-defaults. The optional fourth `hoverNode` argument supplies call-site context and
-defaults to null. Focus continues to reuse `StateRow` without disclosure and with
-explicit child links; a distinct built-in focus row remains separate design work.
+Stage 10D (hierarchy parity) replaced `focusJourney`/`showOverview` with
+`setViewMode`, `toggleTouchpoint` with `selectTouchpoint`, and `getRowRelation`
+with `getRowHighlight`; `ViewerNavigation.focus` became `mode` and `lanes`.
+`occurrenceLabel` remains for readable call-site captions, and the five screen
+functions and controlled screen components remain public. Prefer
+`createViewerSnapshot(document)` over hand-built snapshots to obtain all defaults.
+The optional fourth `hoverNode` argument supplies call-site context and defaults to null.
 
 ## Build-time extensions
 
@@ -387,13 +422,13 @@ const extensions = {
 <JourneyViewer document={document} extensions={extensions} />
 ```
 
-All matching inspector panels append in array order after built-in sections and
-navigation. The viewer owns each panel's title and semantic heading; the component
+All matching inspector panels append in array order after the built-in sections,
+footnote and annotations. The viewer owns each panel's title and semantic heading; the component
 receives the next heading `level`, capped at 6. All matching annotations render in
 array order for journeys/states in the explorer and for the selected journey,
 state, entry or exit in the inspector. They are separate content beside controls,
 so custom annotation controls do not become nested buttons. Inspector annotations
-appear after the built-in sections and before “Navigate graph”. Annotation lists
+appear after the built-in sections and footnote, before panels. Annotation lists
 keep native list semantics without a repeated accessible label.
 
 Descriptor IDs must be unique within each supplied array; they serve only as
@@ -410,9 +445,10 @@ not change the inspector's selected-node extension context.
 
 The first matching `stateOverrides` descriptor wins; unmatched rows use the
 ordinary `StateRow`. `ViewerStateRenderProps` contains the original state context
-and the complete design-system `row` contract: selection/filter/relation marks,
-counts, selection/hover/disclosure callbacks, screenshot actions, focus/empty-child
-notices and nested content. Compose `<StateRow {...row} />` to preserve these
+and the complete design-system `row` contract: selection/filter state, relation
+tone and marks, child-journey description and touchpoint crossing,
+selection/hover/disclosure callbacks, screenshot actions, empty-child notices and
+nested content. Compose `<StateRow {...row} />` to preserve these
 behaviors. A replacement that omits controls or children takes responsibility for
 their presentation and accessibility; returning null deliberately hides that row's
 content. It does not alter canonical membership, queries or selection state.
@@ -421,7 +457,7 @@ React composition; predicates and rendering must leave caller inputs unchanged.
 Errors propagate to the host's error boundary.
 
 Replacing/removing `extensions` recomputes presentation and preserves the viewer
-snapshot, including selection, expansion, focus, query, filters, hover and lightbox.
+snapshot, including selection, expansion, mode and columns, query, filters, hover and lightbox.
 Removing descriptors restores built-in content. Only replacing `document` resets
 interaction. For externally controlled hosts, `JourneyExplorer.extensions` takes
 annotations/state overrides and `JourneyInspector.extensions` takes panels/
@@ -437,6 +473,7 @@ From the workspace root:
 pnpm storybook:viewer
 pnpm build:storybook:viewer
 pnpm test:viewer:browser
+pnpm test:parity   # requires the original hierarchy and the app dev server
 ```
 
 Viewer Storybook runs on port 6007. Its internal `.storybook` configuration extends
@@ -451,8 +488,8 @@ replacement, empty/unresolved composites and the compiled consumer. Native JSON 
 frozen demonstration documents are shared only at the development boundary in
 `.storybook/documents.ts`. Story controls receive the heading level; document
 editing is excluded from controls. Navigation stories include bounded search,
-no matches, multiple/equal-label touchpoints, capped results and a repeated child
-focused at its second reference. A review fixture includes unresolved state/child
+no matches, a selected touchpoint, equal-label touchpoints, capped results and
+columns at a repeated child's second reference. A review fixture includes unresolved state/child
 references to check that UI wording does not expose query-result positions.
 Screen stories include all 37 OIDC assets, several opaque surface IDs, a missing
 file and independent map/path replacement. The live-input story and compiled
@@ -474,13 +511,24 @@ The browser command builds viewer Storybook, verifies OIDC structure,
 recursion/reuse, accessibility, themes and responsive wrapping in the compiled
 consumer, then loads the full inherited catalog, both iframes and viewer stories.
 It checks inherited light/dark/alternate theme globals, source-story wrapping,
-native keyboard selection/disclosure, instance independence and document reset,
-all 37 PNG decodes, live map changes, image failure/recovery, modal focus/keys,
+native keyboard selection/disclosure, collapsed contracts, the explorer bar and
+sticky inspector at the shared breakpoints, columns, single-select filtering,
+search popover/“/”/outside dismissal, reveal-on-navigate, row tones and marks,
+instance independence and document reset, all 37 PNG decodes, hover preview
+placement, live map changes, image failure/recovery, modal focus/keys/backdrop,
 extension matching/removal, preserved call-site state and custom-row keyboard controls,
 and closes its temporary server/browser. Screenshots remain in ignored `.test-output`.
 Install Chromium once with
 `pnpm --filter @journey-viewer/viewer exec playwright install chromium`, or set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing binary.
+
+`pnpm test:parity` is a development-only comparison with the original
+`journey-graph` hierarchy. With the original (`ORIGINAL_URL`, default
+`http://localhost:5174/hierarchy`) and the app (`VIEWER_URL`, default
+`http://localhost:4321/app/examples/solid-oidc/`) already running, it checks the
+first-row offset, inspector column and order, control count, hover preview,
+lightbox ratio, columns, filter and search popover at 1440/1099/859/375px, and
+writes paired screenshots to `.test-output/parity/`.
 
 Production exports contain only the renderer and compiled layout CSS. Fixtures,
 Storybook, consumer fixtures, tests, example assets and tooling stay outside `dist`.

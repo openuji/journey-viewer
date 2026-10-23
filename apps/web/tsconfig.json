@@ -1,18 +1,12 @@
 {
+  "extends": "astro/tsconfigs/strictest",
   "compilerOptions": {
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "types": ["vite/client"],
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
+    "types": ["astro/client", "node"],
+    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [".astro/types.d.ts", "src/**/*", ".storybook/**/*"],
+  "exclude": ["dist", "storybook-static", "node_modules", ".pnpm-store"]
 }

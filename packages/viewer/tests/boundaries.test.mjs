@@ -22,10 +22,12 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
   for (const file of await readdir(root, { recursive: true })) {
     if (!/\.tsx?$/.test(file) || /stories/.test(file)) continue;
     const source = await readFile(new URL(file, root), "utf8");
-    const browser = ["browser/BrowserLightbox.tsx", "browser/BrowserScreenImage.tsx"].includes(file);
+    // Named browser adapters own DOM effects, measurement and listeners, reaching the page only
+    // through their own elements' ownerDocument/defaultView, never through globals.
+    const browser = file.startsWith("browser/");
     assert.doesNotMatch(source, /useContext|createContext|window\.|document\./, file);
-    if (!browser) assert.doesNotMatch(source, /useEffect|useLayoutEffect|useRef|showModal|\.focus\(/, file);
-    if (!file.endsWith("JourneyViewer.tsx") && file !== "browser/BrowserScreenImage.tsx") assert.doesNotMatch(source, /useState|useReducer/, file);
+    if (!browser) assert.doesNotMatch(source, /useEffect|useLayoutEffect|useRef|showModal|\.focus\(|getBoundingClientRect|addEventListener/, file);
+    if (!file.endsWith("JourneyViewer.tsx") && !browser) assert.doesNotMatch(source, /useState|useReducer/, file);
     if (browser) assert.doesNotMatch(source, /UjgDocument|ViewerSnapshot|ViewerInteraction|ViewerSelection|ujg-jsonld|new Image|fetch\(/, file);
     const module = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
     const checkModuleScope = (node) => {

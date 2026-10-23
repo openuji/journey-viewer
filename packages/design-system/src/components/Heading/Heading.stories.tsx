@@ -19,7 +19,7 @@ export const SizesAndLevels: Story = {
           key={level}
           {...createHeadingFixture({
             level,
-            size: level < 3 ? "lg" : level < 5 ? "md" : "sm",
+            size: level < 3 ? "lg" : level < 5 ? "md" : level < 6 ? "sm" : "xs",
             children: `Semantic heading level ${level}`,
           })}
         />

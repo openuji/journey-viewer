@@ -16,9 +16,11 @@ props.document.nodes?.push({ "@id": "urn:other" });
 const selection: ViewerSelection = { kind: "state", journeyRef: "urn:j", nodeRef: "urn:s" };
 // @ts-expect-error Selection is an immutable identity snapshot.
 selection.nodeRef = "urn:other";
-const interaction: ViewerInteraction = { selection, expandedJourneys: ["urn:j"] };
+const interaction: ViewerInteraction = { selection, expandedJourneys: ["urn:j"], openContracts: [] };
 // @ts-expect-error No mutable expansion sets or arrays are exposed.
 interaction.expandedJourneys.push("urn:other");
+// @ts-expect-error Open contract lists are readonly.
+interaction.openContracts.push("urn:j");
 // @ts-expect-error Interaction snapshots cannot be patched in place.
 interaction.selection = null;
 // @ts-expect-error Controlled interaction requires explicit callbacks.
@@ -30,6 +32,10 @@ declare const snapshot: ViewerSnapshot;
 declare const occurrence: ViewerOccurrence;
 // @ts-expect-error Navigation snapshots are immutable.
 snapshot.navigation.query = "query";
+// @ts-expect-error The view mode changes only through setViewMode.
+snapshot.navigation.mode = "columns";
+// @ts-expect-error Column lanes are readonly occurrence lists.
+snapshot.navigation.lanes.push(occurrence);
 // @ts-expect-error Touchpoint identities cannot be patched in place.
 snapshot.navigation.touchpointRefs.push("urn:tp");
 // @ts-expect-error Occurrence paths are readonly.

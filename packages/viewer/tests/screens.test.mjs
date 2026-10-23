@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   JourneyExplorer, JourneyNavigation, JourneyScreens, JourneyLightbox,
   createViewerSnapshot, getNodeScreens, getScreens, openScreenshot, closeScreenshot, stepScreenshot,
-  collapseAllJourneys, navigateViewer, searchViewer, hoverNode, setSearchQuery, toggleTouchpoint,
+  collapseAllJourneys, navigateViewer, searchViewer, hoverNode, setSearchQuery, setViewMode, countMappedScreens,
 } from "../dist/index.js";
 
 const freeze = (value) => {
@@ -150,15 +150,31 @@ test("configured screenshots and presentation use readonly inputs without invoki
   const before = JSON.stringify({ oidc, screenshots, touchpoints, initial });
   const explorer = renderToStaticMarkup(h(JourneyExplorer, { document: oidc, interaction: initial.interaction,
     navigation: initial.navigation, touchpoints, media: { screenshots, onOpen: fail }, onSelect: fail, onToggleChildren: fail }));
-  assert.equal((explorer.match(/>Screen<\/span>/g) ?? []).length, 37);
+  assert.equal((explorer.match(/aria-label="Screen mockup: /g) ?? []).length, 37);
   assert.match(explorer, /var\(--jv-color-category-orange\)/);
-  assert.match(explorer, />App<\/span>/);
+  assert.match(explorer, /role="img" aria-label="App"/);
+  assert.equal(countMappedScreens(oidc, screenshots), 37);
   const searching = freeze(setSearchQuery(initial, "SMS"));
   const navigation = renderToStaticMarkup(h(JourneyNavigation, { document: oidc, snapshot: searching, screenshots,
-    onNavigate: fail, onSearchPick: fail, onQuery: fail, onTouchpoint: fail, onOverview: fail, onFocus: fail }));
-  assert.match(navigation, /Screenshot/);
+    onMode: fail, onExpandAll: fail, onCollapseAll: fail, onSearchPick: fail, onQuery: fail, onTouchpoint: fail, onReset: fail }));
+  assert.match(navigation, /title="Screenshot available"/);
+  assert.match(navigation, /47 states · 120 transitions · 37 screens/);
   const screen = getScreens(oidc, screenshots)[0];
   const preview = renderToStaticMarkup(h(JourneyScreens, { document: oidc, screenshots, target: screen.target, onOpen: fail }));
   assert.match(preview, /app-sign-in-required\.png/);
+  assert.match(preview, /aria-label="Enlarge screenshot: Sign-in required"/);
+  const unmapped = renderToStaticMarkup(h(JourneyScreens, { document: oidc, screenshots: freeze({}), target: screen.target, onOpen: fail }));
+  assert.match(unmapped, /Screenshot unavailable/);
+  assert.doesNotMatch(unmapped, /<button/);
   assert.equal(JSON.stringify({ oidc, screenshots, touchpoints, initial }), before);
+});
+
+test("opening a screen in columns follows its call path without opening a composite's children", () => {
+  const columns = freeze(setViewMode(document, createViewerSnapshot(document), "columns"));
+  const composite = getScreens(document, mapped).find((item) => item.surface["@id"] === "opaque:11");
+  assert.equal(composite.target.selection.nodeRef, "urn:composite");
+  const open = freeze(openScreenshot(document, mapped, columns, composite.target, "opaque:11"));
+  assert.deepEqual(open.navigation.lanes, [composite.target.occurrence]);
+  const selected = freeze(navigateViewer(document, columns, composite.target));
+  assert.ok(selected.navigation.lanes.length > 1, "ordinary composite selection opens its child columns");
 });

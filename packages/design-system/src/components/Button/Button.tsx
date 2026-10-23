@@ -1,8 +1,13 @@
 import type { ButtonHTMLAttributes } from "react";
 import styles from "./Button.module.css";
 
-export type ButtonVariant = "solid" | "outline" | "ghost" | "row";
-export type ButtonSize = "sm" | "md";
+/**
+ * `row` fills its container with a hover background; `bare` fills it without one (rows own that
+ * presentation); `pill`, `segment` and `chip` are compact toolbar/list treatments; `panel` is a
+ * full-width muted media button.
+ */
+export type ButtonVariant = "solid" | "outline" | "ghost" | "row" | "bare" | "pill" | "segment" | "chip" | "panel";
+export type ButtonSize = "xs" | "sm" | "md";
 export type ButtonProps = Readonly<
   ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: ButtonVariant;

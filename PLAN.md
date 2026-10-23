@@ -2,20 +2,52 @@
 
 ## Current checkpoint
 
-- Current stage: **9 — Build-time extensions (complete, uncommitted)**.
-- Next stage: **10 — Standalone application**. Do not start it in the stage-9 request.
-- Stage-9 deliverable: readonly inspector-panel, annotation and state-rendering
-  descriptors passed through explicit props. Matching uses original canonical
-  nodes and call-site context. Replacement/removal preserves viewer interaction;
-  removal restores built-ins. No registration, lifecycle or shared runtime state.
-- Changed modules/interfaces: viewer extension types, optional `extensions` on
-  `JourneyViewer`, controlled explorer/inspector extension props, a private
-  annotation outlet, development examples/stories, compiled consumer, readonly/
-  unit/browser checks and documentation. The public API review retains current
-  navigation/screen helpers and snapshot construction contracts.
-  Static `JourneyHierarchy`, transitions, snapshots and browser adapters remain
-  intact. Design-system/data/lint packages, application source, canonical UJG,
-  captured baselines/assets, dependency manifests and lockfile remain unchanged.
+- Current stage: **10E — Application shell (10E-a review and 10E-b integration complete, uncommitted)**.
+  10D (hierarchy parity) is complete. Next: **11 — Distribution and Cloudflare**.
+- Stage-10E-b deliverable: both app routes render only the compact shell header and
+  the full-width viewer, or the no-document panel. The app browser suite covers the
+  new structure (8/8 against the built output and a fresh dev server). Evidence is
+  in `apps/web/PLAN.md`; the library interfaces are unchanged by 10E-b.
+- Stage-10E-a deliverable: `apps/web` `Application/Shell` stories for one compact header
+  (square icon, document title, check status with a findings popover, Open file, example
+  link) and the no-document panel, plus design-system `color.warning`/`color.danger`
+  (+soft) tokens and a solid-button hover fix. Details and evidence are in `apps/web/PLAN.md`.
+- Stage-10D deliverable: the viewer and design system reproduce the original
+  `journey-graph` hierarchy (`localhost:5174/hierarchy`). This covers the explorer
+  bar, tree and columns, rows, collapsed contracts, the sticky grouped inspector,
+  the hover preview, the phone-sized lightbox, the search popover and the
+  single-select filter. The review and the approved interface changes are recorded
+  below. `apps/web` is intentionally unchanged (app shell issues deferred).
+- Stage-10A deliverable: an independent Astro repository at `apps/web` with
+  native Astro Storybook, approved SVG logo, framework-neutral SVG eye geometry,
+  local tokens/primitives, touchpoint tiles, continuous persona waves, fixed
+  studies and a static single-persona teaser. No playback controls or app loader.
+- Stage-10B deliverable: reference-based landing at `/`, composed from the
+  reviewed components, with transparent SVG branding, borderless artwork,
+  10px maximum cells, visible CTAs, native navigation and footer. Component
+  studies live only in Storybook. Links target `/app/` and
+  `/app/examples/solid-oidc/`; those screens and file reading belong to Stage 10C.
+  The responsive hero uses recognizable heart/donut/star figures below the
+  message, each with its own tempo and persona cycle. Each wave changes that
+  figure's silhouette; existing colors persist and departed cells fade to zero.
+- Stage-10C deliverable: `/app/` opens local JSON-LD; the explicit example route
+  `/app/examples/solid-oidc/` reads unchanged UJG, presentation inputs and all 37
+  screens under that app path. App-owned read/syntax reports stay separate from
+  selected-rule findings. Shape/duplicate-ID errors block opening; reference
+  findings are warnings. Rejected loads preserve the current viewer; successful
+  loads retain the new parsed object until replacement. No upload/persistence.
+- Changed responsibilities: `apps/web` owns its UI, Git metadata, dependencies,
+  lockfile and catalog commands. It is excluded from the parent pnpm workspace
+  and ignored by the parent. Root convenience commands delegate into it; parent
+  builds/tests cover the four library packages. The six formerly tracked web
+  paths remain in the parent index until the user performs the agreed untracking
+  operation. No parent-index edits, commits or remote repository are created.
+  Stage-9 source, library interfaces and canonical UJG/assets remain unchanged.
+  Stage 10C explicitly links the four libraries' built public exports from the
+  separate site dependency manifest. The app reuses the viewer/design-system;
+  the landing keeps its local primitives. No workspace membership or source
+  aliases are added. Install/build portability beyond these local checkouts
+  remains Stage 11.
 - The viewer owns its Storybook and UJG examples. It may reuse the design system's
   internal Storybook configuration/catalog in development. The design-system
   package retains its independent Storybook and imports no viewer/UJG code.
@@ -49,14 +81,21 @@
 9. DTCG tokens own shared design values. Tailwind utilities and component styles
    consume their generated output. Shared controls, typography, and surfaces have
    one primitive owner; composed components reuse that implementation. This
-   ownership rule applies to the design system, viewer, and application.
+   ownership rule applies to the design system and viewer. The approved Stage-10A
+   split gives the landing in the independent site repository its own local
+   tokens/primitives; the landing does not import or duplicate the parent's
+   design-system implementation. The Stage-10C application composes the built
+   viewer and design-system in its own scoped theme.
+   Future shared-brand extraction requires a separately scoped change.
 
 ## Scope and defaults
 
 Create an independent repository under the Journey Viewer brand. Preserve the
 current hierarchy layout and behavior; leave the original repository working.
-The final application includes a landing page, the Solid-OIDC example, local-file
-loading, and a separate Cloudflare static deployment.
+The landing/catalog has its own nested repository at `apps/web`. The final site
+includes a landing at `/` and application routes under `/app/`, including the
+Solid-OIDC example and local-file loading inside the app. Cloudflare deployment
+remains a separate later stage.
 
 V1 supports self-contained canonical compact UJG Editor's Draft JSON-LD, including
 Core/Graph/Surface data, entry indexes, multiple roots and child journeys, and
@@ -82,8 +121,38 @@ packages or changing the existing site.
 | 7. Navigation controls | Overview/focus switching, search, touchpoint filtering, entry/exit navigation; derive highlights, breadcrumbs, summaries. | Existing behavior and nested boundaries are preserved; no derived-data synchronization or mutable cache. |
 | 8. Screens and presentation | Previews/lightbox with a separate replaceable surface-ID-to-screenshot JSON document; explicit OIDC assets, colors and short labels. | All 37 screens resolve; replacing screenshot mappings updates previews/lightbox without replacing UJG or resetting interaction; missing images and keyboard navigation work; no OIDC filenames or ID guessing in reusable code; DOM effects isolated. |
 | 9. Build-time extensions | Readonly descriptors for inspector panels, annotations, and rendering overrides; parser/view selection stays explicit in the app. | Small custom panel and annotation work without changing built-ins; removal restores defaults; no registration, lifecycle, or shared runtime state. |
-| 10. Standalone application | Journey Viewer brand, landing page, catalog, routes, local-file loading, finding presentation; compose reading/parsing/checking/rendering explicitly. | OIDC and local files open; syntax failures/findings displayed separately; blocking policy only in app; no upload/persistence. Routes: `/`, `/examples/solid-oidc`, `/viewer`. |
+| 10A. Independent brand catalog | Independent Astro repo at `apps/web`; own UI/tokens, original logo, reusable eye geometry, native Storybook, animation and teaser studies. | Both Git/workspace boundaries documented; Astro and Storybook development/static rendering pass; small-size/responsive SVGs, continuous motion, reduced motion, suspension and instance cleanup verified. User performs parent-index removal; no commits. |
+| 10B. Landing composition | Compose the approved reference-based landing from the reviewed components. | Responsive landing at `/`; no hero controls; links lead to `/app/`; no file handoff, graph filtering or deployment. |
+| 10C. Standalone application | Application under `/app/`, Solid-OIDC and local-file loading, findings; compose reading/parsing/checking/rendering explicitly. | OIDC/local files open; syntax failures/findings displayed separately; blocking policy only in app; no upload/persistence. App-owned example routes remain under `/app/`. |
+| 10D. Hierarchy parity | Port the original hierarchy's presentation and behavior into the design system and viewer; side-by-side parity harness. App shell excluded. | Paired original/viewer screenshots and metric assertions pass at 1440/1099/859/375px; all package unit/browser suites and Storybooks pass; `apps/web` unchanged. |
+| 10E-a. App shell review | Compact application header and no-document panel as `apps/web` Storybook studies. | One ≤56px row with the 22px icon at desktop; keyboard file opening; findings popover; no overflow at 320–1440px; built and dev catalogs pass. |
+| 10E-b. App shell integration | Replace the app routes' header/h1/file card/status with the approved shell; full-bleed viewer; update app browser tests. | App browser suite passes against the new shell; local files, findings and the example behave as in 10C. |
 | 11. Distribution and Cloudflare | Finish independent ESM/declaration/CSS exports and app-local Cloudflare config; separate package/app builds, Storybook, and deploy commands. | External-consumer smoke check; Cloudflare dry run and deep-link refresh; no development fixtures/Storybook in deployment; no package publication. |
+
+## Stage-10A refinement — approved 2026-10-22
+
+- The independent site lives inside `apps/web`, with its own `.git`, pnpm
+  workspace boundary, pinned versions and lockfile. Root ignores `/apps/web/` and
+  no longer discovers it as a workspace member. The original minimal Vite shell
+  is replaced in place; no placeholder app is moved elsewhere.
+- Existing tracked files are not hidden by an ignore entry. Per the approved
+  plan and no-staging rule, the user must run
+  `git rm -r --cached -- apps/web` from the parent to finish the ownership
+  transfer. This preserves all nested files. Agent work must not perform it,
+  stage another path, create a gitlink/submodule, commit or add a remote.
+- The landing owns its UI rather than consuming the parent's design system.
+  Original reference bytes are preserved. The approved SVG replaces the rendered
+  PNG with a transparent canvas. SVG geometry is independent of Astro and
+  persona identity: square baseline plus checker, hearts, visor, shelf, brow and
+  surprised variants. Both prototype sprite sets have fixed catalog stories.
+- Hero waves loop continuously with no controls in production or stories.
+  Reduced-motion users receive a still composition. Browser animation effects
+  remain local, suspend offscreen/hidden, and clean up on removal. Fixed-frame
+  studies support deterministic visual inspection without playback controls.
+- The quieter teaser has fewer tiles and one expression. All mosaics are
+  explicitly illustrative, without invented OIDC topology or extra personas.
+  Graph mapping/filtering, shared-brand extraction, full landing composition,
+  `/app/` loader and deployment remain outside Stage 10A.
 
 ## Stage-9 extension contract
 
@@ -1139,6 +1208,387 @@ static-mode and local traversal-set implementation details and verification coun
 - `git diff --check` passes. Changes remain unstaged and uncommitted. Stage 9
   still has no unresolved acceptance failures; Stage 10 remains unstarted.
 
+## Stage-10A verification evidence — 2026-10-22
+
+- Implemented only the approved independent brand/catalog stage from clean
+  checkpoint `6e724861a1b71f281c262c306bb6d1b9a3d91211`. Replaced the minimal
+  Vite shell in place with a local-only Astro repo at `apps/web`. It has its own
+  Git metadata, pnpm workspace marker, pinned versions, lockfile, Storybook,
+  plan and working agreement. No remote, commit, submodule or gitlink was added.
+- Parent pnpm membership now contains only its four library packages; root
+  `build`/`test` run independently. The root lockfile only removes the former
+  web importer, preserving every dependency version. Root `dev`, `build:app`,
+  `storybook:web` and `build:storybook:web` delegate into the nested checkout.
+  `/apps/web/` is ignored, while all six previously tracked paths remain in the
+  parent index for the user's explicit `git rm -r --cached -- apps/web` handoff.
+  No index was modified or staged by the agent.
+- Site-local DTCG tokens and `Heading`, `Text`, `Surface`, original-logo,
+  eye-path, eye-pair and tile components have one owner per responsibility.
+  Seven deliberately drawn SVG eye variants share a 32 × 16 canvas; both
+  supplied expression sets retain their own named stories. Geometry is readonly
+  and framework-independent, without persona identity or UJG dependencies.
+  All four supplied reference files and the rendered logo preserve original bytes.
+- Static mosaics, the animated hero and quiet teaser have separate contracts.
+  The hero reuses existing paths and continuously cycles three illustrative
+  personas per set, using the source 4200ms wave duration. It has no controls.
+  Browser-only effects suspend offscreen/hidden, respect changing reduced-motion
+  preferences and clean up per instance. The teaser has fewer tiles and exactly
+  one square-eye pair. No graph model, filtering, app loader or landing CTA was added.
+- Site `pnpm test`: **8/8 passed**, plus clean Astro/TypeScript diagnostics,
+  readonly compile checks and **38 independent token checks**. A source-only
+  temporary copy outside this parent passed a frozen offline install, Astro
+  production build and native Astro Storybook build, proving independent use.
+  The copy was removed afterward. Both root delegated site build commands passed.
+- Native Astro Storybook builds and loads **34 stories**, from primitives and
+  individual eyes through proof sheets, tiles, both hero sets, still frames,
+  teaser and multiple instances. The same actual Astro components are inspected
+  in development and built Storybook. No React/HTML stand-in renderer or custom
+  playback/Controls UI was added. Storybook uses a narrow localhost/127.0.0.1
+  allowlist for its development preview.
+- Site browser suite: **7/7 Chromium checks passed against built output**, and
+  the same **7/7 passed against running Astro and Storybook development servers**.
+  Checks verify every story's styles/assets/slots/scripts, preserved logo bytes,
+  all eye bounds, no playback controls, reduced-motion changes, actual full loop
+  cadence, every persona's visible expression, retained paths, offscreen/hidden
+  suspension, detach/reconnect cleanup, independent instances and static teaser.
+  CSS minification exposed a `4200ms` → `4.2s` timing bug; explicit unit handling
+  and a duration/cadence regression fix it. Small-size square-eye proofs now use
+  colored backing so the white frames remain visible.
+- Layout checks pass at **320, 375, 768, 1024 and 1440px** without page overflow.
+  Visually inspected ignored catalog, eye-sheet, hero and teaser screenshots at
+  mobile/desktop sizes under `apps/web/.test-output/`; Storybook instance
+  screenshots are captured too. Original references are not shipped in the
+  production output. Browser runners close their own servers/browsers; ordinary
+  development servers are stopped after verification.
+- Parent `pnpm test`: **135/135 passed** (**53 viewer + 49 design-system +
+  17 lint + 13 query + 3 baseline**), with existing readonly/token checks and
+  all **18 component fixture contracts**. Parent `pnpm build` passed for all
+  four libraries. No library sources/interfaces, examples or canonical UJG/assets
+  changed. Both repositories pass `git diff --check`, have unstaged changes and
+  no commits created. Stage 10A has no unresolved implementation gate failures;
+  the user-owned parent-index transfer remains documented. Stage 10B is next.
+
+### Stage-10A logo and hero-size correction — 2026-10-22
+
+- Replaced the rendered PNG with the user's supplied `tmp/logo.svg`. Preserved
+  the original SVG byte-for-byte in the nested repository's references. The
+  production SVG removes the full white canvas and tightens its viewport;
+  every other path and gradient is retained. Astro and Storybook serve the
+  same transparent `public/brand/logo.svg` asset. Scratch originals are untouched.
+- Hero and deterministic-frame mosaics now shrink with their container and cap
+  each cell at **10 × 10 CSS pixels**, centered in larger containers. The cap
+  belongs to the local DTCG token source; animation geometry/timing, expressions,
+  teaser and library interfaces are unchanged. Full landing composition remains
+  Stage 10B; this correction does not begin it.
+- All **8 unit tests** pass. Astro/TypeScript/readonly checks and **39 token
+  checks** pass; Astro and native Storybook production builds pass. Browser
+  verification passes **7/7 against built output and 7/7 against development**,
+  including logo decoding/transparency, maximum cell dimensions at 320/375/768/
+  1024/1440px, all 34 stories and the existing animation/lifecycle checks.
+- Inspected the updated mobile catalog, desktop hero and transparent-logo
+  screenshots under `apps/web/.test-output/`. Screenshot review caught an
+  unsupported static Storybook asset URL; sharing the public asset directory
+  fixes it, and logo decoding is now checked in every relevant story. Logs use
+  the `review-logo-cells-` prefix. Existing user development servers were reused
+  and left running; temporary test servers/browsers closed normally.
+- Parent libraries/examples remain unchanged, so their previously passing
+  135-test/build results were not rerun. Both Git indexes remain untouched;
+  whitespace checks pass. All changes remain uncommitted.
+
+### Stage-10A teaser alignment correction — 2026-10-22
+
+- Applied the same **10 × 10 CSS pixel** cell cap to the static teaser. It now
+  stays compact in every composition and Storybook instance. Existing readonly
+  artwork, touchpoint colors and the single square-eye pair are preserved.
+- Added a reusable native `ExamplePreview` composition, inspected through the
+  existing teaser study. It follows `tmp/landing_page.png`: example label,
+  Solid-OIDC heading/copy, artwork beside the copy on desktop, and a visible
+  softly filled “Open example” CTA. The teaser has no enclosing surface/card
+  border and stacks at narrow widths, with its CTA before the artwork.
+- The native link accepts an explicit destination and defaults to the agreed
+  `/app/` path. That application route remains Stage 10C; verification checks
+  its destination and presentation, without claiming the app is implemented.
+- `pnpm test`: **8/8 passed**, with clean Astro/TypeScript/readonly diagnostics
+  and **39 token checks**. Astro and native Storybook production builds pass.
+  Browser checks pass **7/7 built and 7/7 development**, covering all 34 stories,
+  the 10px cap for hero/still/teaser cells, borderless composition, visible
+  keyboard-reachable CTA at 320/375/768/1024/1440px and existing motion behavior.
+- Visually compared the supplied landing reference with mobile/desktop teaser
+  screenshots in the page and standalone Storybook. Evidence is under
+  `apps/web/.test-output/`, with `review-teaser-*.log` logs. Temporary browser/test
+  servers closed; existing user development servers remain running. Parent
+  libraries/examples are unchanged, and their prior checks were not rerun.
+  Both repositories pass whitespace checks; changes remain unstaged/uncommitted.
+
+## Stage-10B verification evidence — 2026-10-22
+
+- Implemented only the landing stage over the user's nested-repo checkpoint
+  `3d84116`. Replaced the duplicated catalog at `/` with the approved reference's
+  sequence: original SVG brand/header, headline and animated hero, journey CTA,
+  Solid-OIDC teaser and muted footer. The later size/border corrections take
+  precedence over the initial screenshot: no card borders, and every hero/teaser
+  cell stays at most **10 × 10 CSS pixels**. Existing logo, eye geometry, colors,
+  static teaser and animation controller/timing are unchanged.
+- The page imports actual landing components directly. It imports no catalog
+  studies, proof sheets or fixed frames. Added native Astro stories for the
+  header, hero, journey CTA, footer and complete page. Local typography primitives
+  now support hero/lead treatments; shared `ActionLink` owns CTA semantics and
+  sizing, including reuse by the existing teaser. The teaser's heading level is
+  explicit. Three additional DTCG tokens own the new type sizes/page width.
+- Links lead to `/app/` and `/app/examples/solid-oidc/`. The GitHub footer URL
+  matches the existing parent origin. Native disclosure navigation, section
+  links and a keyboard skip link work without a navigation controller. The
+  landing contains no file input, drop target, parser, upload/handoff, app-route
+  placeholder, persona filter or deployment setup. Application routes remain
+  deliberately unimplemented until Stage 10C; hrefs/presentation are verified.
+- Site `pnpm test`: **8/8 passed**, with zero Astro/TypeScript diagnostics,
+  readonly checks and **42 token checks**. Astro production and native Storybook
+  builds pass. Storybook contains **44 stories**, retaining all 34 brand studies
+  plus ten new primitive/landing stories. Actual native slots, images, styles and
+  browser scripts load correctly. Dependencies and lockfile are unchanged.
+- Site browser suite: **8/8 passed against built output and 8/8 against local
+  Astro/Storybook development servers**. Checks cover landing-only content,
+  transparent SVG decoding, h1/h2 structure, CTA targets/keyboard reachability,
+  native menu and skip link, section targets, no file handling or overflow, all
+  44 stories, all seven eye shapes, reduced-motion changes, complete wave cadence,
+  offscreen/hidden suspension, detach/reconnect cleanup and independent instances.
+- Responsive checks pass at **320, 375, 640, 768, 940, 1024 and 1440px**.
+  Compared the reference with full-page screenshots at **320/940/1440px** and
+  inspected the hero/teaser captures in `apps/web/.test-output/`. Logs use the
+  `stage10b-` prefix. CTA measurements center links before checking bounds,
+  avoiding fractional nearest-edge scroll rounding without changing the layout.
+- Parent `pnpm test`: **135/135 passed** (**53 viewer + 49 design-system +
+  17 lint + 13 query + 3 baseline**), plus existing readonly/token checks and
+  **18 independent fixture contracts**. Parent `pnpm build` passed independently.
+  No library interfaces/sources, canonical examples, package dependencies or
+  supplied references changed. Temporary test browsers/servers and the owned
+  Astro preview were stopped; the existing user Storybook server is untouched.
+- Both repositories pass `git diff --check`; both indexes remain untouched.
+  No commits, remotes or publication were created. The previously agreed
+  user-owned parent-index handoff remains unchanged. Stage 10B is complete;
+  Stages 10C and 11 remain unstarted.
+
+## Stage-10B responsive figures and independent motion — 2026-10-22
+
+- The hero accepts the actual message through a native Astro slot and measures
+  its container and message with `ResizeObserver`. One to three large, recognizable
+  heart/donut/star silhouettes fit the context. Artwork stays below the message;
+  the upper and left text area remains clear. Cells stay at most **10 × 10px**.
+- Framework-independent readonly geometry owns the silhouettes, placements and
+  coordinate-based colors/memberships. A separate pure motion function gives
+  each figure its own tempo, starting phase and persona cycle: **4.2 / 5.46 /
+  6.93 seconds** per wave. Each figure changes silhouette at its own boundary,
+  without restarting the other figures. The schedule lets every persona encounter
+  every silhouette; expressions are not assigned to particular shapes.
+- Native `WaveMosaic` owns instance-specific SVG symbols and the tile template;
+  the browser controller reuses existing cell elements and colors. Departed cells
+  fade fully to **opacity 0**. Invalid regions clear immediately after text reflow.
+  Reduced motion uses deterministic still figures, and offscreen/hidden clocks
+  suspend. Removal/reconnection cleans up frames, observers and listeners.
+- `pnpm test`: **15/15 passed**, zero Astro/TypeScript diagnostics, readonly
+  compilation and **44 token checks**. Astro and native Storybook production
+  builds pass. The catalog now has **45 native stories**, including a resizable
+  message context using the actual hero. Dependencies/lockfile are unchanged.
+- Browser verification: **9/9 built and 9/9 development**. Checks cover independent
+  figure clocks/personas, shape changes, retained cell nodes/colors, complete
+  fading, native sprite ownership, reduced-motion changes, suspension/reconnect,
+  all 45 stories, CTAs and responsive bounds. Preference changes are sampled at
+  the event boundary rather than polling the media query inside every frame;
+  this fixes a reproduced Chromium preference-notification failure.
+- No overflow at **320/375/640/768/940/1024/1440px**, with container-only resizing
+  at **272/620/360px** and message reflow. Inspected mobile/desktop landing and
+  hero screenshots, independently progressing figures and the narrow context.
+  Evidence is in ignored `apps/web/.test-output/` with `hero-independent-*.log`,
+  `landing-*.png`, `hero-context-*.png` and `hero-independent-shapes.png`.
+- Parent library/example sources, approved references, eye geometry, static
+  teaser and nested dependencies remain unchanged. Prior parent **135-test/build**
+  evidence remains applicable and was not rerun. Temporary browser/test servers
+  closed; existing user Astro/Storybook servers remain running. Both indexes are
+  untouched, whitespace checks pass, and all changes remain uncommitted. This is
+  a Stage-10B refinement; Stage 10C and deployment/publication remain unstarted.
+
+## Stage-10C verification evidence — 2026-10-22
+
+- Implemented only the application stage over the nested site's user-created
+  checkpoint `f2d3e84`. Added static `/app/` and `/app/examples/solid-oidc/` pages.
+  `ApplicationPage.astro` owns the branded shell, native navigation and skip link;
+  `app/mount.tsx` mounts the actual React `JourneyViewer` through `createRoot`.
+  Native navigation owns its lifetime. The landing imports no application mount,
+  file reader or viewer code; its source/artwork and all 45 catalog stories remain
+  unchanged. No additional Astro renderer, router or placeholder package.
+- The separate site manifest/lockfile explicitly links the four libraries'
+  **built public exports**, with React/ReactDOM **19.2.7** and matching types.
+  Vite deduplicates React. Application UI reuses design-system primitives and
+  compiled component/viewer CSS inside a scoped theme. No parent workspace
+  membership, source aliases, library/interface changes or package publication.
+  The site requires the local library/example checkouts and a prior parent
+  install/build; portable distribution is still Stage 11.
+- Browser reading (`File.text` or explicit example fetches), native `JSON.parse`,
+  `checkDocument` rule composition and `Findings` presentation are separate app
+  operations. The app supplies `documentShape`, `uniqueNodeIds` and
+  `referenceTargets`; shape/duplicate-ID findings block opening, while reference
+  findings are warnings. Read errors, syntax errors and findings have distinct
+  presentations; findings include rule IDs and exact source paths. Blocking is
+  derived from findings in the app, with no parser/viewer/lint-runner policy.
+  An empty finding list does not claim full UJG conformance.
+- Successful loads retain the **original parsed object** until the next load,
+  including same-ID replacements. Rejected attempts leave the current viewer
+  mounted with its interaction intact. Browser effect lifetimes abort superseded
+  example reads and discard late file completions; no business state is hidden
+  in refs. Local files get empty screenshot/presentation inputs, clearing example
+  media without filename/ID inference. No upload, storage, import/context fetching
+  or asset discovery was added.
+- `prepare-example.mjs` copies only the canonical JSON-LD, independent screenshot
+  and touchpoint documents and their **37 explicitly mapped PNGs** into ignored
+  public output under `/app/examples/solid-oidc/`. The browser resolves map paths
+  against that explicit asset base. Graph and image response hashes match source;
+  every image decodes. Baseline/provenance, references, fixtures and Storybook do
+  not enter application deployment output. Canonical source bytes are unchanged.
+- Site `pnpm test`: **19/19 passed**, including four new frozen-input/report-policy
+  checks, clean Astro/TypeScript/readonly diagnostics and **44 token checks**.
+  Frozen-lockfile install, Astro production build (**three pages**) and native
+  Astro Storybook build (**45 stories**) pass. Running Astro and Storybook
+  together reproduced stale optimized-dependency **504** responses from a shared
+  Vite cache. Separate app/catalog cache directories resolve it; simultaneous
+  development rendering now passes without expanding the loopback host allowlist.
+- App browser suite: **7/7 built and 7/7 development**. Checks cover actual landing
+  navigation, direct-route refresh, **10/47/20/24** rendered journey/state/entry/exit
+  counts, all 37 image hashes/decodes, search/filter/focus and keyboard lightbox,
+  local opening, failed-load selection/query preservation, same-file/same-ID
+  reset, distinct syntax/shape/duplicate/reference reports, cancellation, late
+  reads, example HTTP failure/recovery, independent tabs and no persistence or
+  external graph requests. Existing landing/catalog suite: **9/9 built and 9/9
+  development**, including all 45 actual Astro stories and motion/lifecycle gates.
+- No app overflow at **320/375/768/859/860/861/1099/1100/1101/1440px**. File input
+  focus/hit area and native skip navigation pass; image/dialog bounds pass at
+  **320/1440px**. Inspected application, findings and lightbox screenshots in
+  ignored `apps/web/.test-output/stage10c-*.png`; final logs use `stage10c-`.
+- Parent `pnpm test`: **135/135 passed** (**53 viewer + 49 design-system +
+  17 lint + 13 query + 3 baseline**), with existing readonly/token checks and all
+  **18 fixture contracts**. Parent `pnpm build` passes independently. Library,
+  example and baseline sources remain unchanged. Both repositories pass
+  `git diff --check`, with untouched indexes and unchanged HEADs. No commits,
+  remotes, deployment or publication. The user-owned parent-index handoff remains
+  unchanged. Test browsers/servers and the temporary app/catalog development
+  servers were stopped; the user's existing servers/lockfile were preserved.
+  Stage 10C has no unresolved acceptance failures; Stage 11 is next.
+
+## Stage-10D hierarchy parity — review and approved interface changes (2026-10-22)
+
+A review compared `localhost:4321/app/examples/solid-oidc/` with the original
+hierarchy (`specs/solid-oidc/journey-graph/apps/graph-studio/.../JourneyHierarchyMap`).
+It found that the earlier stages kept the data but not the layout or interaction
+model. At 1440px the first state row sat at 905px (original 160px), the inspector
+was not sticky and on phones followed the whole tree (7404px vs 324px), there was
+no hover preview, the lightbox was a full-page panel, Columns was an ancestor-only
+“Focus selected scope”, rows carried permanent entry/exit badges, contracts were
+always open, and nested journeys had their own heading plus Inspect/Focus buttons.
+Root cause: Stage 4 captured tokens only, and no gate compared the result with the
+original. The user approved these changes (the app shell part was excluded):
+
+- **Design system.**
+  - `StateRow` ports the original row: `tone`/`marks` relative to the active
+    state, whole-row selection, a decorative column caret when a composite has no
+    `onToggle`, `description` for child labels, a `crossing` dot, and the new
+    `ScreenAction` phone button. `entryCount`, `exitCount` and `relation` are removed.
+  - `JourneyContractControls` gains a required `open`/`onToggle` summary toggle.
+  - `InspectorPanel` is rebuilt (head, media, direction sections with transition
+    groups and detail buttons, footnote).
+  - `ScreenPreview` becomes the floating card and `ScreenLightbox` the phone
+    figure plus caption; `ScreenImage` gains `fit`.
+  - `SearchField` gains a result popover (`SearchResult`); `Button` gains the
+    `bare`/`pill`/`segment`/`chip`/`panel` variants and the `xs` size; `Text`
+    gains `weight` and the `accent` tone; `Heading` gains `xs`.
+  - New owners: `Icon`, `SegmentedControl`, `ExplorerBar`, `JourneyNest` and
+    `ScreenThumbnail`, plus 21 DTCG layout/shadow tokens and two repurposed
+    screen sizes.
+- **Viewer.**
+  - `ViewerNavigation.focus` becomes `mode` and `lanes`, with `setViewMode` and
+    `getLanePath`. `toggleTouchpoint` (OR) becomes single-select `selectTouchpoint`,
+    and `getRowRelation` becomes `getRowHighlight`/`getRouteDescription`.
+  - `ViewerInteraction` adds `openContracts` and `toggleContracts`.
+  - `JourneyNavigation` becomes the explorer bar with new callbacks.
+    `JourneyViewer` gains optional `headerStart`/`headerEnd`, and inspector media
+    follows the selection only.
+  - The duplicate “Navigate graph” list, breadcrumbs and per-journey Inspect/Focus
+    buttons are removed; the `journey` selection kind stays available through search.
+- **Browser boundary.** Every DOM effect lives in named `browser/` adapters
+  (preview placement, reveal, idle preload, “/”, outside clicks, column scrolling,
+  inspector scroll reset). They reach the page only via their own elements and
+  never receive graph types; the boundary test now treats `browser/` as that set.
+
+## Stage-10D verification evidence — 2026-10-23
+
+- Implemented only Stage 10D over checkpoint `6e72486`, plus the existing
+  uncommitted Stage-10 parent changes. No dependencies were added and neither
+  lockfile was touched by this stage (only `test:parity` scripts were added). The
+  nested `apps/web` working tree status is unchanged and both repositories pass
+  `git diff --check`.
+- Parent `pnpm test`: **143/143 passed**.
+  - Counts: **56 design-system, 54 viewer, 17 lint, 13 query, 3 baseline**.
+  - It includes **23 independent fixture contracts** and readonly declaration checks.
+  - New and updated checks cover tones, marks, lane carets, collapsible contracts,
+    grouped inspector sections, single-select filters, lane paths, open contracts,
+    screens in columns, preview-free row actions and the browser-adapter boundary.
+- `pnpm build` passes. `pnpm build:storybook` builds **73 design-system stories**;
+  `pnpm build:storybook:viewer` builds **106 (73 inherited + 33 viewer)** and both
+  compiled consumers.
+- `pnpm test:design-system:browser`: **8/8**. Two checks were rewritten for
+  accessible mark explanations and whole-row selection.
+- `pnpm test:viewer:browser`: **28/28**. The suite covers:
+  - the OIDC baseline (10/47/20/24 when expanded) and keyboard selection;
+  - collapsed contracts and the compact explorer bar (≤2 lines);
+  - the original grid: stacked below 860px with the inspector first, 300px then
+    340px columns, the sticky bar and inspector;
+  - columns: 284px lanes, crumbs, carets, opening and trimming, rootless starts;
+  - search: popover, “/”, outside dismissal, reveal on pick;
+  - single-select equal-label filters, matched nests, undimmed matching children;
+  - inspector group-head/detail navigation with reveal, and hover tones/marks;
+  - all 37 PNGs and lightbox order/wrap/focus trap/backdrop, live map changes;
+  - floating preview placement beside its opener;
+  - lightbox bounds and 840/1520 ratio at all thresholds, thumbnails 110/150px;
+  - extensions and document reset.
+  Evidence screenshots: `packages/viewer/.test-output/stage10d-*.png`.
+- `pnpm test:parity` (new, development-only, both dev servers running): **7/7**.
+  - At 1440px: first-row offset below the bar **56 vs 63px**, inspector **340 vs
+    340px**, visible controls **119 vs 120**.
+  - At 1099px: inspector **300 vs 300px**. At 859 and 375px the inspector precedes
+    the tree on both sides.
+  - Both show a portrait hover card, an ≤760px lightbox at the original ratio,
+    identical columns after selecting Login (two 284px lanes), the IdP filter and
+    an SMS search popover.
+  - Paired screenshots are in `packages/viewer/.test-output/parity/` and were
+    visually compared.
+- Unchanged-app checks: `apps/web` `pnpm test` 19/19, `pnpm build` (3 pages) and
+  the landing browser suite 9/9 pass against the rebuilt libraries.
+- Its application browser suite now fails **4 of 7**, because it asserts the
+  replaced viewer UI:
+  - 20 always-visible entry chips;
+  - the “Search results” list and Focus/Overview buttons;
+  - `button[data-variant="row"]` rows;
+  - “Open screenshot” buttons.
+
+  Updating those assertions is an app follow-up, deliberately not done here.
+
+## Stage-10D follow-ups and accepted differences
+
+- **App (excluded from 10D).** Resolved in Stage 10E:
+  - the shell replaces the logo header, h1, file card, status prose and document
+    heading;
+  - the stats open the explorer bar, and “Open file…” lives in the header;
+  - the application browser suite is updated.
+
+  The UJG footer and a JSON-LD source link were not requested for the shell and
+  remain optional.
+- **Accepted differences.**
+  - Mobile-first breakpoints switch at ≥860/≥1100px, while the original used
+    ≤860/≤1100px, so layouts differ only at exactly 860px and 1100px.
+  - Rows and controls keep the Stage-4 44px touch targets below `md` and on
+    coarse pointers (the original used 32px).
+  - The inspector shows full IRIs, not local IDs.
+  - Search stays constrained by the touchpoint filter (Stage 7), and the search
+    reset scrolls the viewer root rather than the window.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -1164,12 +1614,12 @@ static-mode and local traversal-set implementation details and verification coun
   correction does not optimize this work. Measure representative reused graphs
   before selecting per-call traversal/lookups; add no persistent catalog/cache.
 - Selection and expansion intentionally follow logical IDs across all reused
-  occurrences within one instance. Stage 7 now records explicit occurrence
-  context for focus and breadcrumbs; it assigns no arbitrary parent and adds no
-  per-call-site expansion state. Occurrence paths belong to one document object
+  occurrences within one instance. Explicit occurrence context drives the columns
+  and the inspector crumb (Stage 10D replaced focus mode and breadcrumbs); it
+  assigns no arbitrary parent and adds no per-call-site expansion state. Occurrence paths belong to one document object
   and must be reset on replacement by externally controlled consumers.
   All occurrences of the selected logical identity remain highlighted, while
-  breadcrumbs/inspector navigation use the last chosen occurrence. This is now
+  the inspector crumb and its navigation use the last chosen occurrence. This is now
   explicit in the README. Snapshot consumers must use `navigateViewer` or
   `pickSearchResult` for selection; the interaction-only `selectNode` API does not
   update occurrence context and must not be spread into a snapshot on its own.
@@ -1184,9 +1634,9 @@ static-mode and local traversal-set implementation details and verification coun
   explicit separate captions/dots and caller-supplied short labels/colors for
   interactive journeys, without selecting a primary touchpoint. Static hierarchy
   presentation retains its existing contract.
-- A distinct built-in focus-row presentation remains separate design work.
-  Stage 9 retains the existing `StateRow` focus contract and supplies it intact
-  to state overrides. The navigation/screen export review is complete: the
+- Stage 10D's column rows reuse `StateRow` with a decorative caret, so no separate
+  focus-row presentation is needed; state overrides still receive the complete
+  row contract. The navigation/screen export review is complete: the
   decisions and snapshot-construction guidance are recorded in the Stage-9
   extension contract above and the viewer README. There are no breaking changes.
 - Native modal focus restoration captures `activeElement` at mount. On Safari,
@@ -1196,14 +1646,16 @@ static-mode and local traversal-set implementation details and verification coun
   Example touchpoint colors intentionally reference the design-system's public
   CSS variables; that example coupling remains documented without a new runtime
   color/token resolution abstraction.
-- Focus columns use native horizontal overflow; programmatic reveal/scrolling
-  and global keyboard shortcuts stay at a browser/application boundary. Stage 10
-  may compose those effects explicitly without moving them into pure queries or
-  controlled renderer components. Stage 8's modal-only keyboard/focus behavior is
-  isolated in `BrowserLightbox`; it adds no global shortcut listeners.
-- All stages after 9 remain unstarted. Routing,
-  reporting UI and deployment are not implemented. Syntax
-  parsing remains the caller's native `JSON.parse`; the app does not call lint yet.
+- Columns use native horizontal overflow (with inline-size containment).
+  Stage 10D composes reveal-on-navigate, the “/” shortcut, outside clicks, preview
+  placement and idle preloading in named `browser/` adapters; pure queries and
+  controlled components stay free of DOM effects. Only “/” listens on the owning
+  document, and the first mounted viewer handles it.
+- Stage 11 remains unstarted. Application routing, file loading and reporting are
+  complete; deployment/configuration and portable distribution remain deferred.
+  The app currently consumes explicit local links to built libraries and copies
+  the canonical example from this parent checkout. Native `JSON.parse`, selected
+  lint rules and blocking policy remain explicit application operations.
 - The initial rules check compact field shapes, node identity uniqueness, and
   target existence/classes. IRI grammar, context meaning, ownership, transition
   locality, boundary mappings, forbidden properties, and outgoing-target

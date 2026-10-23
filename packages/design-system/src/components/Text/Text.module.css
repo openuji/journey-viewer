@@ -6,13 +6,22 @@
   overflow-wrap: anywhere;
 }
 .text[data-role="label"] {
-  @apply text-label font-medium;
+  @apply text-label font-medium leading-tight;
 }
 .text[data-role="caption"] {
   @apply text-caption;
 }
 .text[data-role="code"] {
   @apply font-mono text-code;
+}
+.text[data-weight="regular"] {
+  @apply font-regular;
+}
+.text[data-weight="medium"] {
+  @apply font-medium;
+}
+.text[data-weight="semibold"] {
+  @apply font-semibold;
 }
 .text[data-tone="muted"] {
   color: var(--jv-color-muted);
@@ -25,4 +34,7 @@
 }
 .text[data-tone="exit"] {
   color: var(--jv-color-exit);
+}
+.text[data-tone="accent"] {
+  color: var(--jv-color-accent);
 }

@@ -1,3 +1,13 @@
+import { createIconFixture } from "../src/components/Icon/Icon.fixtures.ts";
+import { checkIconFixture } from "../src/components/Icon/Icon.checks.ts";
+import { createJourneyNestFixture } from "../src/components/JourneyNest/JourneyNest.fixtures.ts";
+import { checkJourneyNestFixture } from "../src/components/JourneyNest/JourneyNest.checks.ts";
+import { createScreenThumbnailFixture } from "../src/components/ScreenThumbnail/ScreenThumbnail.fixtures.ts";
+import { checkScreenThumbnailFixture } from "../src/components/ScreenThumbnail/ScreenThumbnail.checks.ts";
+import { createSegmentedControlFixture } from "../src/components/SegmentedControl/SegmentedControl.fixtures.ts";
+import { checkSegmentedControlFixture } from "../src/components/SegmentedControl/SegmentedControl.checks.ts";
+import { createExplorerBarFixture } from "../src/components/ExplorerBar/ExplorerBar.fixtures.ts";
+import { checkExplorerBarFixture } from "../src/components/ExplorerBar/ExplorerBar.checks.ts";
 import { createScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.fixtures.ts";
 import { checkScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.checks.ts";
 import { createScreenPreviewFixture } from "../src/components/ScreenPreview/ScreenPreview.fixtures.ts";
@@ -36,6 +46,11 @@ import { createTouchpointDotFixture } from "../src/components/TouchpointDot/Touc
 import { checkTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.checks.ts";
 
 const findings = [
+  ...checkIconFixture(createIconFixture()).map((finding) => ({ ...finding, path: ["Icon", ...finding.path] })),
+  ...checkJourneyNestFixture(createJourneyNestFixture()).map((finding) => ({ ...finding, path: ["JourneyNest", ...finding.path] })),
+  ...checkScreenThumbnailFixture(createScreenThumbnailFixture()).map((finding) => ({ ...finding, path: ["ScreenThumbnail", ...finding.path] })),
+  ...checkSegmentedControlFixture(createSegmentedControlFixture()).map((finding) => ({ ...finding, path: ["SegmentedControl", ...finding.path] })),
+  ...checkExplorerBarFixture(createExplorerBarFixture()).map((finding) => ({ ...finding, path: ["ExplorerBar", ...finding.path] })),
   ...checkScreenImageFixture(createScreenImageFixture()).map((finding) => ({ ...finding, path: ["ScreenImage", ...finding.path] })),
   ...checkScreenPreviewFixture(createScreenPreviewFixture()).map((finding) => ({ ...finding, path: ["ScreenPreview", ...finding.path] })),
   ...checkScreenLightboxFixture(createScreenLightboxFixture()).map((finding) => ({ ...finding, path: ["ScreenLightbox", ...finding.path] })),
@@ -94,4 +109,4 @@ if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("18 component fixture contracts pass independently.");
+} else console.log("23 component fixture contracts pass independently.");

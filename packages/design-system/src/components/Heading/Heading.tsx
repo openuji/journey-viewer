@@ -5,7 +5,7 @@ export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 export type HeadingProps = Readonly<
   HTMLAttributes<HTMLHeadingElement> & {
     level: HeadingLevel;
-    size?: "sm" | "md" | "lg";
+    size?: "xs" | "sm" | "md" | "lg";
   }
 >;
 

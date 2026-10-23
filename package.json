@@ -8,9 +8,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @journey-viewer/web dev",
+    "dev": "pnpm --dir apps/web dev",
     "build": "pnpm -r --if-present build",
-    "build:app": "pnpm --filter @journey-viewer/web build",
+    "build:app": "pnpm --dir apps/web build",
+    "storybook:web": "pnpm --dir apps/web storybook",
+    "build:storybook:web": "pnpm --dir apps/web build:storybook",
     "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
     "build:design-system": "pnpm --filter @journey-viewer/design-system build",
     "build:viewer": "pnpm --filter @journey-viewer/viewer... build",
@@ -22,6 +24,7 @@
     "check:fixtures": "pnpm --filter @journey-viewer/design-system check:fixtures",
     "storybook": "pnpm --filter @journey-viewer/design-system storybook",
     "build:storybook": "pnpm --filter @journey-viewer/design-system build:storybook",
-    "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser"
+    "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser",
+    "test:parity": "pnpm --filter @journey-viewer/viewer test:parity"
   }
 }

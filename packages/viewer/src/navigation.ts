@@ -1,8 +1,8 @@
 import {
   getChildJourneys, getJourneyEntries, getJourneyExits, getJourneyStates,
-  getJourneyTouchpoints, getJourneyTransitions, getNodesByType,
+  getJourneyTouchpoints, getJourneyTransitions, getNode, getNodesByType,
 } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument, UjgJourney, UjgNode } from "@journey-viewer/ujg-jsonld";
+import type { UjgDocument, UjgJourney, UjgNode, UjgTransition } from "@journey-viewer/ujg-jsonld";
 import { createViewerInteraction, resolveSelection, sameSelection, selectNode } from "./interaction.js";
 import type { ViewerInteraction, ViewerSelection } from "./interaction.js";
 import { childOccurrence, getOccurrenceTrail, journeyOccurrences, sameOccurrence } from "./occurrence.js";
@@ -10,10 +10,18 @@ import type { ViewerOccurrence } from "./occurrence.js";
 import { getOccurrenceLabels } from "./occurrence-presentation.js";
 import type { ViewerLightbox } from "./screens.js";
 
+export type ViewerMode = "tree" | "columns";
+
 export interface ViewerNavigation {
-  readonly focus: ViewerOccurrence | null;
+  readonly mode: ViewerMode;
+  /**
+   * Column occurrences, in display order: the selection's explicit call path plus the children of
+   * a selected composite. Updated on navigation while in columns mode and when switching to it.
+   */
+  readonly lanes: readonly ViewerOccurrence[];
   readonly occurrence: ViewerOccurrence | null;
   readonly query: string;
+  /** At most one touchpoint; empty matches every journey. */
   readonly touchpointRefs: readonly string[];
   readonly hover: ViewerSelection | null;
   readonly hoverOccurrence: ViewerOccurrence | null;
@@ -36,15 +44,53 @@ export interface ViewerNavigationItem extends ViewerTarget {
   readonly context: string;
 }
 
+/** Relation of a state row to the active (hovered, else selected) state of the same journey. */
+export interface ViewerRowHighlight {
+  readonly tone: "active" | "incoming" | "outgoing" | "both" | "dim";
+  /** Transitions from the row to the active state. */
+  readonly incoming: number;
+  /** Transitions from the active state to the row. */
+  readonly outgoing: number;
+}
+
 const label = (node: UjgNode) => typeof node.label === "string" ? node.label : node["@id"];
 const selectionFor = (journey: UjgJourney, node: UjgNode, kind: ViewerSelection["kind"]): ViewerSelection => (
   { kind, journeyRef: journey["@id"], nodeRef: node["@id"] }
 );
+const sameLanes = (left: readonly ViewerOccurrence[], right: readonly ViewerOccurrence[]) => (
+  left.length === right.length && left.every((lane, index) => sameOccurrence(lane, right[index] ?? null))
+);
+
+/** The occurrence's explicit call path, plus every resolvable child of a selected composite when opened. */
+export function getLanePath(
+  document: UjgDocument, occurrence: ViewerOccurrence, selection: ViewerSelection | null, openComposite: boolean,
+): readonly ViewerOccurrence[] {
+  const trail = getOccurrenceTrail(document, occurrence);
+  const journey = trail.at(-1)?.journey;
+  const lanes = trail.map((crumb) => crumb.occurrence);
+  if (!openComposite || !journey || selection?.kind !== "state" || selection.journeyRef !== journey["@id"]) return lanes;
+  const states = getJourneyStates(document, journey);
+  const composites = getNodesByType(document, "CompositeState");
+  const stateIndex = states.findIndex((state) => state["@id"] === selection.nodeRef && composites.some((node) => node === state));
+  const composite = composites.find((node) => node === states[stateIndex]);
+  if (!composite) return lanes;
+  return [...lanes, ...getChildJourneys(document, composite)
+    .map((_, childIndex) => childOccurrence(occurrence, stateIndex, childIndex))
+    .filter((path) => getOccurrenceTrail(document, path).length > 0)];
+}
 
 export function createViewerSnapshot(document: UjgDocument): ViewerSnapshot {
   const interaction = createViewerInteraction(document);
   const start = journeyOccurrences(document).next().value;
-  return { interaction, navigation: { focus: null, occurrence: start?.occurrence ?? null, query: "", touchpointRefs: [], hover: null, hoverOccurrence: null }, lightbox: null };
+  const occurrence = start?.occurrence ?? null;
+  return {
+    interaction,
+    navigation: {
+      mode: "tree", lanes: occurrence ? getLanePath(document, occurrence, interaction.selection, false) : [],
+      occurrence, query: "", touchpointRefs: [], hover: null, hoverOccurrence: null,
+    },
+    lightbox: null,
+  };
 }
 
 function navigate(
@@ -54,10 +100,15 @@ function navigate(
   if (journey?.["@id"] !== target.selection.journeyRef || !resolveSelection(document, target.selection)) return current;
   const interaction = selectNode(document, current.interaction, target.selection);
   const navigation = current.navigation;
-  const focus = navigation.focus === null ? null : target.occurrence;
-  if (interaction === current.interaction && sameOccurrence(navigation.occurrence, target.occurrence)
-    && sameOccurrence(navigation.focus, focus) && navigation.query === query && navigation.hover === null && current.lightbox === null) return current;
-  return { ...current, interaction, navigation: { ...navigation, occurrence: target.occurrence, focus, query, hover: null, hoverOccurrence: null }, lightbox: null };
+  const lanes = navigation.mode === "columns" ? getLanePath(document, target.occurrence, target.selection, true) : navigation.lanes;
+  const unchangedLanes = sameLanes(lanes, navigation.lanes);
+  if (interaction === current.interaction && sameOccurrence(navigation.occurrence, target.occurrence) && unchangedLanes
+    && navigation.query === query && navigation.hover === null && current.lightbox === null) return current;
+  return {
+    ...current, interaction,
+    navigation: { ...navigation, occurrence: target.occurrence, lanes: unchangedLanes ? navigation.lanes : lanes, query, hover: null, hoverOccurrence: null },
+    lightbox: null,
+  };
 }
 
 /** Selection and occurrence update together; ordinary navigation preserves search text. */
@@ -70,24 +121,26 @@ export function pickSearchResult(document: UjgDocument, current: ViewerSnapshot,
   return navigate(document, current, target, "");
 }
 
-export function focusJourney(document: UjgDocument, current: ViewerSnapshot, occurrence: ViewerOccurrence): ViewerSnapshot {
-  if (getOccurrenceTrail(document, occurrence).length === 0 || sameOccurrence(current.navigation.focus, occurrence)) return current;
-  return { ...current, navigation: { ...current.navigation, focus: occurrence, hover: null, hoverOccurrence: null } };
-}
-
-export function showOverview(current: ViewerSnapshot): ViewerSnapshot {
-  return current.navigation.focus === null ? current : { ...current, navigation: { ...current.navigation, focus: null, hover: null, hoverOccurrence: null } };
+/** Switching to columns derives lanes from the current selection and occurrence; tree keeps expansion. */
+export function setViewMode(document: UjgDocument, current: ViewerSnapshot, mode: ViewerMode): ViewerSnapshot {
+  const navigation = current.navigation;
+  if (mode !== "tree" && mode !== "columns") return current;
+  const lanes = mode === "columns" && navigation.occurrence
+    ? getLanePath(document, navigation.occurrence, current.interaction.selection, true) : navigation.lanes;
+  if (navigation.mode === mode && sameLanes(lanes, navigation.lanes)) return current;
+  return { ...current, navigation: { ...navigation, mode, lanes: sameLanes(lanes, navigation.lanes) ? navigation.lanes : lanes, hover: null, hoverOccurrence: null } };
 }
 
 export function setSearchQuery(current: ViewerSnapshot, query: string): ViewerSnapshot {
   return query === current.navigation.query ? current : { ...current, navigation: { ...current.navigation, query } };
 }
 
-/** Multiple selected touchpoints use OR; assignments are explicit and never inherited. */
-export function toggleTouchpoint(document: UjgDocument, current: ViewerSnapshot, ref: string): ViewerSnapshot {
-  if (!getNodesByType(document, "Touchpoint").some((node) => node["@id"] === ref)) return current;
+/** Single-select touchpoint filter; null shows every journey. Assignments are explicit and never inherited. */
+export function selectTouchpoint(document: UjgDocument, current: ViewerSnapshot, ref: string | null): ViewerSnapshot {
+  if (ref !== null && !getNodesByType(document, "Touchpoint").some((node) => node["@id"] === ref)) return current;
   const refs = current.navigation.touchpointRefs;
-  return { ...current, navigation: { ...current.navigation, touchpointRefs: refs.includes(ref) ? refs.filter((value) => value !== ref) : [...refs, ref] } };
+  if (ref === null ? refs.length === 0 : refs.length === 1 && refs[0] === ref) return current;
+  return { ...current, navigation: { ...current.navigation, touchpointRefs: ref === null ? [] : [ref] } };
 }
 
 export function hoverNode(document: UjgDocument, current: ViewerSnapshot, hover: ViewerSelection | null, occurrence: ViewerOccurrence | null = null): ViewerSnapshot {
@@ -95,6 +148,36 @@ export function hoverNode(document: UjgDocument, current: ViewerSnapshot, hover:
   const hoverOccurrence = hover ? occurrence : null;
   if (sameSelection(current.navigation.hover, hover) && sameOccurrence(current.navigation.hoverOccurrence, hoverOccurrence)) return current;
   return { ...current, navigation: { ...current.navigation, hover: hover ? { ...hover } : null, hoverOccurrence } };
+}
+
+/** Only local, explicitly listed transitions produce row highlights. Hover takes precedence over selection. */
+export function getRowHighlight(
+  document: UjgDocument, interaction: ViewerInteraction, navigation: ViewerNavigation | undefined, journeyRef: string, stateRef: string,
+): ViewerRowHighlight | undefined {
+  const active = navigation?.hover ?? interaction.selection;
+  if (!active || active.kind !== "state" || active.journeyRef !== journeyRef) return undefined;
+  const journey = resolveSelection(document, active)?.journey;
+  if (!journey) return undefined;
+  if (active.nodeRef === stateRef) return { tone: "active", incoming: 0, outgoing: 0 };
+  const transitions = getJourneyTransitions(document, journey);
+  const incoming = transitions.filter((edge) => edge.from === stateRef && edge.to === active.nodeRef).length;
+  const outgoing = transitions.filter((edge) => edge.from === active.nodeRef && edge.to === stateRef).length;
+  return { tone: incoming && outgoing ? "both" : incoming ? "incoming" : outgoing ? "outgoing" : "dim", incoming, outgoing };
+}
+
+/** Plain-text explanation of the routes behind a row's marks, relative to the active state. */
+export function getRouteDescription(document: UjgDocument, navigation: ViewerNavigation | undefined, interaction: ViewerInteraction, journeyRef: string, stateRef: string): string {
+  const active = navigation?.hover ?? interaction.selection;
+  const journey = active?.kind === "state" && active.journeyRef === journeyRef ? resolveSelection(document, active)?.journey : undefined;
+  if (!active || !journey) return "";
+  const nodeLabel = (ref: string) => { const node = getNode(document, ref); return node ? label(node) : ref; };
+  const describe = (heading: string, edges: readonly UjgTransition[]) => edges.length
+    ? [heading, ...edges.map((edge) => `• ${label(edge)}`)] : [];
+  const transitions = getJourneyTransitions(document, journey);
+  return [
+    ...describe(`${nodeLabel(stateRef)} → ${nodeLabel(active.nodeRef)}:`, transitions.filter((edge) => edge.from === stateRef && edge.to === active.nodeRef)),
+    ...describe(`${nodeLabel(active.nodeRef)} → ${nodeLabel(stateRef)}:`, transitions.filter((edge) => edge.from === active.nodeRef && edge.to === stateRef)),
+  ].join("\n");
 }
 
 export function matchesTouchpoints(document: UjgDocument, journeyRef: string, refs: readonly string[]): boolean {
@@ -108,6 +191,7 @@ export function getViewerSummary(document: UjgDocument, refs: readonly string[] 
     states: new Set([...getNodesByType(document, "State"), ...getNodesByType(document, "CompositeState")]).size,
     entries: getNodesByType(document, "JourneyEntry").length,
     exits: getNodesByType(document, "JourneyExit").length,
+    transitions: getNodesByType(document, "Transition").length,
     matchingJourneys: journeys.filter((journey) => matchesTouchpoints(document, journey["@id"], refs)).length,
   } as const;
 }
@@ -138,18 +222,6 @@ export function searchViewer(document: UjgDocument, query: string, touchpointRef
     }
   }
   return results;
-}
-
-/** Only local, explicitly listed transitions produce row highlights. Hover takes precedence. */
-export function getRowRelation(document: UjgDocument, interaction: ViewerInteraction, navigation: ViewerNavigation | undefined, journeyRef: string, stateRef: string): "incoming" | "outgoing" | "both" | undefined {
-  const active = navigation?.hover ?? interaction.selection;
-  if (!active || active.journeyRef !== journeyRef || active.kind === "journey") return undefined;
-  const journey = resolveSelection(document, active)?.journey;
-  if (!journey) return undefined;
-  const transitions = getJourneyTransitions(document, journey);
-  const incoming = transitions.some((edge) => edge.to === active.nodeRef && edge.from === stateRef);
-  const outgoing = transitions.some((edge) => edge.from === active.nodeRef && edge.to === stateRef);
-  return incoming && outgoing ? "both" : incoming ? "incoming" : outgoing ? "outgoing" : undefined;
 }
 
 /** Navigation follows explicit local targets and explicit boundary mappings only. */

@@ -18,6 +18,11 @@ export function childOccurrence(parent: ViewerOccurrence, stateIndex: number, ch
   return { startJourneyRef: parent.startJourneyRef, steps: [...parent.steps, { stateIndex, childIndex }] };
 }
 
+/** Stable text identity of an occurrence, for DOM markers and React keys. */
+export function occurrenceKey(occurrence: ViewerOccurrence): string {
+  return [occurrence.startJourneyRef, ...occurrence.steps.map((step) => `${step.stateIndex}.${step.childIndex}`)].join(" ");
+}
+
 export function sameOccurrence(left: ViewerOccurrence | null, right: ViewerOccurrence | null): boolean {
   return left === right || (left !== null && right !== null && left.startJourneyRef === right.startJourneyRef
     && left.steps.length === right.steps.length && left.steps.every((step, index) => (

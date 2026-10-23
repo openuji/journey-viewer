@@ -5,8 +5,12 @@ import { checkTouchpointDotFixture } from "../TouchpointDot/TouchpointDot.checks
 export const checkJourneyHeadFixture: FixtureCheck = (value) => [
   ...text(value, "title"),
   ...boolean(value, "filtered"),
+  ...boolean(value, "matched"),
   ...text(value, "count"),
   ...choice(value, "level", [1, 2, 3, 4, 5, 6]),
+  ...(object(value) && value.crumb !== undefined ? text(value, "crumb") : []),
+  ...(object(value) && value.filtered === true && value.matched === true
+    ? [{ path: ["matched"], message: "A journey cannot be both filtered and matched." }] : []),
   ...(object(value) && value.touchpoints !== undefined
     ? Array.isArray(value.touchpoints)
       ? value.touchpoints.flatMap((item, index) => [

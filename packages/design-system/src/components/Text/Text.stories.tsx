@@ -14,7 +14,7 @@ export const Default: Story = {};
 export const Tones: Story = {
   render: () => (
     <div className="story-inline">
-      {(["default", "muted", "subtle", "entry", "exit"] as const).map(
+      {(["default", "muted", "subtle", "entry", "exit", "accent"] as const).map(
         (tone) => (
           <Text key={tone} {...createTextFixture({ tone, children: tone })} />
         ),
@@ -34,6 +34,15 @@ export const Roles: Story = {
             children: `${variant}: shared typography`,
           })}
         />
+      ))}
+    </div>
+  ),
+};
+export const Weights: Story = {
+  render: () => (
+    <div className="story-inline">
+      {(["regular", "medium", "semibold"] as const).map((weight) => (
+        <Text key={weight} {...createTextFixture({ weight, variant: "label", children: weight })} />
       ))}
     </div>
   ),

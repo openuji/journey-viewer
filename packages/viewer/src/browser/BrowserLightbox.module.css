@@ -1,11 +1,15 @@
 .dialog {
   box-sizing: border-box;
-  inline-size: min(var(--jv-size-lightbox), calc(100% - 2 * var(--jv-space-sm)));
+  inline-size: fit-content;
   max-inline-size: calc(100% - 2 * var(--jv-space-sm));
   max-block-size: calc(100dvh - 2 * var(--jv-space-sm));
+  margin: auto;
   padding: 0;
   border: 0;
+  overflow: visible;
   background: transparent;
   color: inherit;
 }
-.dialog::backdrop { background: var(--jv-color-scrim); }
+.dialog::backdrop {
+  background: var(--jv-color-scrim);
+}

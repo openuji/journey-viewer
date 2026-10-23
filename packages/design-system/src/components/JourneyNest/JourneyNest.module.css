@@ -1,0 +1,18 @@
+.nest {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-inline-size: 0;
+  margin: 0 0 var(--jv-space-xs) calc(var(--jv-size-caret) / 2);
+  padding: 1px 0 0 var(--jv-space-sm);
+  border-inline-start: var(--jv-border-focus) solid
+    color-mix(in srgb, var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 40%, transparent);
+}
+.nest[data-matched] {
+  border-inline-start-color: var(--jv-touchpoint-color, var(--jv-color-touchpoint));
+}
+@media (pointer: coarse) {
+  .nest {
+    margin-inline-start: calc(var(--jv-size-control-mobile) / 2);
+  }
+}

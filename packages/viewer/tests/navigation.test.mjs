@@ -5,8 +5,8 @@ import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   JourneyExplorer, JourneyNavigation, JourneyInspector, createViewerSnapshot, navigateViewer, pickSearchResult,
-  focusJourney, showOverview, setSearchQuery, toggleTouchpoint, hoverNode, getOccurrenceTrail,
-  matchesTouchpoints, getViewerSummary, searchViewer, getNavigationItems, getRowRelation,
+  setViewMode, getLanePath, setSearchQuery, selectTouchpoint, hoverNode, getOccurrenceTrail,
+  matchesTouchpoints, getViewerSummary, searchViewer, getNavigationItems, getRowHighlight,
 } from "../dist/index.js";
 
 const freeze = (value) => {
@@ -20,13 +20,15 @@ const prefix = "urn:ujg:solid-oidc:";
 const pick = (document, ref) => searchViewer(document, ref).find((item) => item.selection.nodeRef === ref);
 const initial = freeze(createViewerSnapshot(fixture));
 const fail = () => assert.fail("rendering must not invoke callbacks");
+const bar = { onMode: fail, onExpandAll: fail, onCollapseAll: fail, onTouchpoint: fail, onQuery: fail, onSearchPick: fail, onReset: fail };
 
-test("navigation snapshots are independent and reset to overview, blank search and all touchpoints", () => {
+test("navigation snapshots are independent and reset to the tree, blank search and all touchpoints", () => {
   const before = JSON.stringify({ fixture, initial });
-  const changed = freeze(toggleTouchpoint(fixture, setSearchQuery(initial, "test"), "urn:test:web"));
+  const changed = freeze(selectTouchpoint(fixture, setSearchQuery(initial, "test"), "urn:test:web"));
   assert.equal(initial.navigation.query, "");
   assert.deepEqual(initial.navigation.touchpointRefs, []);
-  assert.equal(initial.navigation.focus, null);
+  assert.equal(initial.navigation.mode, "tree");
+  assert.deepEqual(initial.navigation.lanes, [{ startJourneyRef: "urn:test:first", steps: [] }]);
   assert.equal(initial.navigation.hover, null);
   assert.deepEqual(createViewerSnapshot(fixture), initial);
   assert.notEqual(createViewerSnapshot(fixture), initial);
@@ -74,7 +76,7 @@ test("invalid and recursive occurrence targets are no-ops; rootless cycles remai
   ]) {
     assert.deepEqual(getOccurrenceTrail(fixture, freeze(occurrence)), []);
     assert.equal(navigateViewer(fixture, initial, freeze({ ...target, occurrence })), initial);
-    assert.equal(focusJourney(fixture, initial, occurrence), initial);
+    assert.deepEqual(getLanePath(fixture, freeze(occurrence), target.selection, true), []);
   }
   const wrongOwner = freeze({ ...target, selection: { kind: "state", journeyRef: "urn:test:first", nodeRef: "urn:test:terminal" } });
   assert.equal(navigateViewer(fixture, initial, wrongOwner), initial);
@@ -83,58 +85,78 @@ test("invalid and recursive occurrence targets are no-ops; rootless cycles remai
   assert.deepEqual(cycle.map((item) => getOccurrenceTrail(fixture, item.occurrence).length), [2, 1]);
 });
 
-test("focus follows explicit navigation, and overview preserves selection, expansion and occurrence", () => {
+test("columns follow the explicit call path, open a selected composite's children and leave tree expansion intact", () => {
   const target = freeze(searchViewer(fixture, "urn:test:shared")[1]);
   const selected = freeze(navigateViewer(fixture, setSearchQuery(initial, "Repeated child"), target));
   assert.equal(selected.navigation.query, "Repeated child");
   assert.deepEqual(selected.navigation.occurrence, target.occurrence);
-  assert.equal(selected.navigation.focus, null);
-  assert.equal(navigateViewer(fixture, selected, target), selected);
-  const focused = freeze(focusJourney(fixture, selected, target.occurrence));
-  assert.equal(focusJourney(fixture, focused, target.occurrence), focused);
+  assert.equal(selected.navigation.mode, "tree");
+  assert.equal(selected.navigation.lanes, initial.navigation.lanes, "tree navigation keeps the previous columns");
+  const columns = freeze(setViewMode(fixture, selected, "columns"));
+  assert.equal(setViewMode(fixture, columns, "columns"), columns);
+  assert.equal(setViewMode(fixture, columns, "other"), columns);
+  assert.deepEqual(columns.navigation.lanes, getOccurrenceTrail(fixture, target.occurrence).map((crumb) => crumb.occurrence));
+  assert.equal(columns.interaction, selected.interaction);
+  const compose = freeze(pick(fixture, "urn:test:compose"));
+  const opened = freeze(navigateViewer(fixture, columns, compose));
+  assert.deepEqual(opened.navigation.lanes, [
+    { startJourneyRef: "urn:test:first", steps: [] },
+    { startJourneyRef: "urn:test:first", steps: [{ stateIndex: 0, childIndex: 0 }] },
+    { startJourneyRef: "urn:test:first", steps: [{ stateIndex: 0, childIndex: 1 }] },
+    { startJourneyRef: "urn:test:first", steps: [{ stateIndex: 0, childIndex: 2 }] },
+  ]);
   const secondRoot = freeze(pick(fixture, "urn:test:second"));
-  const moved = freeze(navigateViewer(fixture, focused, secondRoot));
-  assert.deepEqual(moved.navigation.focus, secondRoot.occurrence);
-  const overview = freeze(showOverview(moved));
-  assert.equal(overview.navigation.focus, null);
-  assert.equal(overview.interaction, moved.interaction);
-  assert.equal(overview.navigation.occurrence, moved.navigation.occurrence);
-  assert.equal(showOverview(overview), overview);
+  const moved = freeze(navigateViewer(fixture, opened, secondRoot));
+  assert.deepEqual(moved.navigation.lanes, [secondRoot.occurrence], "selecting elsewhere trims the columns");
+  const tree = freeze(setViewMode(fixture, moved, "tree"));
+  assert.equal(tree.navigation.mode, "tree");
+  assert.equal(tree.interaction, moved.interaction);
+  assert.equal(tree.navigation.occurrence, moved.navigation.occurrence);
+  assert.equal(setViewMode(fixture, tree, "tree"), tree);
 });
 
-test("touchpoint identity filtering uses OR, retains topology and handles equal labels without inheritance", () => {
+test("the touchpoint filter selects one explicit identity, retains topology and handles equal labels without inheritance", () => {
   const document = freeze({ ...fixture, nodes: fixture.nodes.map((node) => node["@id"] === "urn:test:phone" ? { ...node, label: "Web", journeyRefs: ["urn:test:second"] } : node) });
-  const web = freeze(toggleTouchpoint(document, initial, "urn:test:web"));
+  const web = freeze(selectTouchpoint(document, initial, "urn:test:web"));
+  assert.deepEqual(web.navigation.touchpointRefs, ["urn:test:web"]);
   assert.equal(matchesTouchpoints(document, "urn:test:first", web.navigation.touchpointRefs), true);
   assert.equal(matchesTouchpoints(document, "urn:test:second", web.navigation.touchpointRefs), false);
   assert.equal(matchesTouchpoints(document, "urn:test:shared", web.navigation.touchpointRefs), false);
-  const both = freeze(toggleTouchpoint(document, web, "urn:test:phone"));
-  assert.equal(getViewerSummary(document, both.navigation.touchpointRefs).matchingJourneys, 2);
-  assert.deepEqual(searchViewer(document, "Repeated child", both.navigation.touchpointRefs), []);
-  assert.equal(toggleTouchpoint(document, initial, "missing"), initial);
-  assert.deepEqual(toggleTouchpoint(document, web, "urn:test:web"), initial);
+  const phone = freeze(selectTouchpoint(document, web, "urn:test:phone"));
+  assert.deepEqual(phone.navigation.touchpointRefs, ["urn:test:phone"], "selecting another touchpoint replaces the filter");
+  assert.equal(getViewerSummary(document, phone.navigation.touchpointRefs).matchingJourneys, 1);
+  assert.deepEqual(searchViewer(document, "Repeated child", phone.navigation.touchpointRefs), []);
+  assert.equal(selectTouchpoint(document, initial, "missing"), initial);
+  assert.equal(selectTouchpoint(document, web, "urn:test:web"), web);
+  assert.equal(selectTouchpoint(document, initial, null), initial);
+  assert.deepEqual(selectTouchpoint(document, web, null), initial);
   assert.equal(web.interaction, initial.interaction);
-  assert.deepEqual(getViewerSummary(oidc), { journeys: 10, states: 47, entries: 20, exits: 24, matchingJourneys: 10 });
+  assert.deepEqual(getViewerSummary(oidc), { journeys: 10, states: 47, entries: 20, exits: 24, transitions: 120, matchingJourneys: 10 });
   const overlappingTypes = freeze({ ...fixture, nodes: fixture.nodes.map((node) => node["@id"] === "urn:test:terminal"
     ? { ...node, "@type": ["State", "CompositeState"], subjourneyRefs: [] } : node) });
   assert.equal(getViewerSummary(overlappingTypes).states, getViewerSummary(fixture).states, "a source node with both types counts once");
 });
 
-test("hover overrides selection for incoming/outgoing relations, repeated hover preserves identity", () => {
+test("hover overrides selection for row highlights relative to the active state; repeated hover preserves identity", () => {
   const selected = freeze(navigateViewer(fixture, initial, pick(fixture, "urn:test:terminal")));
-  assert.equal(getRowRelation(fixture, selected.interaction, selected.navigation, "urn:test:first", "urn:test:terminal"), undefined);
+  assert.deepEqual(getRowHighlight(fixture, selected.interaction, selected.navigation, "urn:test:first", "urn:test:terminal"), { tone: "active", incoming: 0, outgoing: 0 });
+  assert.deepEqual(getRowHighlight(fixture, selected.interaction, selected.navigation, "urn:test:first", "urn:test:compose"), { tone: "dim", incoming: 0, outgoing: 0 });
+  assert.equal(getRowHighlight(fixture, selected.interaction, selected.navigation, "urn:test:second", "urn:test:compose-again"), undefined);
   const exit = freeze({ kind: "exit", journeyRef: "urn:test:first", nodeRef: "urn:test:exit" });
   const hovered = freeze(hoverNode(fixture, selected, exit));
   assert.equal(hoverNode(fixture, hovered, freeze({ ...exit })), hovered);
-  assert.equal(getRowRelation(fixture, hovered.interaction, hovered.navigation, "urn:test:first", "urn:test:terminal"), "incoming");
-  assert.equal(getRowRelation(fixture, hovered.interaction, hovered.navigation, "urn:test:second", "urn:test:terminal"), undefined);
+  assert.equal(getRowHighlight(fixture, hovered.interaction, hovered.navigation, "urn:test:first", "urn:test:terminal"), undefined,
+    "only states are active for row highlights");
   assert.equal(hoverNode(fixture, hovered, { ...exit, nodeRef: "missing" }), hovered);
   assert.deepEqual(hoverNode(fixture, hovered, null), selected);
   const bidirectional = freeze({ ...fixture, nodes: [...fixture.nodes,
     { "@id": "urn:test:back", "@type": "Transition", from: "urn:test:compose", to: "urn:test:terminal" },
     { "@id": "urn:test:forward", "@type": "Transition", from: "urn:test:terminal", to: "urn:test:compose" },
-  ].map((node) => node["@id"] === "urn:test:first" ? { ...node, transitionRefs: ["urn:test:back", "urn:test:forward"] } : node) });
-  assert.equal(getRowRelation(bidirectional, selected.interaction, selected.navigation, "urn:test:first", "urn:test:compose"), "both");
+    { "@id": "urn:test:again", "@type": "Transition", from: "urn:test:terminal", to: "urn:test:compose" },
+  ].map((node) => node["@id"] === "urn:test:first" ? { ...node, transitionRefs: ["urn:test:back", "urn:test:forward", "urn:test:again"] } : node) });
+  assert.deepEqual(getRowHighlight(bidirectional, selected.interaction, selected.navigation, "urn:test:first", "urn:test:compose"), { tone: "both", incoming: 1, outgoing: 2 });
+  const composeHover = freeze(hoverNode(bidirectional, selected, { kind: "state", journeyRef: "urn:test:first", nodeRef: "urn:test:compose" }));
+  assert.deepEqual(getRowHighlight(bidirectional, composeHover.interaction, composeHover.navigation, "urn:test:first", "urn:test:terminal"), { tone: "both", incoming: 2, outgoing: 1 });
 });
 
 test("entry, exit and transition navigation preserves explicit OIDC boundary mappings", () => {
@@ -176,32 +198,42 @@ test("shared boundary navigation exposes every caller and omits non-composite an
   assert.deepEqual(boundaries.map((item) => item.occurrence.steps.at(-1).childIndex), [0, 2]);
 });
 
-test("controlled focus, breadcrumbs, search and inspector rendering remain pure with frozen inputs", () => {
+test("controlled columns, search and inspector rendering remain pure with frozen inputs", () => {
   const target = freeze(searchViewer(fixture, "urn:test:shared")[1]);
-  const snapshot = freeze(focusJourney(fixture, navigateViewer(fixture, initial, target), target.occurrence));
+  const snapshot = freeze(setViewMode(fixture, navigateViewer(fixture, initial, target), "columns"));
   const before = JSON.stringify({ fixture, snapshot });
-  const explorer = renderToStaticMarkup(h(JourneyExplorer, { document: fixture, ...snapshot, onSelect: fail, onToggleChildren: fail, onFocusJourney: fail, onHover: fail }));
+  const explorer = renderToStaticMarkup(h(JourneyExplorer, { document: fixture, ...snapshot, onSelect: fail, onToggleChildren: fail, onHover: fail }));
   assert.equal((explorer.match(/data-journey-ref=/g) ?? []).length, 2);
-  assert.match(explorer, /Recursive journey reference: Repeated child/);
-  assert.doesNotMatch(explorer, /data-journey-ref="urn:test:second"|data-journey-ref="urn:test:other"/);
-  const navigation = renderToStaticMarkup(h(JourneyNavigation, { document: fixture, snapshot: freeze(setSearchQuery(snapshot, "Repeated child")), onNavigate: fail, onSearchPick: fail, onQuery: fail, onTouchpoint: fail, onOverview: fail, onFocus: fail }));
+  assert.match(explorer, /aria-label="Journey columns"/);
+  assert.match(explorer, />Root journey</);
+  assert.match(explorer, /data-occurrence="urn:test:first 0\.2"/);
+  assert.match(explorer, /<p[^>]*>First root<\/p><h2[^>]*>Repeated child</);
+  assert.doesNotMatch(explorer, /data-journey-ref="urn:test:second"|data-journey-ref="urn:test:other"|aria-expanded="(?:true|false)"[^>]*aria-label="(?:Expand|Collapse)/);
+  const navigation = renderToStaticMarkup(h(JourneyNavigation, { document: fixture, snapshot: freeze(setSearchQuery(snapshot, "Repeated child")), ...bar }));
   assert.match(navigation, /reference 2 of 2/);
-  assert.match(navigation, /Search results/);
+  assert.match(navigation, /aria-label="Search the graph results"/);
+  assert.match(navigation, /aria-pressed="true"[^>]*>Columns</);
+  assert.doesNotMatch(navigation, /Expand all/, "tree tools are hidden in columns");
   const inspector = renderToStaticMarkup(h(JourneyInspector, { document: fixture, selection: snapshot.interaction.selection, navigation: { occurrence: target.occurrence, onNavigate: fail } }));
-  assert.match(inspector, /Navigate graph/);
+  assert.match(inspector, /First root \/ Repeated child \(reference 2 of 2\)/);
+  assert.match(inspector, /Begin repeated child/);
+  assert.match(inspector, /<button/);
   assert.equal(JSON.stringify({ fixture, snapshot }), before);
 });
 
-test("empty navigation remains explicit and disables focus without fabricating a scope", () => {
+test("empty navigation remains explicit without fabricating a scope", () => {
   const document = freeze({ "@id": "urn:empty", "@context": "urn:c", "@type": "UJGDocument" });
   const snapshot = freeze(createViewerSnapshot(document));
   assert.equal(snapshot.navigation.occurrence, null);
+  assert.deepEqual(snapshot.navigation.lanes, []);
   assert.equal(snapshot.interaction.selection, null);
+  assert.equal(setViewMode(document, snapshot, "columns").navigation.lanes, snapshot.navigation.lanes);
   assert.deepEqual(searchViewer(document, "anything"), []);
   assert.deepEqual(getNavigationItems(document, null, null), []);
-  const html = renderToStaticMarkup(h(JourneyNavigation, { document, snapshot, onNavigate: fail, onSearchPick: fail, onQuery: fail, onTouchpoint: fail, onOverview: fail, onFocus: fail }));
-  assert.match(html, /disabled=""[^>]*>Focus selected scope/);
-  assert.match(html, /No selected scope/);
+  const html = renderToStaticMarkup(h(JourneyNavigation, { document, snapshot, ...bar }));
+  assert.match(html, /aria-pressed="true"[^>]*>Tree</);
+  assert.match(html, /0 journeys · 0 states · 0 transitions/);
+  assert.match(html, /aria-pressed="true"[^>]*>All</);
 });
 
 test("ordinary navigation preserves a query; only valid search picks clear it, including selection no-ops", () => {
@@ -245,8 +277,7 @@ test("occurrence wording uses labels and disambiguates repeated references indep
 
 test("navigation presents equal-label touchpoint IDs and explicitly labels its first 18 matches", () => {
   const snapshot = freeze(setSearchQuery(createViewerSnapshot(review), "urn:test:"));
-  const html = renderToStaticMarkup(h(JourneyNavigation, { document: review, snapshot,
-    onNavigate: fail, onSearchPick: fail, onQuery: fail, onTouchpoint: fail, onOverview: fail, onFocus: fail }));
+  const html = renderToStaticMarkup(h(JourneyNavigation, { document: review, snapshot, ...bar }));
   assert.match(html, />Web \(urn:test:web\)<\/button>/);
   assert.match(html, />Web \(urn:test:phone\)<\/button>/);
   assert.match(html, /Showing first 18 matches\. Refine your search/);

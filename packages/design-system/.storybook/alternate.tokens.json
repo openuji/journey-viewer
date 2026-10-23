@@ -106,6 +106,22 @@
     "scrim": {
       "$type": "color",
       "$value": "{foundation.scrim}"
+    },
+    "warning": {
+      "$type": "color",
+      "$value": "{foundation.light.warning}"
+    },
+    "warning-soft": {
+      "$type": "color",
+      "$value": "{foundation.light.warning-soft}"
+    },
+    "danger": {
+      "$type": "color",
+      "$value": "{foundation.light.danger}"
+    },
+    "danger-soft": {
+      "$type": "color",
+      "$value": "{foundation.light.danger-soft}"
     }
   },
   "space": {
@@ -181,6 +197,66 @@
     "lightbox": {
       "$type": "dimension",
       "$value": "{foundation.size.lightbox}"
+    },
+    "control-xs": {
+      "$type": "dimension",
+      "$value": "{foundation.size.control-xs}"
+    },
+    "lane": {
+      "$type": "dimension",
+      "$value": "{foundation.size.lane}"
+    },
+    "inspector": {
+      "$type": "dimension",
+      "$value": "{foundation.size.inspector}"
+    },
+    "inspector-compact": {
+      "$type": "dimension",
+      "$value": "{foundation.size.inspector-compact}"
+    },
+    "screen-thumb": {
+      "$type": "dimension",
+      "$value": "{foundation.size.screen-thumb}"
+    },
+    "screen-thumb-compact": {
+      "$type": "dimension",
+      "$value": "{foundation.size.screen-thumb-compact}"
+    },
+    "search": {
+      "$type": "dimension",
+      "$value": "{foundation.size.search}"
+    },
+    "search-results": {
+      "$type": "dimension",
+      "$value": "{foundation.size.search-results}"
+    },
+    "page": {
+      "$type": "dimension",
+      "$value": "{foundation.size.page}"
+    },
+    "tree": {
+      "$type": "dimension",
+      "$value": "{foundation.size.tree}"
+    },
+    "caret": {
+      "$type": "dimension",
+      "$value": "{foundation.size.caret}"
+    },
+    "screen-action": {
+      "$type": "dimension",
+      "$value": "{foundation.size.screen-action}"
+    },
+    "row": {
+      "$type": "dimension",
+      "$value": "{foundation.size.row}"
+    },
+    "contract-label": {
+      "$type": "dimension",
+      "$value": "{foundation.size.contract-label}"
+    },
+    "lightbox-caption": {
+      "$type": "dimension",
+      "$value": "{foundation.size.lightbox-caption}"
     }
   },
   "text": {
@@ -262,6 +338,10 @@
     "full": {
       "$type": "dimension",
       "$value": "{foundation.radius.full}"
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "{foundation.radius.md}"
     }
   },
   "border": {
@@ -290,6 +370,26 @@
     "raised": {
       "$type": "shadow",
       "$value": "{foundation.shadow.raised}"
+    },
+    "subtle": {
+      "$type": "shadow",
+      "$value": "{foundation.shadow.subtle}"
+    },
+    "popover": {
+      "$type": "shadow",
+      "$value": "{foundation.shadow.popover}"
+    },
+    "overlay": {
+      "$type": "shadow",
+      "$value": "{foundation.shadow.overlay}"
+    },
+    "screen": {
+      "$type": "shadow",
+      "$value": "{foundation.shadow.screen}"
+    },
+    "lightbox": {
+      "$type": "shadow",
+      "$value": "{foundation.shadow.lightbox}"
     }
   }
 }
