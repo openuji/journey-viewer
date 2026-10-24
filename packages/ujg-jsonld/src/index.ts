@@ -18,7 +18,7 @@ export type {
   UjgSurfaceInstance,
   UjgTouchpoint,
   UjgTransition,
-} from "./types.js";
+} from "@/types";
 
 export {
   getChildJourneys,
@@ -31,4 +31,4 @@ export {
   getNode,
   getNodesByType,
   getNodeSurfaces,
-} from "./queries.js";
+} from "@/queries";

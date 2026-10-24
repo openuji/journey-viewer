@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import styles from "./Surface.module.css";
+import styles from "@/components/Surface/Surface.module.css";
 
 export type SurfaceProps = Readonly<
   HTMLAttributes<HTMLElement> & {

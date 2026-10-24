@@ -1,9 +1,17 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": false, "emitDeclarationOnly": true,
-    "rootDir": "src", "outDir": "dist", "declaration": true
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true
   },
   "include": ["src/index.ts", "src/vite-env.d.ts"],
-  "exclude": ["**/*.stories.tsx", "**/*.fixtures.ts", "**/*.checks.ts", "src/dev"]
+  "exclude": [
+    "**/*.stories.tsx",
+    "**/*.fixtures.ts",
+    "**/*.checks.ts",
+    "src/dev"
+  ]
 }

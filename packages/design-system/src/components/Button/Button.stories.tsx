@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "./Button.js";
-import { createButtonFixture } from "./Button.fixtures.ts";
+import { Button } from "@/components/Button/Button";
+import { createButtonFixture } from "@/components/Button/Button.fixtures";
 
 const meta = {
   title: "Primitives/Button",
@@ -14,7 +14,19 @@ export const Default: Story = {};
 export const Variants: Story = {
   render: () => (
     <div className="story-inline">
-      {(["solid", "outline", "ghost", "row", "bare", "pill", "segment", "chip", "panel"] as const).map((variant) => (
+      {(
+        [
+          "solid",
+          "outline",
+          "ghost",
+          "row",
+          "bare",
+          "pill",
+          "segment",
+          "chip",
+          "panel",
+        ] as const
+      ).map((variant) => (
         <Button
           key={variant}
           {...createButtonFixture({ variant, children: variant })}
@@ -26,7 +38,9 @@ export const Variants: Story = {
 export const SizesAndStates: Story = {
   render: () => (
     <div className="story-inline">
-      <Button {...createButtonFixture({ size: "xs", children: "Extra small" })} />
+      <Button
+        {...createButtonFixture({ size: "xs", children: "Extra small" })}
+      />
       <Button {...createButtonFixture({ size: "sm" })} />
       <Button {...createButtonFixture({ size: "md", children: "Medium" })} />
       <Button
@@ -43,7 +57,15 @@ export const SelectedTreatments: Story = {
   render: () => (
     <div className="story-inline">
       {(["pill", "segment", "chip"] as const).map((variant) => (
-        <Button key={variant} {...createButtonFixture({ variant, selected: true, children: `${variant} selected` })} aria-pressed />
+        <Button
+          key={variant}
+          {...createButtonFixture({
+            variant,
+            selected: true,
+            children: `${variant} selected`,
+          })}
+          aria-pressed
+        />
       ))}
     </div>
   ),

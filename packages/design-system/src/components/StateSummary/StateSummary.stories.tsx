@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StateSummary } from "./StateSummary.js";
-import { createStateSummaryFixture } from "./StateSummary.fixtures.ts";
+import { StateSummary } from "@/components/StateSummary/StateSummary";
+import { createStateSummaryFixture } from "@/components/StateSummary/StateSummary.fixtures";
 
 const meta = {
   title: "Hierarchy/StateSummary",
@@ -20,6 +20,7 @@ export const Nested: Story = {
 };
 export const LongContent: Story = {
   args: {
-    label: "Averylongunbrokenstatelabelthatmustwrapwithoutoverflowingtheavailablemobilewidth",
+    label:
+      "Averylongunbrokenstatelabelthatmustwrapwithoutoverflowingtheavailablemobilewidth",
   },
 };

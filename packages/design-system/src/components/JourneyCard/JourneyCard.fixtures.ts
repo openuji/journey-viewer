@@ -1,5 +1,5 @@
-import type { JourneyCardProps } from "./JourneyCard.js";
-import { createTouchpointDotFixture } from "../TouchpointDot/TouchpointDot.fixtures.ts";
+import type { JourneyCardProps } from "@/components/JourneyCard/JourneyCard";
+import { createTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.fixtures";
 
 export type JourneyCardFixture = Readonly<
   Required<Pick<JourneyCardProps, "title" | "count" | "level" | "touchpoint">>

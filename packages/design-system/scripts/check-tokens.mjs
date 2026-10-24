@@ -1,5 +1,5 @@
-import { checkTokens } from "./token-checks.mjs";
-import { readDevelopmentTheme, readTokens } from "./token-data.mjs";
+import { checkTokens } from "~/scripts/token-checks.mjs";
+import { readDevelopmentTheme, readTokens } from "~/scripts/token-data.mjs";
 
 const { foundation, themes } = await readTokens();
 const findings = checkTokens(foundation, {

@@ -1,4 +1,4 @@
-import type { StateSummaryProps } from "./StateSummary.js";
+import type { StateSummaryProps } from "@/components/StateSummary/StateSummary";
 
 export type StateSummaryFixture = Readonly<
   Required<Pick<StateSummaryProps, "label" | "entryCount" | "directExitCount">>

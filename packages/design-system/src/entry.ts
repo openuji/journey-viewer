@@ -1,2 +1,2 @@
-import "./styles/tailwind.css";
-export * from "./index.js";
+import "@/styles/tailwind.css";
+export * from "@/index";

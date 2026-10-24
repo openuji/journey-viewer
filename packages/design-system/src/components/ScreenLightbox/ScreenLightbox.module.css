@@ -20,8 +20,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--jv-space-sm);
-  inline-size: min(var(--jv-size-lightbox-caption), calc(100vw - 2 * var(--jv-space-lg)));
-  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-md);
+  inline-size: min(
+    var(--jv-size-lightbox-caption),
+    calc(100vw - 2 * var(--jv-space-lg))
+  );
+  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs)
+    var(--jv-space-md);
   border-radius: var(--jv-radius-lg);
   background: var(--jv-color-surface);
   color: var(--jv-color-foreground);

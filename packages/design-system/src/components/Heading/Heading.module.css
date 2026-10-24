@@ -1,4 +1,4 @@
-@reference "../../styles/tailwind.css";
+@reference "@/styles/tailwind.css";
 .heading {
   @apply font-sans font-semibold leading-tight text-heading-md;
   margin: 0;

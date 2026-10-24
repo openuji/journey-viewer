@@ -1,4 +1,4 @@
-import type { SurfaceProps } from "./Surface.js";
+import type { SurfaceProps } from "@/components/Surface/Surface";
 
 export type SurfaceFixture = Readonly<
   Required<Pick<SurfaceProps, "as" | "tone" | "radius" | "raised">>

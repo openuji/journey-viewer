@@ -96,5 +96,16 @@ test("compiled output is independently consumable and excludes development modul
     /@apply|@reference|@variant|@theme|data-jv-theme=alternate|body\s*\{/,
   );
   assert.match(css, /53\.75rem/);
+
+  // Only CSS-module classes, which Vite names "_<local>_<hash>_<line>", leave the package.
+  const classes = css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .match(/[^{};]+(?=\{)/g)
+    .filter((prelude) => !prelude.trim().startsWith("@"))
+    .flatMap((selector) => selector.match(/\.-?[_a-zA-Z][\w-]*/g) ?? []);
+  assert.deepEqual(
+    classes.filter((name) => !name.startsWith("._")),
+    [],
+  );
   assert.doesNotMatch(await read("dist/index.d.ts"), /\.css/);
 });

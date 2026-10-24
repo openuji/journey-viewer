@@ -9,10 +9,18 @@ export interface BrowserScrollPanelProps {
 }
 
 /** A scroll container whose position resets for each new selection. */
-export function BrowserScrollPanel({ resetKey, className, children }: BrowserScrollPanelProps) {
+export function BrowserScrollPanel({
+  resetKey,
+  className,
+  children,
+}: BrowserScrollPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.scrollTo({ top: 0 });
   }, [resetKey]);
-  return <div ref={ref} className={className}>{children}</div>;
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
 }

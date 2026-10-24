@@ -221,7 +221,7 @@ theme comparisons, and a built-consumer iframe. That consumer imports only `dist
 and is built without a Tailwind plugin. Stories, fixtures, checks, Storybook,
 Playwright, and token build scripts stay outside the package's production output.
 
-The viewer's internal Storybook extends this catalog and reuses its configuration,
-preview decorators/themes and Vite setup. Run `pnpm storybook:viewer` from the root
-to see both catalogs on port 6007. This Storybook stays independent on port 6006;
-no viewer or UJG imports are added to the design system.
+This Storybook runs independently on port 6006. The viewer's Storybook (port 6007)
+has its own configuration and consumes only this package's public exports; no
+viewer or UJG imports are added to the design system. The development-only
+`alternate` theme exists only here.

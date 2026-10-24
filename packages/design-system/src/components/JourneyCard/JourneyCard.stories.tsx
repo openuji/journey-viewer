@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { JourneyCard } from "./JourneyCard.js";
-import { createJourneyCardFixture } from "./JourneyCard.fixtures.ts";
-import { StateRow } from "../StateRow/StateRow.js";
-import { createStateRowFixture } from "../StateRow/StateRow.fixtures.ts";
+import { JourneyCard } from "@/components/JourneyCard/JourneyCard";
+import { createJourneyCardFixture } from "@/components/JourneyCard/JourneyCard.fixtures";
+import { StateRow } from "@/components/StateRow/StateRow";
+import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
 
 const meta = {
   title: "Hierarchy/JourneyCard",

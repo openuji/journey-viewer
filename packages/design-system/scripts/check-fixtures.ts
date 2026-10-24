@@ -1,69 +1,104 @@
-import { createIconFixture } from "../src/components/Icon/Icon.fixtures.ts";
-import { checkIconFixture } from "../src/components/Icon/Icon.checks.ts";
-import { createJourneyNestFixture } from "../src/components/JourneyNest/JourneyNest.fixtures.ts";
-import { checkJourneyNestFixture } from "../src/components/JourneyNest/JourneyNest.checks.ts";
-import { createScreenThumbnailFixture } from "../src/components/ScreenThumbnail/ScreenThumbnail.fixtures.ts";
-import { checkScreenThumbnailFixture } from "../src/components/ScreenThumbnail/ScreenThumbnail.checks.ts";
-import { createSegmentedControlFixture } from "../src/components/SegmentedControl/SegmentedControl.fixtures.ts";
-import { checkSegmentedControlFixture } from "../src/components/SegmentedControl/SegmentedControl.checks.ts";
-import { createExplorerBarFixture } from "../src/components/ExplorerBar/ExplorerBar.fixtures.ts";
-import { checkExplorerBarFixture } from "../src/components/ExplorerBar/ExplorerBar.checks.ts";
-import { createScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.fixtures.ts";
-import { checkScreenImageFixture } from "../src/components/ScreenImage/ScreenImage.checks.ts";
-import { createScreenPreviewFixture } from "../src/components/ScreenPreview/ScreenPreview.fixtures.ts";
-import { checkScreenPreviewFixture } from "../src/components/ScreenPreview/ScreenPreview.checks.ts";
-import { createScreenLightboxFixture } from "../src/components/ScreenLightbox/ScreenLightbox.fixtures.ts";
-import { checkScreenLightboxFixture } from "../src/components/ScreenLightbox/ScreenLightbox.checks.ts";
-import { createButtonFixture } from "../src/components/Button/Button.fixtures.ts";
-import { createSearchFieldFixture } from "../src/components/SearchField/SearchField.fixtures.ts";
-import { checkSearchFieldFixture } from "../src/components/SearchField/SearchField.checks.ts";
-import { createJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.fixtures.ts";
-import { checkJourneyContractControlsFixture } from "../src/components/JourneyContractControls/JourneyContractControls.checks.ts";
-import { createInspectorPanelFixture } from "../src/components/InspectorPanel/InspectorPanel.fixtures.ts";
-import { checkInspectorPanelFixture } from "../src/components/InspectorPanel/InspectorPanel.checks.ts";
-import { createJourneyContractsFixture } from "../src/components/JourneyContracts/JourneyContracts.fixtures.ts";
-import { checkJourneyContractsFixture } from "../src/components/JourneyContracts/JourneyContracts.checks.ts";
-import { createStateSummaryFixture } from "../src/components/StateSummary/StateSummary.fixtures.ts";
-import { checkStateSummaryFixture } from "../src/components/StateSummary/StateSummary.checks.ts";
-import { checkButtonFixture } from "../src/components/Button/Button.checks.ts";
-import { createJourneyCardFixture } from "../src/components/JourneyCard/JourneyCard.fixtures.ts";
-import { checkJourneyCardFixture } from "../src/components/JourneyCard/JourneyCard.checks.ts";
-import { createSurfaceFixture } from "../src/components/Surface/Surface.fixtures.ts";
-import { checkSurfaceFixture } from "../src/components/Surface/Surface.checks.ts";
-import { createJourneyHeadFixture } from "../src/components/JourneyHead/JourneyHead.fixtures.ts";
-import { checkJourneyHeadFixture } from "../src/components/JourneyHead/JourneyHead.checks.ts";
-import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
-import { checkStateRowFixture } from "../src/components/StateRow/StateRow.checks.ts";
-import { createIconButtonFixture } from "../src/components/IconButton/IconButton.fixtures.ts";
-import { checkIconButtonFixture } from "../src/components/IconButton/IconButton.checks.ts";
-import { createTextFixture } from "../src/components/Text/Text.fixtures.ts";
-import { checkTextFixture } from "../src/components/Text/Text.checks.ts";
-import { createBadgeFixture } from "../src/components/Badge/Badge.fixtures.ts";
-import { checkBadgeFixture } from "../src/components/Badge/Badge.checks.ts";
-import { createHeadingFixture } from "../src/components/Heading/Heading.fixtures.ts";
-import { checkHeadingFixture } from "../src/components/Heading/Heading.checks.ts";
-import { createTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.fixtures.ts";
-import { checkTouchpointDotFixture } from "../src/components/TouchpointDot/TouchpointDot.checks.ts";
+import { createIconFixture } from "@/components/Icon/Icon.fixtures";
+import { checkIconFixture } from "@/components/Icon/Icon.checks";
+import { createJourneyNestFixture } from "@/components/JourneyNest/JourneyNest.fixtures";
+import { checkJourneyNestFixture } from "@/components/JourneyNest/JourneyNest.checks";
+import { createScreenThumbnailFixture } from "@/components/ScreenThumbnail/ScreenThumbnail.fixtures";
+import { checkScreenThumbnailFixture } from "@/components/ScreenThumbnail/ScreenThumbnail.checks";
+import { createSegmentedControlFixture } from "@/components/SegmentedControl/SegmentedControl.fixtures";
+import { checkSegmentedControlFixture } from "@/components/SegmentedControl/SegmentedControl.checks";
+import { createExplorerBarFixture } from "@/components/ExplorerBar/ExplorerBar.fixtures";
+import { checkExplorerBarFixture } from "@/components/ExplorerBar/ExplorerBar.checks";
+import { createScreenImageFixture } from "@/components/ScreenImage/ScreenImage.fixtures";
+import { checkScreenImageFixture } from "@/components/ScreenImage/ScreenImage.checks";
+import { createScreenPreviewFixture } from "@/components/ScreenPreview/ScreenPreview.fixtures";
+import { checkScreenPreviewFixture } from "@/components/ScreenPreview/ScreenPreview.checks";
+import { createScreenLightboxFixture } from "@/components/ScreenLightbox/ScreenLightbox.fixtures";
+import { checkScreenLightboxFixture } from "@/components/ScreenLightbox/ScreenLightbox.checks";
+import { createButtonFixture } from "@/components/Button/Button.fixtures";
+import { createSearchFieldFixture } from "@/components/SearchField/SearchField.fixtures";
+import { checkSearchFieldFixture } from "@/components/SearchField/SearchField.checks";
+import { createJourneyContractControlsFixture } from "@/components/JourneyContractControls/JourneyContractControls.fixtures";
+import { checkJourneyContractControlsFixture } from "@/components/JourneyContractControls/JourneyContractControls.checks";
+import { createInspectorPanelFixture } from "@/components/InspectorPanel/InspectorPanel.fixtures";
+import { checkInspectorPanelFixture } from "@/components/InspectorPanel/InspectorPanel.checks";
+import { createJourneyContractsFixture } from "@/components/JourneyContracts/JourneyContracts.fixtures";
+import { checkJourneyContractsFixture } from "@/components/JourneyContracts/JourneyContracts.checks";
+import { createStateSummaryFixture } from "@/components/StateSummary/StateSummary.fixtures";
+import { checkStateSummaryFixture } from "@/components/StateSummary/StateSummary.checks";
+import { checkButtonFixture } from "@/components/Button/Button.checks";
+import { createJourneyCardFixture } from "@/components/JourneyCard/JourneyCard.fixtures";
+import { checkJourneyCardFixture } from "@/components/JourneyCard/JourneyCard.checks";
+import { createSurfaceFixture } from "@/components/Surface/Surface.fixtures";
+import { checkSurfaceFixture } from "@/components/Surface/Surface.checks";
+import { createJourneyHeadFixture } from "@/components/JourneyHead/JourneyHead.fixtures";
+import { checkJourneyHeadFixture } from "@/components/JourneyHead/JourneyHead.checks";
+import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
+import { checkStateRowFixture } from "@/components/StateRow/StateRow.checks";
+import { createIconButtonFixture } from "@/components/IconButton/IconButton.fixtures";
+import { checkIconButtonFixture } from "@/components/IconButton/IconButton.checks";
+import { createTextFixture } from "@/components/Text/Text.fixtures";
+import { checkTextFixture } from "@/components/Text/Text.checks";
+import { createBadgeFixture } from "@/components/Badge/Badge.fixtures";
+import { checkBadgeFixture } from "@/components/Badge/Badge.checks";
+import { createHeadingFixture } from "@/components/Heading/Heading.fixtures";
+import { checkHeadingFixture } from "@/components/Heading/Heading.checks";
+import { createTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.fixtures";
+import { checkTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.checks";
 
 const findings = [
-  ...checkIconFixture(createIconFixture()).map((finding) => ({ ...finding, path: ["Icon", ...finding.path] })),
-  ...checkJourneyNestFixture(createJourneyNestFixture()).map((finding) => ({ ...finding, path: ["JourneyNest", ...finding.path] })),
-  ...checkScreenThumbnailFixture(createScreenThumbnailFixture()).map((finding) => ({ ...finding, path: ["ScreenThumbnail", ...finding.path] })),
-  ...checkSegmentedControlFixture(createSegmentedControlFixture()).map((finding) => ({ ...finding, path: ["SegmentedControl", ...finding.path] })),
-  ...checkExplorerBarFixture(createExplorerBarFixture()).map((finding) => ({ ...finding, path: ["ExplorerBar", ...finding.path] })),
-  ...checkScreenImageFixture(createScreenImageFixture()).map((finding) => ({ ...finding, path: ["ScreenImage", ...finding.path] })),
-  ...checkScreenPreviewFixture(createScreenPreviewFixture()).map((finding) => ({ ...finding, path: ["ScreenPreview", ...finding.path] })),
-  ...checkScreenLightboxFixture(createScreenLightboxFixture()).map((finding) => ({ ...finding, path: ["ScreenLightbox", ...finding.path] })),
+  ...checkIconFixture(createIconFixture()).map((finding) => ({
+    ...finding,
+    path: ["Icon", ...finding.path],
+  })),
+  ...checkJourneyNestFixture(createJourneyNestFixture()).map((finding) => ({
+    ...finding,
+    path: ["JourneyNest", ...finding.path],
+  })),
+  ...checkScreenThumbnailFixture(createScreenThumbnailFixture()).map(
+    (finding) => ({ ...finding, path: ["ScreenThumbnail", ...finding.path] }),
+  ),
+  ...checkSegmentedControlFixture(createSegmentedControlFixture()).map(
+    (finding) => ({ ...finding, path: ["SegmentedControl", ...finding.path] }),
+  ),
+  ...checkExplorerBarFixture(createExplorerBarFixture()).map((finding) => ({
+    ...finding,
+    path: ["ExplorerBar", ...finding.path],
+  })),
+  ...checkScreenImageFixture(createScreenImageFixture()).map((finding) => ({
+    ...finding,
+    path: ["ScreenImage", ...finding.path],
+  })),
+  ...checkScreenPreviewFixture(createScreenPreviewFixture()).map((finding) => ({
+    ...finding,
+    path: ["ScreenPreview", ...finding.path],
+  })),
+  ...checkScreenLightboxFixture(createScreenLightboxFixture()).map(
+    (finding) => ({ ...finding, path: ["ScreenLightbox", ...finding.path] }),
+  ),
 
-  ...checkSearchFieldFixture(createSearchFieldFixture()).map((finding) => ({ ...finding, path: ["SearchField", ...finding.path] })),
-  ...checkJourneyContractControlsFixture(createJourneyContractControlsFixture()).map((finding) => ({ ...finding, path: ["JourneyContractControls", ...finding.path] })),
-  ...checkInspectorPanelFixture(createInspectorPanelFixture()).map((finding) => ({ ...finding, path: ["InspectorPanel", ...finding.path] })),
+  ...checkSearchFieldFixture(createSearchFieldFixture()).map((finding) => ({
+    ...finding,
+    path: ["SearchField", ...finding.path],
+  })),
+  ...checkJourneyContractControlsFixture(
+    createJourneyContractControlsFixture(),
+  ).map((finding) => ({
+    ...finding,
+    path: ["JourneyContractControls", ...finding.path],
+  })),
+  ...checkInspectorPanelFixture(createInspectorPanelFixture()).map(
+    (finding) => ({ ...finding, path: ["InspectorPanel", ...finding.path] }),
+  ),
   ...checkStateSummaryFixture(createStateSummaryFixture()).map((finding) => ({
-    ...finding, path: ["StateSummary", ...finding.path],
+    ...finding,
+    path: ["StateSummary", ...finding.path],
   })),
-  ...checkJourneyContractsFixture(createJourneyContractsFixture()).map((finding) => ({
-    ...finding, path: ["JourneyContracts", ...finding.path],
-  })),
+  ...checkJourneyContractsFixture(createJourneyContractsFixture()).map(
+    (finding) => ({
+      ...finding,
+      path: ["JourneyContracts", ...finding.path],
+    }),
+  ),
   ...checkButtonFixture(createButtonFixture()).map((finding) => ({
     ...finding,
     path: ["Button", ...finding.path],

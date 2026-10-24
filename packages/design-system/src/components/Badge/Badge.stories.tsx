@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Badge } from "./Badge.js";
-import { createBadgeFixture } from "./Badge.fixtures.ts";
+import { Badge } from "@/components/Badge/Badge";
+import { createBadgeFixture } from "@/components/Badge/Badge.fixtures";
 
 const meta = {
   title: "Primitives/Badge",

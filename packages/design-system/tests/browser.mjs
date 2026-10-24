@@ -5,8 +5,8 @@ import { readFile, mkdir } from "node:fs/promises";
 import { resolve, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { readTokens } from "../scripts/token-data.mjs";
-import { generateTokens } from "../scripts/tokens.mjs";
+import { readTokens } from "~/scripts/token-data.mjs";
+import { generateTokens } from "~/scripts/tokens.mjs";
 
 const root = resolve(
   fileURLToPath(new URL("../storybook-static/", import.meta.url)),
@@ -222,10 +222,18 @@ try {
   await test("state-row labels inherit their button color and selection belongs to the whole row", async () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await consumer();
-    const color = (locator) => locator.evaluate((element) => getComputedStyle(element).color);
-    const rowBackground = (locator) => locator.evaluate((element) => getComputedStyle(element.closest("[data-row]")).backgroundColor);
+    const color = (locator) =>
+      locator.evaluate((element) => getComputedStyle(element).color);
+    const rowBackground = (locator) =>
+      locator.evaluate(
+        (element) =>
+          getComputedStyle(element.closest("[data-row]")).backgroundColor,
+      );
     for (const theme of ["light", "dark", "alternate"]) {
-      const row = page.getByTestId(theme).getByRole("button", { pressed: false }).filter({ hasText: "Averylong" });
+      const row = page
+        .getByTestId(theme)
+        .getByRole("button", { pressed: false })
+        .filter({ hasText: "Averylong" });
       const label = row.locator('[data-role="label"]');
       const resting = await rowBackground(row);
       assert.equal(await color(label), await color(row));
@@ -236,10 +244,20 @@ try {
       await page.mouse.up();
       await page.mouse.move(0, 0);
       // The click above toggled the consumer's controlled selection snapshot.
-      const selected = page.getByTestId(theme).getByRole("button", { pressed: true }).filter({ hasText: "Averylong" });
+      const selected = page
+        .getByTestId(theme)
+        .getByRole("button", { pressed: true })
+        .filter({ hasText: "Averylong" });
       await selected.waitFor();
-      assert.notEqual(await rowBackground(selected), resting, "selection colors the whole row");
-      assert.equal(await color(selected.locator('[data-role="label"]')), await color(selected));
+      assert.notEqual(
+        await rowBackground(selected),
+        resting,
+        "selection colors the whole row",
+      );
+      assert.equal(
+        await color(selected.locator('[data-role="label"]')),
+        await color(selected),
+      );
       await selected.click();
       await page.mouse.move(0, 0);
     }

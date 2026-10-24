@@ -13,7 +13,10 @@
     "build:app": "pnpm --dir apps/web build",
     "storybook:web": "pnpm --dir apps/web storybook",
     "build:storybook:web": "pnpm --dir apps/web build:storybook",
-    "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm format:check && pnpm -r --if-present test && node --test tests/*.test.mjs",
+    "test:consumer": "pnpm build && node tests/external-consumer.mjs",
     "build:design-system": "pnpm --filter @journey-viewer/design-system build",
     "build:viewer": "pnpm --filter @journey-viewer/viewer... build",
     "storybook:viewer": "pnpm --filter @journey-viewer/viewer storybook",
@@ -26,5 +29,8 @@
     "build:storybook": "pnpm --filter @journey-viewer/design-system build:storybook",
     "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser",
     "test:parity": "pnpm --filter @journey-viewer/viewer test:parity"
+  },
+  "devDependencies": {
+    "prettier": "catalog:"
   }
 }

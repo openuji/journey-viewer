@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { IconButton } from "./IconButton.js";
-import { createIconButtonFixture } from "./IconButton.fixtures.ts";
+import { IconButton } from "@/components/IconButton/IconButton";
+import { createIconButtonFixture } from "@/components/IconButton/IconButton.fixtures";
 const icon = (
   <svg viewBox="0 0 16 16" fill="none">
     <path d="M3 8h10M8 3v10" stroke="currentColor" />

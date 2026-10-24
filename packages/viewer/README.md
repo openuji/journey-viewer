@@ -476,11 +476,12 @@ pnpm test:viewer:browser
 pnpm test:parity   # requires the original hierarchy and the app dev server
 ```
 
-Viewer Storybook runs on port 6007. Its internal `.storybook` configuration extends
-the design system's main configuration, preview decorators/theme toolbar,
-accessibility settings and Vite setup. The inherited catalog appears under
-“Design system”; viewer stories appear under “Viewer”. The design system keeps
-its independent Storybook on port 6006 and never imports viewer code.
+Viewer Storybook runs on port 6007 and shows only the viewer stories, under
+“Viewer”. Its own `.storybook` configuration supplies the light/dark theme
+toolbar, scoped theme decorator, accessibility settings and Vite setup, and
+imports only the design system's public exports (`styles.css` and components).
+The design system keeps its independent Storybook on port 6006 and never imports
+viewer code.
 
 Colocated static, controlled, inspector and interactive stories cover Solid-OIDC,
 multiple roots and recursion, empty documents, independent instances, same-ID
@@ -498,19 +499,19 @@ Extension stories and the compiled consumer demonstrate an additive source panel
 boundary annotation and state-row override, with caller-owned replace/remove
 controls alongside an independent default viewer.
 
-The compiled-consumer iframe reads built ESM/declarations/CSS without Tailwind
-processing or source aliases. `tests/consumer` is a build-only smoke fixture,
-served by Storybook at `/viewer-consumer/`; it has no standalone preview command.
-The inherited design-system consumer remains available at `/consumer/`.
-The Storybook commands build all required packages and both consumer fixtures.
+The compiled-consumer iframe reads built ESM/declarations/CSS by package name,
+without Tailwind processing or the `@/` source alias. `tests/consumer` is a
+build-only smoke fixture, served by Storybook at `/viewer-consumer/`; it has no
+standalone preview command. The Storybook commands build all required packages
+and the consumer fixture.
 `pnpm build:viewer` builds the renderer and its runtime dependencies independently
 of Storybook.
 
 `pnpm test` includes frozen-input rendering and readonly declaration checks.
 The browser command builds viewer Storybook, verifies OIDC structure,
 recursion/reuse, accessibility, themes and responsive wrapping in the compiled
-consumer, then loads the full inherited catalog, both iframes and viewer stories.
-It checks inherited light/dark/alternate theme globals, source-story wrapping,
+consumer, then loads every viewer story and the consumer iframe.
+It checks the light/dark theme globals, source-story wrapping,
 native keyboard selection/disclosure, collapsed contracts, the explorer bar and
 sticky inspector at the shared breakpoints, columns, single-select filtering,
 search popover/“/”/outside dismissal, reveal-on-navigate, row tones and marks,

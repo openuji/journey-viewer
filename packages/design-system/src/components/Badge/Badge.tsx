@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Surface } from "../Surface/Surface.js";
-import { Text } from "../Text/Text.js";
-import type { TextTone } from "../Text/Text.js";
-import styles from "./Badge.module.css";
+import { Surface } from "@/components/Surface/Surface";
+import { Text } from "@/components/Text/Text";
+import type { TextTone } from "@/components/Text/Text";
+import styles from "@/components/Badge/Badge.module.css";
 
 export type BadgeProps = Readonly<
   HTMLAttributes<HTMLSpanElement> & {

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Heading } from "./Heading.js";
-import { createHeadingFixture } from "./Heading.fixtures.ts";
+import { Heading } from "@/components/Heading/Heading";
+import { createHeadingFixture } from "@/components/Heading/Heading.fixtures";
 
 const meta = {
   title: "Primitives/Heading",

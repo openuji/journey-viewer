@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { JourneyNest } from "./JourneyNest.js";
-import { createJourneyNestFixture } from "./JourneyNest.fixtures.ts";
-import { StateRow } from "../StateRow/StateRow.js";
-import { createStateRowFixture } from "../StateRow/StateRow.fixtures.ts";
+import { JourneyNest } from "@/components/JourneyNest/JourneyNest";
+import { createJourneyNestFixture } from "@/components/JourneyNest/JourneyNest.fixtures";
+import { StateRow } from "@/components/StateRow/StateRow";
+import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
 
 const meta = {
   title: "Hierarchy/JourneyNest",
@@ -11,10 +11,24 @@ const meta = {
   args: createJourneyNestFixture(),
   render: (args) => (
     <div>
-      <StateRow {...createStateRowFixture({ label: "Authenticate", description: "Identity journey", expanded: true })} onToggle={() => undefined}>
+      <StateRow
+        {...createStateRowFixture({
+          label: "Authenticate",
+          description: "Identity journey",
+          expanded: true,
+        })}
+        onToggle={() => undefined}
+      >
         <JourneyNest {...args}>
-          <StateRow {...createStateRowFixture({ label: "Select account", composite: false })} />
-          <StateRow {...createStateRowFixture({ label: "Login", composite: false })} />
+          <StateRow
+            {...createStateRowFixture({
+              label: "Select account",
+              composite: false,
+            })}
+          />
+          <StateRow
+            {...createStateRowFixture({ label: "Login", composite: false })}
+          />
         </JourneyNest>
       </StateRow>
     </div>
@@ -23,4 +37,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
-export const Matched: Story = { args: createJourneyNestFixture({ matched: true }) };
+export const Matched: Story = {
+  args: createJourneyNestFixture({ matched: true }),
+};

@@ -1,6 +1,6 @@
-import { choice, object, text } from "../../dev/checks.ts";
-import type { FixtureCheck } from "../../dev/checks.ts";
-import { checkTouchpointDotFixture } from "../TouchpointDot/TouchpointDot.checks.ts";
+import { choice, object, text } from "@/dev/checks";
+import type { FixtureCheck } from "@/dev/checks";
+import { checkTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.checks";
 
 export const checkJourneyCardFixture: FixtureCheck = (value) => [
   ...text(value, "title"),

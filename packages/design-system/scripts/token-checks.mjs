@@ -4,8 +4,8 @@ import {
   isObject,
   resolveValue,
   tokenEntries,
-} from "./tokens.mjs";
-import { semanticKeys } from "../tokens/semantic-keys.mjs";
+} from "~/scripts/tokens.mjs";
+import { semanticKeys } from "~/tokens/semantic-keys.mjs";
 
 const supported = [
   "color",

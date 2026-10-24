@@ -7,4 +7,6 @@
   list-style: none;
   overflow-wrap: anywhere;
 }
-.annotations > li { min-inline-size: 0; }
+.annotations > li {
+  min-inline-size: 0;
+}

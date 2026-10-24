@@ -1,0 +1,4 @@
+# Prettier also reads .gitignore (build output, generated tokens, apps/web, tmp).
+*.md
+pnpm-lock.yaml
+examples/

@@ -1,4 +1,4 @@
-import type { HeadingProps } from "./Heading.js";
+import type { HeadingProps } from "@/components/Heading/Heading";
 
 export type HeadingFixture = Readonly<
   Omit<

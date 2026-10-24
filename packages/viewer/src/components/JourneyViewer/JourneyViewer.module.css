@@ -44,7 +44,9 @@
     order: 0;
     position: sticky;
     inset-block-start: calc(var(--jv-explorer-offset) + var(--jv-space-lg));
-    max-block-size: calc(100dvh - var(--jv-explorer-offset) - 2 * var(--jv-space-lg));
+    max-block-size: calc(
+      100dvh - var(--jv-explorer-offset) - 2 * var(--jv-space-lg)
+    );
     overflow: auto;
     overscroll-behavior: contain;
     border-radius: var(--jv-radius-lg);

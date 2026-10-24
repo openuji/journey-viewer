@@ -1,4 +1,4 @@
-import type { IconButtonProps } from "./IconButton.js";
+import type { IconButtonProps } from "@/components/IconButton/IconButton";
 
 export type IconButtonFixture = Readonly<
   Required<Pick<IconButtonProps, "label" | "variant" | "size" | "disabled">>

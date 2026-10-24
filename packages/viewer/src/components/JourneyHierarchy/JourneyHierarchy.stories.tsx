@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { JourneyHierarchy } from "./JourneyHierarchy.js";
-import { emptyDocument, oidcDocument, topologyDocument } from "../../../.storybook/documents.js";
+import { JourneyHierarchy } from "@/components/JourneyHierarchy/JourneyHierarchy";
+import {
+  emptyDocument,
+  oidcDocument,
+  topologyDocument,
+} from "~/.storybook/documents";
 
 const meta = {
   title: "Viewer/JourneyHierarchy",

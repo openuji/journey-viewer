@@ -4,35 +4,59 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
     "./tailwind.css": "./dist/tailwind.css",
     "./reset.css": "./dist/reset.css"
   },
-  "files": ["dist"],
-  "sideEffects": ["**/*.css"],
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
-    "check:tokens": "node scripts/check-tokens.mjs",
-    "generate:tokens": "node scripts/generate-tokens.mjs",
+    "check:tokens": "tsx scripts/check-tokens.mjs",
+    "generate:tokens": "tsx scripts/generate-tokens.mjs",
     "build:css": "pnpm generate:tokens && vite build",
-    "build": "pnpm check:tokens && pnpm build:css && tsc -p tsconfig.build.json && node scripts/copy-styles.mjs",
-    "check:fixtures": "tsc -p tsconfig.json && node --experimental-strip-types scripts/check-fixtures.ts",
-    "test": "pnpm build && pnpm check:fixtures && node --experimental-strip-types --test tests/*.test.mjs",
+    "build": "pnpm check:tokens && pnpm build:css && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && node scripts/copy-styles.mjs",
+    "check:fixtures": "tsc -p tsconfig.json && tsx scripts/check-fixtures.ts",
+    "test": "pnpm build && pnpm check:fixtures && tsx --test tests/*.test.mjs",
     "build:consumer": "tsc -p tests/consumer/tsconfig.json && vite build --config tests/consumer/vite.config.ts",
     "storybook": "pnpm build && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6006 --no-open",
     "build:storybook": "pnpm build && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "tsx tests/browser.mjs"
   },
-  "peerDependencies": { "react": "^19.2.0" },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "@types/react": "^19.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "react": "catalog:", "react-dom": "catalog:",
-    "@types/react": "catalog:", "@types/react-dom": "catalog:",
-    "@types/node": "catalog:", "typescript": "catalog:",
-    "vite": "catalog:", "@vitejs/plugin-react": "catalog:",
-    "tailwindcss": "catalog:", "@tailwindcss/vite": "catalog:",
-    "storybook": "catalog:", "@storybook/react-vite": "catalog:",
-    "@storybook/addon-docs": "catalog:", "@storybook/addon-a11y": "catalog:",
-    "playwright": "catalog:"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "storybook": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/addon-a11y": "catalog:",
+    "playwright": "catalog:",
+    "tsc-alias": "catalog:",
+    "tsx": "catalog:"
   }
 }

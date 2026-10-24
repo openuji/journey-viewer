@@ -1,4 +1,4 @@
-@reference "../../styles/tailwind.css";
+@reference "@/styles/tailwind.css";
 
 .button {
   @apply font-sans text-label font-medium leading-tight;
@@ -88,7 +88,11 @@
 }
 .button[data-variant="solid"]:enabled:hover,
 .button[data-variant="solid"]:enabled:active {
-  background: color-mix(in srgb, var(--jv-color-accent) 86%, var(--jv-color-foreground));
+  background: color-mix(
+    in srgb,
+    var(--jv-color-accent) 86%,
+    var(--jv-color-foreground)
+  );
   color: var(--jv-color-on-accent);
 }
 .button[data-variant="chip"]:enabled:hover {

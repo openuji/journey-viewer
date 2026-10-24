@@ -6,10 +6,17 @@
   margin: 0 0 var(--jv-space-xs) calc(var(--jv-size-caret) / 2);
   padding: 1px 0 0 var(--jv-space-sm);
   border-inline-start: var(--jv-border-focus) solid
-    color-mix(in srgb, var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 40%, transparent);
+    color-mix(
+      in srgb,
+      var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 40%,
+      transparent
+    );
 }
 .nest[data-matched] {
-  border-inline-start-color: var(--jv-touchpoint-color, var(--jv-color-touchpoint));
+  border-inline-start-color: var(
+    --jv-touchpoint-color,
+    var(--jv-color-touchpoint)
+  );
 }
 @media (pointer: coarse) {
   .nest {

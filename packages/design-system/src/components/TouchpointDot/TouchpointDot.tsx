@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import styles from "./TouchpointDot.module.css";
+import styles from "@/components/TouchpointDot/TouchpointDot.module.css";
 
 export interface TouchpointDotProps {
   readonly label: string;

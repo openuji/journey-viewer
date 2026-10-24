@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Button } from "../Button/Button.js";
-import type { ButtonProps } from "../Button/Button.js";
-import styles from "./IconButton.module.css";
+import { Button } from "@/components/Button/Button";
+import type { ButtonProps } from "@/components/Button/Button";
+import styles from "@/components/IconButton/IconButton.module.css";
 
 export type IconButtonProps = Readonly<
   Omit<ButtonProps, "children" | "iconOnly" | "aria-label"> & {

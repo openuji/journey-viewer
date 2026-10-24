@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { TouchpointDot } from "./TouchpointDot.js";
-import { createTouchpointDotFixture } from "./TouchpointDot.fixtures.ts";
+import { TouchpointDot } from "@/components/TouchpointDot/TouchpointDot";
+import { createTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.fixtures";
 
 const meta = {
   title: "Hierarchy/TouchpointDot",

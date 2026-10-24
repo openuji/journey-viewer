@@ -1,4 +1,4 @@
-@reference "../../styles/tailwind.css";
+@reference "@/styles/tailwind.css";
 .wrap {
   position: relative;
   flex: 1 1 100%;
@@ -52,7 +52,10 @@
   inset-inline-start: 0;
   z-index: 30;
   box-sizing: border-box;
-  inline-size: min(var(--jv-size-search-results), calc(100vw - 2 * var(--jv-space-lg)));
+  inline-size: min(
+    var(--jv-size-search-results),
+    calc(100vw - 2 * var(--jv-space-lg))
+  );
   max-block-size: 60vh;
   overflow: auto;
   padding: var(--jv-space-xs);

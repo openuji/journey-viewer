@@ -1,11 +1,11 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "../Button/Button.js";
-import type { ButtonProps } from "../Button/Button.js";
-import { Icon } from "../Icon/Icon.js";
-import { IconButton } from "../IconButton/IconButton.js";
-import { Text } from "../Text/Text.js";
-import { TouchpointDot } from "../TouchpointDot/TouchpointDot.js";
-import styles from "./StateRow.module.css";
+import { Button } from "@/components/Button/Button";
+import type { ButtonProps } from "@/components/Button/Button";
+import { Icon } from "@/components/Icon/Icon";
+import { IconButton } from "@/components/IconButton/IconButton";
+import { Text } from "@/components/Text/Text";
+import { TouchpointDot } from "@/components/TouchpointDot/TouchpointDot";
+import styles from "@/components/StateRow/StateRow.module.css";
 
 /** Relation to the active (hovered, else selected) state of the same journey. */
 export type StateRowTone = "active" | "incoming" | "outgoing" | "both" | "dim";
@@ -59,7 +59,8 @@ export function StateRow({
   notice,
   children,
 }: StateRowProps) {
-  const showMarks = marks !== undefined && (marks.incoming > 0 || marks.outgoing > 0);
+  const showMarks =
+    marks !== undefined && (marks.incoming > 0 || marks.outgoing > 0);
   return (
     <div className={styles.container} data-filtered={filtered || undefined}>
       <div
@@ -82,52 +83,130 @@ export function StateRow({
             icon={<Icon name="chevron" />}
           />
         ) : composite ? (
-          <span className={styles.indicator} data-open={expanded || undefined} aria-hidden="true">
+          <span
+            className={styles.indicator}
+            data-open={expanded || undefined}
+            aria-hidden="true"
+          >
             <Icon name="chevron" />
           </span>
         ) : (
           <span className={styles.spacer} aria-hidden="true" />
         )}
-        <Button variant="bare" className={styles.main} aria-pressed={selected} onClick={onSelect}>
-          <Text variant="label" weight={composite || selected ? "semibold" : "medium"} className={styles.label}>{label}</Text>
-          {crossing && <TouchpointDot label={`Crosses into ${crossing.label}`} {...(crossing.color ? { color: crossing.color } : {})} />}
+        <Button
+          variant="bare"
+          className={styles.main}
+          aria-pressed={selected}
+          onClick={onSelect}
+        >
+          <Text
+            variant="label"
+            weight={composite || selected ? "semibold" : "medium"}
+            className={styles.label}
+          >
+            {label}
+          </Text>
+          {crossing && (
+            <TouchpointDot
+              label={`Crosses into ${crossing.label}`}
+              {...(crossing.color ? { color: crossing.color } : {})}
+            />
+          )}
           {description && (
-            <Text className={styles.description} variant="caption" tone="subtle">
+            <Text
+              className={styles.description}
+              variant="caption"
+              tone="subtle"
+            >
               {description}
             </Text>
           )}
         </Button>
         {showMarks && (
-          <span className={styles.marks} title={marks.title}
-            onPointerOver={(event) => { event.stopPropagation(); onHover?.(false); }}>
-            {marks.incoming > 0 && <Text variant="caption" tone="entry" weight="semibold" aria-hidden="true">←{marks.incoming}</Text>}
-            {marks.outgoing > 0 && <Text variant="caption" tone="exit" weight="semibold" aria-hidden="true">→{marks.outgoing}</Text>}
+          <span
+            className={styles.marks}
+            title={marks.title}
+            onPointerOver={(event) => {
+              event.stopPropagation();
+              onHover?.(false);
+            }}
+          >
+            {marks.incoming > 0 && (
+              <Text
+                variant="caption"
+                tone="entry"
+                weight="semibold"
+                aria-hidden="true"
+              >
+                ←{marks.incoming}
+              </Text>
+            )}
+            {marks.outgoing > 0 && (
+              <Text
+                variant="caption"
+                tone="exit"
+                weight="semibold"
+                aria-hidden="true"
+              >
+                →{marks.outgoing}
+              </Text>
+            )}
             <span className={styles.hidden}>
               {[
-                marks.incoming > 0 ? `${marks.incoming} ${marks.incoming === 1 ? "transition" : "transitions"} into the active state` : "",
-                marks.outgoing > 0 ? `${marks.outgoing} ${marks.outgoing === 1 ? "transition" : "transitions"} from the active state` : "",
-              ].filter(Boolean).join(", ")}
+                marks.incoming > 0
+                  ? `${marks.incoming} ${marks.incoming === 1 ? "transition" : "transitions"} into the active state`
+                  : "",
+                marks.outgoing > 0
+                  ? `${marks.outgoing} ${marks.outgoing === 1 ? "transition" : "transitions"} from the active state`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(", ")}
             </span>
           </span>
         )}
         {actions}
       </div>
       {notice && <div className={styles.nested}>{notice}</div>}
-      {expanded && children && <div className={styles.children}>{children}</div>}
+      {expanded && children && (
+        <div className={styles.children}>{children}</div>
+      )}
     </div>
   );
 }
 
-export type ScreenActionProps = Readonly<Omit<ButtonProps, "children" | "variant" | "size" | "iconOnly" | "aria-label"> & {
-  /** Accessible name, such as "Screen mockup: Login". */
-  label: string;
-  /** Touchpoint color used on hover, focus and touch devices. */
-  color?: string;
-}>;
+export type ScreenActionProps = Readonly<
+  Omit<
+    ButtonProps,
+    "children" | "variant" | "size" | "iconOnly" | "aria-label"
+  > & {
+    /** Accessible name, such as "Screen mockup: Login". */
+    label: string;
+    /** Touchpoint color used on hover, focus and touch devices. */
+    color?: string;
+  }
+>;
 
 /** The compact phone action that opens a row's screenshot. */
-export function ScreenAction({ label, color, className, style, ...props }: ScreenActionProps) {
-  return <IconButton {...props} size="xs" label={label} icon={<Icon name="phone" />}
-    className={[styles.screen, className].filter(Boolean).join(" ")}
-    style={color === undefined ? style : ({ ...style, "--jv-touchpoint-color": color } as CSSProperties)} />;
+export function ScreenAction({
+  label,
+  color,
+  className,
+  style,
+  ...props
+}: ScreenActionProps) {
+  return (
+    <IconButton
+      {...props}
+      size="xs"
+      label={label}
+      icon={<Icon name="phone" />}
+      className={[styles.screen, className].filter(Boolean).join(" ")}
+      style={
+        color === undefined
+          ? style
+          : ({ ...style, "--jv-touchpoint-color": color } as CSSProperties)
+      }
+    />
+  );
 }

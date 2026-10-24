@@ -1,4 +1,4 @@
-import type { ButtonProps } from "./Button.js";
+import type { ButtonProps } from "@/components/Button/Button";
 
 export type ButtonFixture = Readonly<
   Omit<

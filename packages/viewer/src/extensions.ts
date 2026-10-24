@@ -1,9 +1,18 @@
 import type { ComponentType } from "react";
-import type { HeadingLevel, StateRowProps } from "@journey-viewer/design-system";
-import type { UjgCompositeState, UjgDocument, UjgJourney, UjgNode, UjgState } from "@journey-viewer/ujg-jsonld";
-import type { ViewerSelection } from "./interaction.js";
-import type { ViewerTarget } from "./navigation.js";
-import type { ViewerOccurrence } from "./occurrence.js";
+import type {
+  HeadingLevel,
+  StateRowProps,
+} from "@journey-viewer/design-system";
+import type {
+  UjgCompositeState,
+  UjgDocument,
+  UjgJourney,
+  UjgNode,
+  UjgState,
+} from "@journey-viewer/ujg-jsonld";
+import type { ViewerSelection } from "@/interaction";
+import type { ViewerTarget } from "@/navigation";
+import type { ViewerOccurrence } from "@/occurrence";
 
 /** Original canonical nodes and the current explicit call site; nothing is copied or retained. */
 export interface ViewerNodeContext {

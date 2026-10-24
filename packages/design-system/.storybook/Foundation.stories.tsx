@@ -8,11 +8,11 @@ import {
   StateRow,
   Surface,
   Text,
-} from "../src/index.js";
-import { createJourneyCardFixture } from "../src/components/JourneyCard/JourneyCard.fixtures.ts";
-import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
-import { tokenEntries } from "../scripts/tokens.mjs";
-import light from "../tokens/themes/light.tokens.json";
+} from "@/index";
+import { createJourneyCardFixture } from "@/components/JourneyCard/JourneyCard.fixtures";
+import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
+import { tokenEntries } from "~/scripts/tokens.mjs";
+import light from "~/tokens/themes/light.tokens.json";
 
 const meta = {
   title: "Foundations/System",

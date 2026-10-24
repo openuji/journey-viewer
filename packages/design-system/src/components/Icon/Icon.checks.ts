@@ -1,5 +1,7 @@
-import { choice } from "../../dev/checks.ts";
-import type { FixtureCheck } from "../../dev/checks.ts";
-import { iconNames } from "./Icon.fixtures.ts";
+import { choice } from "@/dev/checks";
+import type { FixtureCheck } from "@/dev/checks";
+import { iconNames } from "@/components/Icon/Icon.fixtures";
 
-export const checkIconFixture: FixtureCheck = (value) => [...choice(value, "name", iconNames)];
+export const checkIconFixture: FixtureCheck = (value) => [
+  ...choice(value, "name", iconNames),
+];

@@ -1,8 +1,9 @@
 import type { HTMLAttributes } from "react";
-import styles from "./Text.module.css";
+import styles from "@/components/Text/Text.module.css";
 
 export type TextRole = "body" | "label" | "caption" | "code";
-export type TextTone = "default" | "muted" | "subtle" | "entry" | "exit" | "accent";
+export type TextTone =
+  "default" | "muted" | "subtle" | "entry" | "exit" | "accent";
 export type TextWeight = "regular" | "medium" | "semibold";
 export type TextProps = Readonly<
   HTMLAttributes<HTMLElement> & {

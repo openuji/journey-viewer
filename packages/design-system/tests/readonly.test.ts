@@ -8,10 +8,10 @@ import type {
   JourneyContractsProps,
   JourneyContractControlsProps,
   InspectorPanelProps,
-} from "../src/index.js";
-import { createStateRowFixture } from "../src/components/StateRow/StateRow.fixtures.ts";
-import type { SearchFieldProps } from "../src/index.js";
-import type { ScreenImageProps, ScreenLightboxProps } from "../src/index.js";
+} from "@/index";
+import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
+import type { SearchFieldProps } from "@/index";
+import type { ScreenImageProps, ScreenLightboxProps } from "@/index";
 
 const button: ButtonProps = { children: "Select", selected: false };
 // @ts-expect-error Component props are immutable snapshots.
@@ -40,26 +40,42 @@ const badge: BadgeProps = {
 // @ts-expect-error Forwarded native attributes remain readonly.
 badge.id = "changed";
 
-const contracts: JourneyContractsProps = { entries: [{ id: "e", label: "Begin" }], exits: [] };
+const contracts: JourneyContractsProps = {
+  entries: [{ id: "e", label: "Begin" }],
+  exits: [],
+};
 // @ts-expect-error Contract lists are readonly.
 contracts.entries.push({ id: "next", label: "Next" });
 // @ts-expect-error Contract item data is readonly.
 contracts.entries[0]!.label = "Changed";
 
-const summary: StateSummaryProps = { label: "Start", entryCount: 1, directExitCount: 2 };
+const summary: StateSummaryProps = {
+  label: "Start",
+  entryCount: 1,
+  directExitCount: 2,
+};
 // @ts-expect-error Summary presentation data is readonly.
 summary.label = "Changed";
 // @ts-expect-error Selection belongs to StateRow, not StateSummary.
 const selectedSummary: StateSummaryProps = { label: "Start", selected: true };
-// @ts-expect-error Summary has no interaction callbacks.
-const callbackSummary: StateSummaryProps = { label: "Start", onSelect: () => {} };
+const callbackSummary: StateSummaryProps = {
+  label: "Start",
+  // @ts-expect-error Summary has no interaction callbacks.
+  onSelect: () => {},
+};
 // @ts-expect-error Nested content requires no expansion flag.
 const expandedSummary: StateSummaryProps = { label: "Start", expanded: true };
 // @ts-expect-error Summary has no filtering flag.
 const filteredSummary: StateSummaryProps = { label: "Start", filtered: true };
 // @ts-expect-error Mode flags are not part of either component's contract.
 const staticRow: StateRowProps = { label: "Start", static: true };
-void [selectedSummary, callbackSummary, expandedSummary, filteredSummary, staticRow];
+void [
+  selectedSummary,
+  callbackSummary,
+  expandedSummary,
+  filteredSummary,
+  staticRow,
+];
 
 declare const panel: InspectorPanelProps;
 // @ts-expect-error Inspector presentation collections are readonly.
@@ -67,7 +83,11 @@ panel.sections.push({ title: "Other" });
 // @ts-expect-error Nested inspector transition tags are readonly.
 panel.sections[0]!.groups![0]!.items[0]!.tags.push("Changed");
 // @ts-expect-error Contract controls require their explicit selection callback.
-const uncontrolledContracts: JourneyContractControlsProps = { entries: [], exits: [], selection: null };
+const uncontrolledContracts: JourneyContractControlsProps = {
+  entries: [],
+  exits: [],
+  selection: null,
+};
 void uncontrolledContracts;
 declare const search: SearchFieldProps;
 // @ts-expect-error Search presentation is controlled and readonly.
@@ -79,7 +99,11 @@ declare const image: ScreenImageProps;
 // @ts-expect-error Loading state is supplied by the browser caller.
 image.status = "unavailable";
 // @ts-expect-error Native image events must have explicit callbacks.
-const missingImageCallbacks: ScreenImageProps = { source: "image.png", label: "Example", status: "loading" };
+const missingImageCallbacks: ScreenImageProps = {
+  source: "image.png",
+  label: "Example",
+  status: "loading",
+};
 void missingImageCallbacks;
 declare const lightbox: ScreenLightboxProps;
 // @ts-expect-error Lightbox presentation does not own modal state.

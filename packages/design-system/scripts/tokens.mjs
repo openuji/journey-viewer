@@ -1,5 +1,5 @@
 /** Pure translation of the documented DTCG subset. No checking or file access. */
-import { semanticKeys } from "../tokens/semantic-keys.mjs";
+import { semanticKeys } from "~/tokens/semantic-keys.mjs";
 
 export const isObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);

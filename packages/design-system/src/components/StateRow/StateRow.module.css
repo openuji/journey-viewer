@@ -1,4 +1,4 @@
-@reference "../../styles/tailwind.css";
+@reference "@/styles/tailwind.css";
 .container {
   min-inline-size: 0;
 }
@@ -15,7 +15,8 @@
   padding-inline: var(--jv-space-2xs) var(--jv-space-xs);
   border-radius: var(--jv-radius-md);
   color: var(--jv-color-foreground);
-  scroll-margin: calc(var(--jv-explorer-offset, 0px) + var(--jv-space-lg)) 0 var(--jv-space-xl);
+  scroll-margin: calc(var(--jv-explorer-offset, 0px) + var(--jv-space-lg)) 0
+    var(--jv-space-xl);
 }
 .row::before {
   content: "";
@@ -45,10 +46,17 @@
   background: var(--jv-color-exit);
 }
 .row[data-tone="both"] {
-  background: linear-gradient(90deg, var(--jv-color-entry-soft), var(--jv-color-exit-soft));
+  background: linear-gradient(
+    90deg,
+    var(--jv-color-entry-soft),
+    var(--jv-color-exit-soft)
+  );
 }
 .row[data-tone="both"]::before {
-  background: linear-gradient(var(--jv-color-entry) 50%, var(--jv-color-exit) 50%);
+  background: linear-gradient(
+    var(--jv-color-entry) 50%,
+    var(--jv-color-exit) 50%
+  );
 }
 .row[data-tone="active"] {
   background: var(--jv-color-hover);

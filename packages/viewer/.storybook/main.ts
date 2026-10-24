@@ -1,26 +1,17 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-import designSystem from "../../design-system/.storybook/main.js";
 
-/** Extend the internal design-system catalog; all additions stay in viewer development. */
+/** The viewer's own internal catalog; it imports only the design system's public exports. */
 const config: StorybookConfig = {
-  ...designSystem,
-  stories: [
-    {
-      directory: "../../design-system/src",
-      files: "**/*.stories.tsx",
-      titlePrefix: "Design system",
-    },
-    {
-      directory: "../../design-system/.storybook",
-      files: "*.stories.tsx",
-      titlePrefix: "Design system",
-    },
-    "../src/**/*.stories.tsx",
-  ],
+  stories: ["../src/**/*.stories.tsx"],
+  framework: {
+    name: "@storybook/react-vite",
+    options: { builder: { viteConfigPath: ".storybook/vite.config.ts" } },
+  },
+  addons: ["@storybook/addon-docs", "@storybook/addon-a11y"],
   staticDirs: [
     { from: "../../../examples/solid-oidc", to: "/solid-oidc" },
-    { from: "../../design-system/.test-output/consumer", to: "/consumer" },
     { from: "../.test-output/consumer", to: "/viewer-consumer" },
   ],
+  core: { disableTelemetry: true },
 };
 export default config;

@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import styles from "./Heading.module.css";
+import styles from "@/components/Heading/Heading.module.css";
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 export type HeadingProps = Readonly<

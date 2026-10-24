@@ -7,6 +7,9 @@ export interface Finding {
 export type Rule<Value = unknown> = (value: Value) => readonly Finding[];
 
 /** Runs exactly the supplied rules, preserving rule and finding order. */
-export function lint<Value>(value: Value, rules: readonly Rule<Value>[]): readonly Finding[] {
+export function lint<Value>(
+  value: Value,
+  rules: readonly Rule<Value>[],
+): readonly Finding[] {
   return rules.flatMap((rule) => rule(value));
 }

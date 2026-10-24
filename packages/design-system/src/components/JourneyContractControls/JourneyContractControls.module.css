@@ -21,7 +21,8 @@
   flex-direction: column;
   gap: var(--jv-space-xs);
   margin: 0;
-  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xl);
+  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs)
+    var(--jv-space-xl);
   min-inline-size: 0;
 }
 .group {

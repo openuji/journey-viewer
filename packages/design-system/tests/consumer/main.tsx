@@ -7,10 +7,10 @@ import {
   JourneyCard,
   StateRow,
   Text,
-} from "../../dist/index.js";
-import "../../dist/styles.css";
-import "../../dist/reset.css";
-import "../../.storybook/generated/alternate.css";
+} from "@journey-viewer/design-system";
+import "@journey-viewer/design-system/styles.css";
+import "@journey-viewer/design-system/reset.css";
+import "~/.storybook/generated/alternate.css";
 
 function Sample({ theme }: { readonly theme: string }) {
   const [snapshot, setSnapshot] = useState<
@@ -41,7 +41,11 @@ function Sample({ theme }: { readonly theme: string }) {
           selected={snapshot.selected}
           expanded={snapshot.expanded}
           tone="outgoing"
-          marks={{ incoming: 0, outgoing: 2, title: "Two routes from the active state" }}
+          marks={{
+            incoming: 0,
+            outgoing: 2,
+            title: "Two routes from the active state",
+          }}
           onSelect={() =>
             setSnapshot((previous) => ({
               ...previous,

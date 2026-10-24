@@ -1,4 +1,4 @@
-import type { TouchpointDotProps } from "./TouchpointDot.js";
+import type { TouchpointDotProps } from "@/components/TouchpointDot/TouchpointDot";
 
 export type TouchpointDotFixture = Readonly<
   Required<Pick<TouchpointDotProps, "label" | "color">>

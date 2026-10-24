@@ -1,9 +1,14 @@
-import type { JourneyHeadProps } from "./JourneyHead.js";
-import { createTouchpointDotFixture } from "../TouchpointDot/TouchpointDot.fixtures.ts";
+import type { JourneyHeadProps } from "@/components/JourneyHead/JourneyHead";
+import { createTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.fixtures";
 
 export type JourneyHeadFixture = Readonly<
-  Required<Pick<JourneyHeadProps, "title" | "count" | "level" | "touchpoint" | "filtered" | "matched">>
-  & Pick<JourneyHeadProps, "touchpoints" | "crumb">
+  Required<
+    Pick<
+      JourneyHeadProps,
+      "title" | "count" | "level" | "touchpoint" | "filtered" | "matched"
+    >
+  > &
+    Pick<JourneyHeadProps, "touchpoints" | "crumb">
 >;
 
 export function createJourneyHeadFixture(

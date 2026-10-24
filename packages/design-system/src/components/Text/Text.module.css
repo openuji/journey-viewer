@@ -1,4 +1,4 @@
-@reference "../../styles/tailwind.css";
+@reference "@/styles/tailwind.css";
 .text {
   @apply font-sans text-body font-regular leading-normal;
   margin: 0;

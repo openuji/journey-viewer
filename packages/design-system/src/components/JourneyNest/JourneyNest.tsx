@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import styles from "./JourneyNest.module.css";
+import styles from "@/components/JourneyNest/JourneyNest.module.css";
 
 export interface JourneyNestProps {
   /** The nested journey's touchpoint color for its guide line. */
@@ -10,10 +10,21 @@ export interface JourneyNestProps {
 }
 
 /** Indented nested-journey content beneath a composite row, with a touchpoint guide line. */
-export function JourneyNest({ color, matched = false, children }: JourneyNestProps) {
+export function JourneyNest({
+  color,
+  matched = false,
+  children,
+}: JourneyNestProps) {
   return (
-    <div className={styles.nest} data-matched={matched || undefined}
-      style={color === undefined ? undefined : ({ "--jv-touchpoint-color": color } as CSSProperties)}>
+    <div
+      className={styles.nest}
+      data-matched={matched || undefined}
+      style={
+        color === undefined
+          ? undefined
+          : ({ "--jv-touchpoint-color": color } as CSSProperties)
+      }
+    >
       {children}
     </div>
   );

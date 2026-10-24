@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Badge } from "../Badge/Badge.js";
-import { Text } from "../Text/Text.js";
-import styles from "./StateSummary.module.css";
+import { Badge } from "@/components/Badge/Badge";
+import { Text } from "@/components/Text/Text";
+import styles from "@/components/StateSummary/StateSummary.module.css";
 
 export interface StateSummaryProps {
   readonly label: string;
@@ -20,7 +20,9 @@ export function StateSummary({
   return (
     <div className={styles.summary}>
       <div className={styles.row}>
-        <Text variant="label" className={styles.label}>{label}</Text>
+        <Text variant="label" className={styles.label}>
+          {label}
+        </Text>
         <span className={styles.marks}>
           {entryCount > 0 && (
             <Badge

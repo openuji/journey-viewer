@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { ScreenPreview } from "@journey-viewer/design-system";
-import { getPreviewPosition, getPreviewWidth } from "../preview-placement.js";
-import type { PreviewAnchor } from "../preview-placement.js";
+import { getPreviewPosition, getPreviewWidth } from "@/preview-placement";
+import type { PreviewAnchor } from "@/preview-placement";
 
 export interface BrowserScreenPreviewProps {
   readonly anchor: PreviewAnchor;
@@ -15,17 +15,30 @@ export interface BrowserScreenPreviewProps {
 }
 
 /** Places the floating card beside its anchor and dismisses it when the viewport scrolls or resizes. */
-export function BrowserScreenPreview({ anchor, visible, title, context, touchpoint, onDismiss, children }: BrowserScreenPreviewProps) {
+export function BrowserScreenPreview({
+  anchor,
+  visible,
+  title,
+  context,
+  touchpoint,
+  onDismiss,
+  children,
+}: BrowserScreenPreviewProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const dismissRef = useRef(onDismiss);
-  useLayoutEffect(() => { dismissRef.current = onDismiss; });
+  useLayoutEffect(() => {
+    dismissRef.current = onDismiss;
+  });
   useLayoutEffect(() => {
     const card = cardRef.current;
     const view = card?.ownerDocument.defaultView;
     if (!card || !view || !visible) return;
     card.style.inlineSize = `${getPreviewWidth(view.innerHeight)}px`;
-    const { x, y } = getPreviewPosition(anchor, { width: card.offsetWidth, height: card.offsetHeight },
-      { width: view.innerWidth, height: view.innerHeight });
+    const { x, y } = getPreviewPosition(
+      anchor,
+      { width: card.offsetWidth, height: card.offsetHeight },
+      { width: view.innerWidth, height: view.innerHeight },
+    );
     card.style.transform = `translate(${x}px, ${y}px)`;
   }, [anchor, visible, title, children]);
   useEffect(() => {
@@ -39,6 +52,15 @@ export function BrowserScreenPreview({ anchor, visible, title, context, touchpoi
       view.removeEventListener("resize", dismiss);
     };
   }, [visible]);
-  return <ScreenPreview ref={cardRef} title={title} context={context} visible={visible}
-    {...(touchpoint ? { touchpoint } : {})}>{children}</ScreenPreview>;
+  return (
+    <ScreenPreview
+      ref={cardRef}
+      title={title}
+      context={context}
+      visible={visible}
+      {...(touchpoint ? { touchpoint } : {})}
+    >
+      {children}
+    </ScreenPreview>
+  );
 }

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Surface } from "../Surface/Surface.js";
-import { JourneyHead } from "../JourneyHead/JourneyHead.js";
-import type { JourneyHeadProps } from "../JourneyHead/JourneyHead.js";
-import styles from "./JourneyCard.module.css";
+import { Surface } from "@/components/Surface/Surface";
+import { JourneyHead } from "@/components/JourneyHead/JourneyHead";
+import type { JourneyHeadProps } from "@/components/JourneyHead/JourneyHead";
+import styles from "@/components/JourneyCard/JourneyCard.module.css";
 
 export interface JourneyCardProps extends JourneyHeadProps {
   readonly children?: ReactNode;

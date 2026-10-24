@@ -1,0 +1,12 @@
+/* Development layout only; shared controls and typography come from primitives. */
+.story-scope {
+  padding: var(--jv-space-lg);
+  background: var(--jv-color-background);
+  min-inline-size: 0;
+}
+.story-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jv-space-md);
+  min-inline-size: 0;
+}

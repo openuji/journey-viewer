@@ -1,7 +1,7 @@
 import type { Preview } from "@storybook/react-vite";
-import "./tailwind.css";
-import "./generated/alternate.css";
-import "./preview.css";
+import "~/.storybook/tailwind.css";
+import "~/.storybook/generated/alternate.css";
+import "~/.storybook/preview.css";
 
 const preview: Preview = {
   globalTypes: {

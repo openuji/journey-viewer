@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { readDevelopmentTheme, readTokens } from "../scripts/token-data.mjs";
-import { generateTokens, themeCss } from "../scripts/tokens.mjs";
-import { checkTokens } from "../scripts/token-checks.mjs";
+import { readDevelopmentTheme, readTokens } from "~/scripts/token-data.mjs";
+import { generateTokens, themeCss } from "~/scripts/tokens.mjs";
+import { checkTokens } from "~/scripts/token-checks.mjs";
 
 const freeze = (value) => {
   if (value && typeof value === "object") {

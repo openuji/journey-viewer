@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Surface } from "./Surface.js";
-import { createSurfaceFixture } from "./Surface.fixtures.ts";
-import { Text } from "../Text/Text.js";
+import { Surface } from "@/components/Surface/Surface";
+import { createSurfaceFixture } from "@/components/Surface/Surface.fixtures";
+import { Text } from "@/components/Text/Text";
 
 const meta = {
   title: "Primitives/Surface",

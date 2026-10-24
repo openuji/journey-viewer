@@ -12,13 +12,20 @@ export function BrowserScreenPreload({ sources }: BrowserScreenPreloadProps) {
     const view = ref.current?.ownerDocument.defaultView;
     if (!view) return;
     if (typeof view.requestIdleCallback === "function") {
-      const handle = view.requestIdleCallback(() => setReady(true), { timeout: 2000 });
+      const handle = view.requestIdleCallback(() => setReady(true), {
+        timeout: 2000,
+      });
       return () => view.cancelIdleCallback(handle);
     }
     const handle = view.setTimeout(() => setReady(true), 200);
     return () => view.clearTimeout(handle);
   }, []);
-  return <span ref={ref} hidden aria-hidden="true">
-    {ready && sources.map((source) => <img key={source} src={source} alt="" decoding="async" />)}
-  </span>;
+  return (
+    <span ref={ref} hidden aria-hidden="true">
+      {ready &&
+        sources.map((source) => (
+          <img key={source} src={source} alt="" decoding="async" />
+        ))}
+    </span>
+  );
 }

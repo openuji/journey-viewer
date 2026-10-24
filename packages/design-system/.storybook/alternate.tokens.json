@@ -41,9 +41,7 @@
       "$value": {
         "colorSpace": "srgb",
         "components": [
-          0.47843137254901963,
-          0.23529411764705882,
-          0.1450980392156863
+          0.47843137254901963, 0.23529411764705882, 0.1450980392156863
         ]
       }
     },
@@ -292,10 +290,7 @@
   "font": {
     "sans": {
       "$type": "fontFamily",
-      "$value": [
-        "Georgia",
-        "serif"
-      ]
+      "$value": ["Georgia", "serif"]
     },
     "mono": {
       "$type": "fontFamily",

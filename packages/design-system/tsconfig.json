@@ -1,11 +1,30 @@
 {
   "compilerOptions": {
-    "target": "ES2023", "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "ESNext", "moduleResolution": "Bundler", "jsx": "react-jsx",
-    "strict": true, "noUncheckedIndexedAccess": true, "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true, "noUnusedLocals": true, "noUnusedParameters": true,
-    "erasableSyntaxOnly": true, "allowImportingTsExtensions": true, "noEmit": true,
-    "resolveJsonModule": true, "types": ["vite/client", "node"]
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "~/*": ["./*"]
+    }
   },
-  "include": ["src", "scripts/*.ts", ".storybook", "tests/*.ts", "vite.config.ts"]
+  "include": [
+    "src",
+    "scripts/*.ts",
+    ".storybook",
+    "tests/*.ts",
+    "vite.config.ts"
+  ]
 }

@@ -1,4 +1,4 @@
-import type { BadgeProps } from "./Badge.js";
+import type { BadgeProps } from "@/components/Badge/Badge";
 
 export type BadgeFixture = Readonly<
   Omit<

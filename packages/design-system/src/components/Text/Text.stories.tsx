@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Text } from "./Text.js";
-import { createTextFixture } from "./Text.fixtures.ts";
+import { Text } from "@/components/Text/Text";
+import { createTextFixture } from "@/components/Text/Text.fixtures";
 
 const meta = {
   title: "Primitives/Text",
@@ -42,7 +42,10 @@ export const Weights: Story = {
   render: () => (
     <div className="story-inline">
       {(["regular", "medium", "semibold"] as const).map((weight) => (
-        <Text key={weight} {...createTextFixture({ weight, variant: "label", children: weight })} />
+        <Text
+          key={weight}
+          {...createTextFixture({ weight, variant: "label", children: weight })}
+        />
       ))}
     </div>
   ),

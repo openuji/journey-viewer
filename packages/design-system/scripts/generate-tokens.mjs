@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { generateTokens, themeCss } from "./tokens.mjs";
-import { readDevelopmentTheme, readTokens } from "./token-data.mjs";
+import { generateTokens, themeCss } from "~/scripts/tokens.mjs";
+import { readDevelopmentTheme, readTokens } from "~/scripts/token-data.mjs";
 
 const { foundation, themes } = await readTokens();
 const { tokensCss, tailwindCss } = generateTokens(foundation, themes);

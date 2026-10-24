@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { JourneyContracts } from "./JourneyContracts.js";
-import { createJourneyContractsFixture } from "./JourneyContracts.fixtures.ts";
+import { JourneyContracts } from "@/components/JourneyContracts/JourneyContracts";
+import { createJourneyContractsFixture } from "@/components/JourneyContracts/JourneyContracts.fixtures";
 
 const meta = {
   title: "Hierarchy/JourneyContracts",
@@ -14,7 +14,20 @@ export const Default: Story = {};
 export const Empty: Story = { args: { entries: [], exits: [] } };
 export const LongContent: Story = {
   args: {
-    entries: [{ id: "entry:long", label: "Averylongentrylabelthatwrapswithoutoverflowingtheavailablemobilewidth", default: true }],
-    exits: [{ id: "exit:long", label: "A long exit contract label that remains readable at narrow widths" }],
+    entries: [
+      {
+        id: "entry:long",
+        label:
+          "Averylongentrylabelthatwrapswithoutoverflowingtheavailablemobilewidth",
+        default: true,
+      },
+    ],
+    exits: [
+      {
+        id: "exit:long",
+        label:
+          "A long exit contract label that remains readable at narrow widths",
+      },
+    ],
   },
 };

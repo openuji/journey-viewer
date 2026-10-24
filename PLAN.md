@@ -2,12 +2,18 @@
 
 ## Current checkpoint
 
-- Current stage: **11B — `apps/web` source layout and formatting (complete,
+- Current stage: **11C — library cleanup and library source conventions (complete,
   uncommitted)**. Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
-  and `e7eb0a9`), 11B (site source layout, `@/` imports, Prettier) and 11C (library
-  cleanup, smoke check, Storybook refactoring). Next: **11C**. 11B changes
-  `apps/web`, this plan and one parity-harness selector; the library packages are
-  unchanged. Evidence is in "Stage-11B verification evidence" and `apps/web/PLAN.md`.
+  and `e7eb0a9`), 11B (site source layout, `@/` imports, Prettier; user checkpoint
+  `d65c7f1`) and 11C. 11C changes only this library repository; `apps/web` is
+  unedited. Decisions are in "Stage-11C decisions" and evidence in "Stage-11C
+  verification evidence". Stage 11 is complete; no later stage is scoped yet.
+- Stage-11C deliverable: no global CSS leaves the design system; `@types/react` is
+  an optional peer; `pnpm test:consumer` installs the packed tarballs outside the
+  workspace; the viewer Storybook is self-contained; the root README documents
+  distribution. The four packages also follow the source conventions: tsconfig
+  aliases and extensionless module imports instead of relative paths (`tsc-alias` resolves them in tsc output) and
+  Prettier formatting, both enforced by `pnpm test`.
 - Stage-10E deliverable (user checkpoint `81c4e40`): the compact app shell; 10D (hierarchy
   parity) is complete.
 - Stage-10E-b deliverable: both app routes render only the compact shell header and
@@ -135,7 +141,7 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 10E-b. App shell integration | Replace the app routes' header/h1/file card/status with the approved shell; full-bleed viewer; update app browser tests. | App browser suite passes against the new shell; local files, findings and the example behave as in 10C. |
 | 11A. Deployment | `apps/web` reaches the library repo only through its git-ignored `.journey-viewer` alias (local symlink, or a Cloudflare build clone); Wrangler static-assets config, `build:cloudflare` command and deployment test. | Cloudflare dry run; deep-link refresh through `wrangler dev`; no development fixtures/Storybook in `dist`; no package publication. |
 | 11B. Site source layout | One `apps/web` component tree in semantic groups, one folder per component owning its styles, stories, studies and private modules; global CSS only in `src/styles`, CSS modules for React; `@/` tsconfig imports instead of relative paths; Prettier formatting; enforced by a layout test and `pnpm check`. | No behavior, URL, API or story-ID change: pages and stories pixel-identical to the pre-change build except the corrected cascade; all app suites and parity pass. |
-| 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files. |
+| 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook; library source conventions: `@/`/`~/` tsconfig aliases instead of relative imports and extensionless module imports (resolved to `./module.js` in tsc output by `tsc-alias --resolve-full-paths`; `tsx` for Node runs), Prettier. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files; layout test and `format:check` pass in `pnpm test`; story IDs unchanged; all package, browser, parity and app suites pass. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -1597,27 +1603,72 @@ original. The user approved these changes (the app shell part was excluded):
   - Search stays constrained by the touchpoint filter (Stage 7), and the search
     reset scrolls the viewer root rather than the window.
 
-## Stage-11C scope — recorded 2026-10-23 (as 11B), not started
+## Stage-11C decisions — 2026-10-24
 
-Found by the Stage-11 audit; implemented in a later request.
+The Stage-11 audit (2026-10-23) recorded the cleanup scope; the user then folded
+the library source conventions into 11C.
 
-- **CSS leak.** Design-system `styles.css` emits seven unused global utilities
+- **CSS leak.** Design-system `styles.css` emitted seven unused global utilities
   (`.hidden .visible .sticky .container .outline .filter .transition`), picked up by
-  Tailwind from words in component source. Drop the two `@source` lines in
-  `src/styles/tailwind.css`; boundary tests assert no unhashed class selectors.
-- **Types.** `design-system` and `viewer` declare `@types/react` as an optional peer.
-- **Smoke check.** `tests/external-consumer.mjs` (`test:consumer`) packs each package
-  into a temp folder and installs the tarballs there (`overrides` for the `0.0.0`
-  inter-package versions); it checks tarball contents, runs `tsc` (bundler
-  resolution, no Vite types), renders `JourneyViewer` on the server and runs a
-  plain Vite build importing the CSS through package exports.
-- **Viewer Storybook.** Its own `main`/`preview`/`vite.config` replace the imports
-  from private design-system `.storybook` files; it shows its 33 stories and
-  `tests/browser.mjs` follows.
-- **README.** A Distribution section: packing, ESM only, peers, CSS import order,
-  a bundler's CSS typing.
-- **Verification.** Both Storybook builds, both browser suites, `test:consumer`,
-  and `test:parity` after the CSS change.
+  Tailwind from words in component source. The two `@source` lines in
+  `src/styles/tailwind.css` are dropped: components only `@apply` in CSS modules,
+  and stories keep their own `@source` in `.storybook/tailwind.css`. Both packages'
+  boundary tests require every class selector in `dist/styles.css` to be a
+  CSS-module class.
+- **Types.** `design-system` and `viewer` declare `@types/react` ^19.2 as an
+  optional peer.
+- **Smoke check.** `tests/external-consumer.mjs` (`pnpm test:consumer`, outside
+  `pnpm test` because it needs the registry or a warm store) packs each package
+  into a temp folder outside the workspace and installs the tarballs there
+  (`overrides` for the `0.0.0` inter-package versions). It checks tarball
+  contents, runs `tsc` on `tests/external-consumer/consumer.tsx` (bundler and
+  nodenext resolution, no Vite types, no `skipLibCheck`) and server-renders
+  `JourneyViewer`.
+  Simplification: CSS exports are checked with `import.meta.resolve` instead of a
+  plain Vite build.
+- **Viewer Storybook.** Its own `main`/`preview`/`vite.config`/`preview.css`
+  replace the imports from private design-system `.storybook` files; it shows only
+  its 33 stories and imports only the design system's public exports. The
+  toolbar offers light/dark. The design system's development-only `alternate`
+  theme, and its font/spacing checks, stay in the design-system Storybook, which
+  owns that Stage-4 gate; the viewer CSS boundary test already rejects literal
+  font values. Nothing new enforces the import rule: relative paths are banned by
+  the layout test, and the design system's `exports` map blocks private subpaths.
+- **Source conventions (library).** No relative imports. Each package's
+  `tsconfig.json` declares `@/*` → `./src/*` (as in `apps/web`) and, for files
+  outside `src`, `~/*` → the package root; the viewer adds `~/examples/*` →
+  `../../examples/*`. A package's own `dist` is imported by its package name
+  (self-reference through `exports`). TypeScript modules are imported without
+  `.js`/`.ts` (user request after review); real file names keep their extension
+  (`.module.css`, `.json`, `.jsonld?raw`, `.mjs`). All four packages use
+  `Bundler` resolution (ujg-jsonld and lint moved from `NodeNext`). Only standard
+  tooling resolves the aliases:
+  - `tsc-alias --resolve-full-paths` (catalog `1.9.7`; 1.9.9 was two days old)
+    runs after each `tsc`, because TypeScript never rewrites `paths` or adds
+    extensions in emitted `.js`/`.d.ts`. Published output therefore names every
+    internal module `./module.js`, as Node ESM and `nodenext` consumers require.
+    A home-made rewrite script was rejected by the user.
+  - Vite configs mirror the paths in `resolve.alias`. Vite 8's built-in
+    `resolve.tsconfigPaths` (experimental) was tried first but does not reach
+    Tailwind's CSS resolver (`@reference "@/styles/tailwind.css"` failed). Library
+    builds alias only `@`, so published source cannot use `~`; compiled consumers
+    alias only `~` for development data.
+  - The design system runs its token scripts, fixture check and Node tests with
+    `tsx` (catalog `4.23.15`), which reads tsconfig paths and resolves
+    extensionless TypeScript modules. It replaces `--experimental-strip-types`; a
+    `registerHooks` mirror like `apps/web/tests/alias.mjs` was used first and
+    removed with the extensions, so Node `>=22.13.0` stays the minimum.
+  - Prettier `3.9.10` (the `apps/web` version), default options; Markdown, the
+    lockfile and `examples/` are excluded. `format:check` starts `pnpm test`.
+  - `tests/source-layout.test.mjs` rejects relative `from`/`import()`/`@import`/
+    `@reference` specifiers and `.js`/`.jsx`/`.ts`/`.tsx` alias specifiers in
+    `packages/*/{src,tests,.storybook,scripts}` and root `tests`. In every built
+    `dist` it rejects leftover aliases and relative specifiers that don't end in
+    `.js`. Tailwind `@source` globs, `new URL()` file paths and config path strings
+    are not imports.
+  - The library layout (flat `components/<Name>/` folders) is unchanged by request.
+- **README.** Root sections "Source conventions" and "Distribution" (packing, ESM
+  only, peers, CSS import order, consumer resolution, CSS typing, `test:consumer`).
 
 ## Stage-11A verification evidence — 2026-10-23
 
@@ -1715,6 +1766,55 @@ Found by the Stage-11 audit; implemented in a later request.
   - `pnpm test:parity` passes 7/7 with unchanged metrics.
   - Nothing is staged or committed.
 
+## Stage-11C verification evidence — 2026-10-24
+
+- Implemented only Stage 11C over user checkpoint `d65c7f1`, in this library
+  repository. `apps/web` is unedited (its status stays clean). The baseline on the
+  clean tree: `pnpm test` green, 73 design-system and 106 viewer stories (index
+  files kept for the ID comparison).
+- **Conversion.** A throwaway codemod (outside the repository) replaced 577
+  relative specifiers in 164 files with `@/`, `~/`, `~/examples/` or the package's
+  own name. The three viewer Storybook configs were rewritten by hand. `pnpm format`
+  then formatted 163 files. Prettier wrapped three objects under
+  `@ts-expect-error`, so those directives moved onto the wrapped property
+  (design-system and viewer `readonly.test.ts`).
+- **Extensionless modules (follow-up review).** A second throwaway codemod removed
+  `.js` (338) and `.ts` (151) from 489 alias specifiers in 129 files whose target
+  is a TypeScript module. The remaining extensions are file names: 48 `.css`,
+  13 `.mjs`, 1 `.json`, 2 `.json?raw`, 5 `.jsonld?raw`. Before applying it, a
+  scratch project confirmed that `tsc-alias --resolve-full-paths` writes
+  `./module.js` into JS and declaration-only output, and that `tsx` resolves
+  `@/`/`~/` with extensionless targets from `.mjs` scripts and `node:test` files.
+  The design system's `allowImportingTsExtensions` and `scripts/alias.mjs` are
+  gone. The lockfile only gains `prettier`, `tsc-alias` and `tsx`;
+  `pnpm install --frozen-lockfile` passes.
+- `pnpm test` passes: format check; **13 ujg, 17 lint, 56 design-system,
+  54 viewer**; root **5/5** (3 baseline, 2 layout: no relative imports or module
+  extensions in sources; every built specifier is a full `./module.js` path with
+  no alias left).
+- **CSS.** Design-system `dist/styles.css` shrinks from 31,210 to 29,217 bytes
+  and contains none of the seven utilities. The new boundary assertion failed on
+  the old output (`.visible`, `.hidden`, …) and passes now; the viewer had none.
+- **Storybooks.** `pnpm build:storybook`: 73 stories, IDs identical to the
+  baseline. `pnpm build:storybook:viewer`: 33 stories, IDs identical to the
+  baseline's `Viewer/` subset; no design-system stories or consumer.
+- `pnpm test:design-system:browser` **8/8**; `pnpm test:viewer:browser` **28/28**
+  (own stories only, light/dark globals).
+- `pnpm test:consumer` **4/4**: tarballs hold only `package.json`, `README.md` and
+  `dist`, with no `workspace:`/`catalog:`; the install outside the workspace
+  passes; `tsc` with `types: []` passes under bundler and nodenext resolution;
+  Node imports all
+  four packages, finds 10 journeys and 0 findings in the example, server-renders
+  `JourneyViewer` (“App auth journey”) and resolves all 5 CSS exports.
+- `pnpm test:parity` **7/7** against the original (5174) and a temporary app dev
+  server (stopped afterwards). Metrics are unchanged: first-row offset 56 vs 63px,
+  inspector 340/340 and 300/300px, controls 119 vs 120. The paired 1440px and
+  columns screenshots were compared visually.
+- `apps/web` against the rebuilt libraries: `pnpm test` **23/23**, `pnpm build`
+  (3 pages), `test:browser` **10/10**, `test:app:browser` **8/8**.
+- Everything above was re-run after the extension change, with the same results.
+- `git diff --check` passes. Nothing is staged or committed.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -1779,7 +1879,7 @@ Found by the Stage-11 audit; implemented in a later request.
   document, and the first mounted viewer handles it.
 - Stage 11A is complete: the app reaches the libraries and canonical example only
   through `.journey-viewer` and deploys through Wrangler. Stage 11B reorganized its
-  source; Stage 11C (above) remains. Native `JSON.parse`, selected lint rules and
+  source; Stage 11C cleaned up the libraries. Native `JSON.parse`, selected lint rules and
   blocking policy remain explicit
   application operations.
 - The initial rules check compact field shapes, node identity uniqueness, and
@@ -1788,5 +1888,5 @@ Found by the Stage-11 audit; implemented in a later request.
   exclusivity need additional independently supplied rules when required. This
   checkpoint does not introduce a full SHACL/conformance engine or infer overall
   validity from an empty list of findings. Imports are not resolved or fetched.
-- Stage 11C makes the viewer Storybook self-contained (see its recorded scope),
-  resolving the accepted relative dependency on design-system private development files.
+- Stage 11C made the viewer Storybook self-contained, resolving the accepted
+  relative dependency on design-system private development files.
