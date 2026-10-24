@@ -30,7 +30,7 @@ const browser = await chromium.launch({ headless: true });
 const original = { name: "original", url: originalUrl, root: "body", bar: "header", inspector: "aside",
   row: (label) => `button:has-text("${label}")`, phone: (label) => `button[aria-label="Screen mockup: ${label}"]`,
   columns: '[class*="_lanes_"]', lane: '[class*="_lanes_"] > section', results: '[class*="_results_"]', previewCard: '[class*="_preview_"][class*="_on_"]' };
-const viewer = { name: "viewer", url: viewerUrl, root: ".app-loaded", bar: "[data-explorer-bar]", inspector: 'aside[aria-label="Selection inspector"]',
+const viewer = { name: "viewer", url: viewerUrl, root: "[data-application-viewer]", bar: "[data-explorer-bar]", inspector: 'aside[aria-label="Selection inspector"]',
   row: (label) => `[data-row] button:has-text("${label}")`, phone: (label) => `button[aria-label="Screen mockup: ${label}"]`,
   columns: '[aria-label="Journey columns"]', lane: '[aria-label="Journey columns"] > *', results: '[data-search-field] ul', previewCard: "[data-visible]" };
 

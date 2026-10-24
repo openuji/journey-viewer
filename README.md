@@ -24,6 +24,7 @@ pnpm build
 ```
 
 ```sh
+ln -s ../.. apps/web/.journey-viewer
 pnpm --dir apps/web install --frozen-lockfile
 pnpm dev
 pnpm storybook:web
@@ -123,13 +124,15 @@ Its browser acceptance suite is `pnpm --dir apps/web test:app:browser` after bui
 ## Nested repository ownership
 
 `apps/web` is ignored by this parent and excluded from its pnpm workspace. It has
-its own Git metadata, lockfile and dependency versions. Stage 10C uses explicit
-`link:../../packages/...` dependencies on the four built public libraries; it
-does not rejoin the parent workspace or alias library source. Run the parent
-install/build before app checks or development. Distribution portability belongs
-to Stage 11. A fresh parent clone will
-need that independent checkout supplied separately before the web convenience
-commands can run; library builds/tests require no site checkout.
+its own Git metadata, lockfile and dependency versions. Since Stage 11A it reaches
+this repository only through its git-ignored `.journey-viewer` alias:
+`link:.journey-viewer/packages/...` dependencies on the four built public libraries
+and `.journey-viewer/examples/`. Locally the alias is a symlink to this checkout;
+Cloudflare's build clones this repository there (see the app README). It does not
+rejoin the parent workspace or alias library source. Run the parent install/build
+before app checks or development. A fresh parent clone needs that independent
+checkout supplied separately before the web convenience commands can run; library
+builds/tests require no site checkout.
 
 Six old web files remain tracked in the parent index until you finish the agreed
 ownership transfer. From this parent directory, run:

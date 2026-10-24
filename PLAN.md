@@ -2,8 +2,14 @@
 
 ## Current checkpoint
 
-- Current stage: **10E — Application shell (10E-a review and 10E-b integration complete, uncommitted)**.
-  10D (hierarchy parity) is complete. Next: **11 — Distribution and Cloudflare**.
+- Current stage: **11B — `apps/web` source layout and formatting (complete,
+  uncommitted)**. Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
+  and `e7eb0a9`), 11B (site source layout, `@/` imports, Prettier) and 11C (library
+  cleanup, smoke check, Storybook refactoring). Next: **11C**. 11B changes
+  `apps/web`, this plan and one parity-harness selector; the library packages are
+  unchanged. Evidence is in "Stage-11B verification evidence" and `apps/web/PLAN.md`.
+- Stage-10E deliverable (user checkpoint `81c4e40`): the compact app shell; 10D (hierarchy
+  parity) is complete.
 - Stage-10E-b deliverable: both app routes render only the compact shell header and
   the full-width viewer, or the no-document panel. The app browser suite covers the
   new structure (8/8 against the built output and a fresh dev server). Evidence is
@@ -105,8 +111,8 @@ into a single-parent tree.
 Packages remain private but independently consumable, with built ESM, declarations,
 and compiled CSS. Storybook is internal. YAML, path discovery, browser/surface
 resolution tooling, remote context/import fetching, and local-file persistence
-remain outside this extraction. Stage 11 prepares deployment without publishing
-packages or changing the existing site.
+remain outside this extraction. Stage 11A prepares deployment without publishing
+packages or changing the existing site; Stage 11C finishes the library exports.
 
 ## Stages
 
@@ -127,7 +133,9 @@ packages or changing the existing site.
 | 10D. Hierarchy parity | Port the original hierarchy's presentation and behavior into the design system and viewer; side-by-side parity harness. App shell excluded. | Paired original/viewer screenshots and metric assertions pass at 1440/1099/859/375px; all package unit/browser suites and Storybooks pass; `apps/web` unchanged. |
 | 10E-a. App shell review | Compact application header and no-document panel as `apps/web` Storybook studies. | One ≤56px row with the 22px icon at desktop; keyboard file opening; findings popover; no overflow at 320–1440px; built and dev catalogs pass. |
 | 10E-b. App shell integration | Replace the app routes' header/h1/file card/status with the approved shell; full-bleed viewer; update app browser tests. | App browser suite passes against the new shell; local files, findings and the example behave as in 10C. |
-| 11. Distribution and Cloudflare | Finish independent ESM/declaration/CSS exports and app-local Cloudflare config; separate package/app builds, Storybook, and deploy commands. | External-consumer smoke check; Cloudflare dry run and deep-link refresh; no development fixtures/Storybook in deployment; no package publication. |
+| 11A. Deployment | `apps/web` reaches the library repo only through its git-ignored `.journey-viewer` alias (local symlink, or a Cloudflare build clone); Wrangler static-assets config, `build:cloudflare` command and deployment test. | Cloudflare dry run; deep-link refresh through `wrangler dev`; no development fixtures/Storybook in `dist`; no package publication. |
+| 11B. Site source layout | One `apps/web` component tree in semantic groups, one folder per component owning its styles, stories, studies and private modules; global CSS only in `src/styles`, CSS modules for React; `@/` tsconfig imports instead of relative paths; Prettier formatting; enforced by a layout test and `pnpm check`. | No behavior, URL, API or story-ID change: pages and stories pixel-identical to the pre-change build except the corrected cascade; all app suites and parity pass. |
+| 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -1589,6 +1597,124 @@ original. The user approved these changes (the app shell part was excluded):
   - Search stays constrained by the touchpoint filter (Stage 7), and the search
     reset scrolls the viewer root rather than the window.
 
+## Stage-11C scope — recorded 2026-10-23 (as 11B), not started
+
+Found by the Stage-11 audit; implemented in a later request.
+
+- **CSS leak.** Design-system `styles.css` emits seven unused global utilities
+  (`.hidden .visible .sticky .container .outline .filter .transition`), picked up by
+  Tailwind from words in component source. Drop the two `@source` lines in
+  `src/styles/tailwind.css`; boundary tests assert no unhashed class selectors.
+- **Types.** `design-system` and `viewer` declare `@types/react` as an optional peer.
+- **Smoke check.** `tests/external-consumer.mjs` (`test:consumer`) packs each package
+  into a temp folder and installs the tarballs there (`overrides` for the `0.0.0`
+  inter-package versions); it checks tarball contents, runs `tsc` (bundler
+  resolution, no Vite types), renders `JourneyViewer` on the server and runs a
+  plain Vite build importing the CSS through package exports.
+- **Viewer Storybook.** Its own `main`/`preview`/`vite.config` replace the imports
+  from private design-system `.storybook` files; it shows its 33 stories and
+  `tests/browser.mjs` follows.
+- **README.** A Distribution section: packing, ESM only, peers, CSS import order,
+  a bundler's CSS typing.
+- **Verification.** Both Storybook builds, both browser suites, `test:consumer`,
+  and `test:parity` after the CSS change.
+
+## Stage-11A verification evidence — 2026-10-23
+
+- Implemented only Stage 11A over user checkpoints `81c4e40` (library repo) and
+  `c342a1f` (`apps/web`). Both have GitHub remotes now (`openuji/journey-viewer`,
+  `openuji/journey-viewer-web`); none was added or changed. Library packages,
+  examples and the library lockfile are unchanged; only this plan and the root
+  README's app setup lines changed here.
+- **Alias.** Every `apps/web` path into the library repo goes through the git-ignored
+  `apps/web/.journey-viewer`: dependencies `link:.journey-viewer/packages/<lib>`
+  (lockfile records the same specs; `node_modules/@journey-viewer/*` link via the
+  alias, so re-pointing needs no reinstall), `prepare-example.mjs`, two tests, and
+  `fs.allow` (real path) in the Astro and Storybook configs. Locally it is
+  `ln -s ../.. .journey-viewer`. A probed dev server read 1,181 paths including
+  `references/`, `tests/` and `src/catalog/`, none through `.journey-viewer`, so
+  the watcher does not recurse and needs no ignore rule.
+- **Cloudflare.** `wrangler.jsonc`: static assets only from `./dist`, name
+  `journey-viewer-web`, compatibility date 2026-10-19 (bundled workerd `1.20261019.1`),
+  `send_metrics: false` (`wrangler telemetry status`: disabled by config). Added
+  `wrangler@4.152.0` (exact) and `workerd` to `allowBuilds`. `build:cloudflare`
+  clones the public `https://github.com/openuji/journey-viewer.git` into
+  `.journey-viewer`, installs/builds it, then builds the site. Workers Builds needs
+  only the build command `pnpm build:cloudflare`; no variables or secrets.
+- `apps/web` with the local symlink: frozen install; `pnpm test` **20/20**, 0 Astro/TS
+  diagnostics; `pnpm build` (3 pages); `pnpm build:storybook`; `pnpm test:browser`
+  **10/10**; `pnpm test:app:browser` **8/8**.
+- `wrangler deploy --dry-run` without Cloudflare credentials: exit 0, read the
+  assets directory (49 files plus 7 folders), "--dry-run: exiting now".
+- `pnpm test:cloudflare` **3/3**: `dist` holds exactly the 3 pages, 4 `_astro`
+  files, 2 brand SVGs and the example's 3 JSON files and 37 mapped PNGs; through
+  `wrangler dev`, `/`, `/app/` and `/app/examples/solid-oidc/` return 200 HTML,
+  `/app` and `/app/examples/solid-oidc` redirect to the slashed path and an unknown
+  path is 404; the application suite passes **8/8** against it, including deep-link
+  reloads and all 37 image hashes. Wrangler/workerd processes exit afterwards.
+- **Clone path.** With the symlink removed,
+  `JOURNEY_VIEWER_REPOSITORY=git@github.com:openuji/journey-viewer.git pnpm build:cloudflare`
+  cloned `81c4e40`, built the libraries and the site; the dry run and
+  `test:cloudflare` (**3/3**, app **8/8**) passed on that output. The clone was
+  removed and the symlink restored; a frozen install and build pass again. The
+  HTTPS token URL differs only in authentication and was not exercised.
+- **First Workers Build (user's).** It failed: the dashboard build command was
+  `pnpm run build`, so nothing cloned `.journey-viewer` (ENOENT on the example).
+  Reproduced on a fresh clone of the pushed `c78dade`: Cloudflare's auto-install
+  passes with dangling alias links, `pnpm run build` fails identically, and
+  `pnpm build:cloudflare` (SSH URL) then builds and dry-runs. `SKIP_DEPENDENCY_INSTALL`
+  is unnecessary and the script's second site install was redundant; both removed.
+  The dashboard build command must be `pnpm build:cloudflare`. The second build ran
+  it but had no repository URL; the library repo is now public, so the script clones
+  its HTTPS URL directly. Replayed anonymously (no credentials, no variables) on a
+  fresh clone of `565a37e`: auto-install, `pnpm run build:cloudflare` and the dry run pass.
+- No deploy, publication, staging or commit. `apps/web/package.json` shows as
+  modified in this repo's status only because the parent index still tracks it
+  (the pending user-owned `git rm -r --cached -- apps/web` handoff).
+  Logs: `apps/web/.test-output/stage11a-*.log`.
+
+## Stage-11B verification evidence — 2026-10-24
+
+- Implemented only Stage 11B in `apps/web`, over user checkpoint `e7eb0a9`.
+  - The library packages, examples and library lockfile are unchanged.
+  - Parent edits: this plan and one selector in the development-only parity
+    harness. `packages/viewer/tests/parity.mjs` now finds the app's viewer through
+    `[data-application-viewer]` instead of the removed `.app-loaded` class.
+  - Details, rationale and full evidence are in `apps/web/PLAN.md` ("Stage-11B
+    source layout and formatting").
+- **One component tree.**
+  - `src/` holds only `pages`, `layouts`, `components`, `styles` and `site`.
+  - Each `components/<group>/<Name>/` owns its component, scoped styles,
+    stories, studies and private modules; group roots hold only shared modules.
+  - The former `app/`, `catalog/`, `brand/` and `browser/` trees are gone, and
+    no relative imports remain (`@/` tsconfig alias, with a Node `registerHooks`
+    mirror for unit tests).
+- **CSS.** Global CSS lives only in `src/styles`.
+  - `global.css`: tokens, base and the shared touchpoint palette.
+  - `application.css`: the libraries' compiled CSS.
+  - Component rules moved into their components. React components use CSS
+    modules, and tests use roles or `data-*` hooks.
+- **Storybook-Astro.** The framework (1.13.0, the latest release) inlines nested
+  styles in static builds only through relative `.astro` imports. A small
+  `.storybook/main.ts` build plugin imports aliased children instead, matching
+  its dev mode.
+- **Formatting and enforcement.** Prettier 3.9.10 with `prettier-plugin-astro`
+  1.1.1, default options. `format:check` is part of `pnpm check`.
+  `tests/source-layout.test.mjs` enforces the roots, folders, imports and CSS
+  placement.
+- **Results.**
+  - `apps/web` `pnpm test` passes 23/23 with 0 diagnostics; the build produces
+    3 pages; the 51 story IDs are unchanged.
+  - Against the pre-change build, 55/57 reduced-motion screenshots are
+    byte-identical, and the dev Storybook matches 51/51. The two differences are
+    the app's "Open file…" button gap at 1440px. It now matches the approved
+    10E-a study; previously, library CSS loaded later in the app and overrode
+    the component's own rule.
+  - `test:browser` 10/10, `test:app:browser` 8/8, `test:cloudflare` 3/3 (app
+    8/8) and the Wrangler dry run pass.
+  - `pnpm test:parity` passes 7/7 with unchanged metrics.
+  - Nothing is staged or committed.
+
 ## Unresolved issues and deferred work
 
 - No architectural changes have been made to the agreed plan.
@@ -1651,17 +1777,16 @@ original. The user approved these changes (the app shell part was excluded):
   placement and idle preloading in named `browser/` adapters; pure queries and
   controlled components stay free of DOM effects. Only “/” listens on the owning
   document, and the first mounted viewer handles it.
-- Stage 11 remains unstarted. Application routing, file loading and reporting are
-  complete; deployment/configuration and portable distribution remain deferred.
-  The app currently consumes explicit local links to built libraries and copies
-  the canonical example from this parent checkout. Native `JSON.parse`, selected
-  lint rules and blocking policy remain explicit application operations.
+- Stage 11A is complete: the app reaches the libraries and canonical example only
+  through `.journey-viewer` and deploys through Wrangler. Stage 11B reorganized its
+  source; Stage 11C (above) remains. Native `JSON.parse`, selected lint rules and
+  blocking policy remain explicit
+  application operations.
 - The initial rules check compact field shapes, node identity uniqueness, and
   target existence/classes. IRI grammar, context meaning, ownership, transition
   locality, boundary mappings, forbidden properties, and outgoing-target
   exclusivity need additional independently supplied rules when required. This
   checkpoint does not introduce a full SHACL/conformance engine or infer overall
   validity from an empty list of findings. Imports are not resolved or fetched.
-- Stage 11 should make the shared Storybook development configuration an explicit
-  supported export or copy the small needed setup, resolving the currently
-  accepted relative dependency on design-system private development files.
+- Stage 11C makes the viewer Storybook self-contained (see its recorded scope),
+  resolving the accepted relative dependency on design-system private development files.
