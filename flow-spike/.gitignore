@@ -1,0 +1,4 @@
+.test-output/
+# Impeccable runtime state (design hook cache, live server); critique snapshots are kept.
+.impeccable/hook.cache.json
+.impeccable/live/

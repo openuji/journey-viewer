@@ -1,0 +1,457 @@
+{
+  "method": "Solid-OIDC, 7 warm runs per scope after one discarded run, median milliseconds; Node v22.23.3; estimator text metrics.",
+  "sizes": { "ownLayoutSourceLines": 2292, "elkBundledBytes": 1609707 },
+  "scopes": [
+    {
+      "scope": "all collapsed",
+      "own": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 0,
+        "bends": 24,
+        "connectors": 12,
+        "width": 667,
+        "height": 415,
+        "milliseconds": 0.7
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 1,
+        "crossings": 0,
+        "bends": 16,
+        "connectors": 12,
+        "width": 716,
+        "height": 441,
+        "milliseconds": 7.7
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 2,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 1,
+        "bends": 16,
+        "connectors": 12,
+        "width": 698,
+        "height": 453
+      }
+    },
+    {
+      "scope": "idp-auth-flow open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 49,
+        "bends": 192,
+        "connectors": 59,
+        "width": 1158,
+        "height": 949,
+        "milliseconds": 12.1
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 2,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 76,
+        "crossings": 5,
+        "bends": 146,
+        "connectors": 59,
+        "width": 1595,
+        "height": 906,
+        "milliseconds": 29.9
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 2,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 49,
+        "bends": 120,
+        "connectors": 59,
+        "width": 1734,
+        "height": 972
+      }
+    },
+    {
+      "scope": "idp-mfa-challenge open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 124,
+        "bends": 284,
+        "connectors": 100,
+        "width": 2029,
+        "height": 1452,
+        "milliseconds": 15.2
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 95,
+        "crossings": 32,
+        "bends": 240,
+        "connectors": 100,
+        "width": 2532,
+        "height": 1218,
+        "milliseconds": 43.3
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 7,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 87,
+        "bends": 228,
+        "connectors": 100,
+        "width": 2811,
+        "height": 1446
+      }
+    },
+    {
+      "scope": "idp-identity-consent-flow open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 56,
+        "bends": 224,
+        "connectors": 64,
+        "width": 1195,
+        "height": 1185,
+        "milliseconds": 10.9
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 63,
+        "crossings": 10,
+        "bends": 156,
+        "connectors": 64,
+        "width": 1949,
+        "height": 1046,
+        "milliseconds": 30.8
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 3,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 50,
+        "bends": 140,
+        "connectors": 64,
+        "width": 2110,
+        "height": 1180
+      }
+    },
+    {
+      "scope": "idp-resource-consent-flow open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 86,
+        "bends": 254,
+        "connectors": 73,
+        "width": 1375,
+        "height": 1255,
+        "milliseconds": 11.9
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 56,
+        "crossings": 15,
+        "bends": 160,
+        "connectors": 73,
+        "width": 2108,
+        "height": 1140,
+        "milliseconds": 32.5
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 4,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 62,
+        "bends": 150,
+        "connectors": 73,
+        "width": 2342,
+        "height": 1308
+      }
+    },
+    {
+      "scope": "mfa-authenticator-code open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 119,
+        "bends": 276,
+        "connectors": 102,
+        "width": 2030,
+        "height": 1579,
+        "milliseconds": 15.6
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 3,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 104,
+        "crossings": 26,
+        "bends": 226,
+        "connectors": 102,
+        "width": 2740,
+        "height": 1385,
+        "milliseconds": 41.8
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 7,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 86,
+        "bends": 226,
+        "connectors": 102,
+        "width": 2756,
+        "height": 1583
+      }
+    },
+    {
+      "scope": "mfa-sms-message open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 121,
+        "bends": 290,
+        "connectors": 103,
+        "width": 2094,
+        "height": 1603,
+        "milliseconds": 14.7
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 80,
+        "crossings": 36,
+        "bends": 240,
+        "connectors": 103,
+        "width": 2784,
+        "height": 1433,
+        "milliseconds": 41.5
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 5,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 86,
+        "bends": 230,
+        "connectors": 103,
+        "width": 2715,
+        "height": 1591
+      }
+    },
+    {
+      "scope": "mfa-email-message open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 124,
+        "bends": 288,
+        "connectors": 103,
+        "width": 2152,
+        "height": 1603,
+        "milliseconds": 14.7
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 80,
+        "crossings": 36,
+        "bends": 240,
+        "connectors": 103,
+        "width": 2793,
+        "height": 1433,
+        "milliseconds": 41.9
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 6,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 87,
+        "bends": 230,
+        "connectors": 103,
+        "width": 2698,
+        "height": 1611
+      }
+    },
+    {
+      "scope": "mfa-push-approval open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 128,
+        "bends": 296,
+        "connectors": 103,
+        "width": 2120,
+        "height": 1611,
+        "milliseconds": 14.7
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 79,
+        "crossings": 31,
+        "bends": 228,
+        "connectors": 103,
+        "width": 2601,
+        "height": 1401,
+        "milliseconds": 42.2
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 8,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 84,
+        "bends": 226,
+        "connectors": 103,
+        "width": 2880,
+        "height": 1589
+      }
+    },
+    {
+      "scope": "mfa-security-key-prompt open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 1,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 135,
+        "bends": 296,
+        "connectors": 104,
+        "width": 2246,
+        "height": 1587,
+        "milliseconds": 17.6
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 3,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 92,
+        "crossings": 33,
+        "bends": 228,
+        "connectors": 104,
+        "width": 2753,
+        "height": 1393,
+        "milliseconds": 45.7
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 4,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 84,
+        "bends": 216,
+        "connectors": 104,
+        "width": 2798,
+        "height": 1573
+      }
+    },
+    {
+      "scope": "all open",
+      "own": {
+        "diagonals": 0,
+        "jogs": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 157,
+        "bends": 360,
+        "connectors": 134,
+        "width": 2769,
+        "height": 2272,
+        "milliseconds": 16.5
+      },
+      "elk": {
+        "diagonals": 0,
+        "jogs": 2,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 32,
+        "crossings": 82,
+        "bends": 246,
+        "connectors": 134,
+        "width": 3116,
+        "height": 2218,
+        "milliseconds": 68.9
+      },
+      "elkUnmerged": {
+        "diagonals": 0,
+        "jogs": 9,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 0,
+        "crossings": 93,
+        "bends": 262,
+        "connectors": 134,
+        "width": 3441,
+        "height": 2348
+      }
+    }
+  ]
+}

@@ -2,12 +2,18 @@
 
 ## Current checkpoint
 
-- Current stage: **11C — library cleanup and library source conventions (complete,
-  uncommitted)**. Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
+- Current stage: **12 — isolated flow-chart spike (complete, uncommitted)**.
+  The independent root `flow-spike/` folder owns the experiment, Storybook,
+  dependencies, tests, report and evidence. Recommendation: keep Flow as an
+  optional third view built on the spike's composition model and own layout
+  engine, not elkjs; no application mode or public API is added. Decisions and
+  verification are recorded in "Stage-12 verification evidence".
+- Previous checkpoint: **11C — library cleanup and library source conventions**.
+  Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
   and `e7eb0a9`), 11B (site source layout, `@/` imports, Prettier; user checkpoint
   `d65c7f1`) and 11C. 11C changes only this library repository; `apps/web` is
   unedited. Decisions are in "Stage-11C decisions" and evidence in "Stage-11C
-  verification evidence". Stage 11 is complete; no later stage is scoped yet.
+  verification evidence". Stage 11 is complete. Production Flow integration is not scoped.
 - Stage-11C deliverable: no global CSS leaves the design system; `@types/react` is
   an optional peer; `pnpm test:consumer` installs the packed tarballs outside the
   workspace; the viewer Storybook is self-contained; the root README documents
@@ -142,6 +148,7 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 11A. Deployment | `apps/web` reaches the library repo only through its git-ignored `.journey-viewer` alias (local symlink, or a Cloudflare build clone); Wrangler static-assets config, `build:cloudflare` command and deployment test. | Cloudflare dry run; deep-link refresh through `wrangler dev`; no development fixtures/Storybook in `dist`; no package publication. |
 | 11B. Site source layout | One `apps/web` component tree in semantic groups, one folder per component owning its styles, stories, studies and private modules; global CSS only in `src/styles`, CSS modules for React; `@/` tsconfig imports instead of relative paths; Prettier formatting; enforced by a layout test and `pnpm check`. | No behavior, URL, API or story-ID change: pages and stories pixel-identical to the pre-change build except the corrected cascade; all app suites and parity pass. |
 | 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook; library source conventions: `@/`/`~/` tsconfig aliases instead of relative imports and extensionless module imports (resolved to `./module.js` in tsc output by `tsc-alias --resolve-full-paths`; `tsx` for Node runs), Prettier. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files; layout test and `format:check` pass in `pnpm test`; story IDs unchanged; all package, browser, parity and app suites pass. |
+| 12. Isolated flow-chart spike | Independent root `flow-spike/` Storybook: a Flow view beside public Tree/Columns over one viewer snapshot, using unchanged Solid-OIDC plus existing test fixtures; own layered engine with ELK as a measure-only baseline; stakeholder/spec detail; Impeccable context, critique, polish and audit. | One connector per pair of blocks; the open composite's card stays its frame's corner and its screen position; contracts on borders; artifact metrics on all scopes and in the browser; UJG ED boundary semantics; shared state; report with own-vs-ELK evidence and a same-data reference capture; existing source/config/lockfiles unchanged. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -1890,3 +1897,80 @@ the library source conventions into 11C.
   validity from an empty list of findings. Imports are not resolved or fetched.
 - Stage 11C made the viewer Storybook self-contained, resolving the accepted
   relative dependency on design-system private development files.
+
+## Stage-12 verification evidence — 2026-10-27
+
+- **Approved scope:** an isolated flow-chart spike in the root `flow-spike/` folder
+  (own manifest, empty `pnpm-workspace.yaml` boundary, lockfile, Storybook, tests,
+  report, evidence), answering four problems of the ebremer/lws-ujg Flow view:
+  parallel lines between one pair of blocks, disorienting composite disclosure,
+  line artifacts, and entries/exits that look like states. A first, ELK-based
+  attempt was discarded; it is not part of this stage. Expansion follows the tree
+  exactly, with no budget. elkjs is a devDependency used only by `measure` and one
+  comparison story. Added during Impeccable init at the user's request: an explicit
+  `FlowDetail` configuration with stakeholder and spec presets.
+- **Responsibilities/interfaces:** no library, site, root manifest/workspace/lockfile,
+  public type or canonical-asset change. The spike consumes built public exports via
+  `link:`; it shares one `ViewerSnapshot` with the public `JourneyExplorer`,
+  `JourneyInspector` and `JourneyLightbox`. Root `PLAN.md` is the only tracked file
+  edited. Source conventions hold: `@/`/`~/` aliases, extensionless imports, one
+  folder per component, Prettier.
+- **Design:** a pure projection (UJG + `ViewerInteraction` → frames, contracts,
+  bundles) and a bottom-up composer that lays out each journey level separately,
+  with open composites as fixed boxes with fixed ports, so lines cross a frame only at
+  a port. The own engine (`src/layout/layered.ts`) does layered placement and
+  orthogonal channel routing, with combs, chain concentration and shared return
+  lanes. Boundary rules follow UJG ED Graph: explicit `toEntryRef`/`fromExitRef`,
+  a single child's `defaultEntryRef` otherwise, never inference from order.
+- **Evidence:** `flow-spike/REPORT.md` and `flow-spike/evidence/`.
+  - **Bundling:** every transition is in exactly one bundle, one connector per
+    terminal pair, in all 11 disclosure scopes (unit test).
+  - **Disclosure:** the toggled card keeps its screen position within 0.5px on
+    collapse, expand and nested expand (browser). Sibling order is unchanged when a
+    composite opens (unit test). The context strip lists the enclosing open frames.
+  - **Artifacts:** no diagonals, lines through blocks, off-port frame crossings or
+    ambiguous overlaps in any scope or fixture, and none of any kind in the
+    browser-rendered stories. **Residual:** in 7 of 11 scopes one connector keeps an
+    8–9px step at IdP's packed left edge (Node estimator), pinned per scope in
+    `tests/layout.test.ts`.
+  - **Own vs ELK on identical input (`evidence/metrics.json`):**
+
+    | | Own engine | ELK, merged edges | ELK, unmerged |
+    | --- | --- | --- | --- |
+    | Overlaps | 0 | 1–104 | 0 |
+    | Crossings | 0–157 | 0–82 | 1–93 |
+    | Jogs | 0–1 | 0–3 | 2–9 |
+    | Layout time | 0.6–16 ms | 7–67 ms | — |
+
+    elkjs adds a 1.6 MB dependency, and ELK placed entries below the card rather
+    than on the border.
+  - **UJG scope fit (unit tests on existing fixtures):** recursion marker, sibling
+    child frames without edges, childless composites without a toggle, outgoing
+    navigation as markers only.
+  - **Shared state and detail (browser):** Tree↔Flow keep selection and expansion.
+    The detail switch keeps node geometry, shows no identifiers at stakeholder
+    detail, and shows identifiers and `×N` chips at spec detail. All 37 screens open
+    in the lightbox.
+  - **Styling (Impeccable):** PRODUCT.md, DESIGN.md and the sidecar live in
+    `flow-spike/`. Critique 24/40, with P1/P2 findings polished; audit 15/20.
+    Detector clean, no colour literals, axe clean on seven page/theme combinations,
+    text at least 4.5:1, connectors 3.25:1 light and 4.98:1 dark, via a spike-local
+    mix proposed as token `color.connector`.
+- **Verification:**
+  - Spike: `pnpm --dir flow-spike test` (9/9), `measure`, `build` (tsc + static
+    Storybook), `capture`, and `format:check` all pass.
+  - Root: `pnpm test` passes. `git status` shows only `PLAN.md`, the pre-existing
+    untracked `.codex/` and `flow-spike/`.
+  - Housekeeping: Impeccable's design hook writes `flow-spike/.impeccable/hook.cache.json`
+    and its live server writes `.impeccable/live/`. Both are ignored by the spike's
+    `.gitignore` and `.prettierignore`. The root Prettier does not read those, so
+    remove them before a root `pnpm test`.
+  - No commit, staging, deployment or library change was made.
+- **Open (not scoped):**
+  - A globally optimised horizontal placement for the residual steps and crossings.
+  - Arrow-key traversal and screen-reader exposure of connections.
+  - A compact toolbar on phones.
+  - A Fit legibility floor.
+  - Moving primitives into the design system and the projection/composer into the
+    viewer.
+  - A stakeholder review.

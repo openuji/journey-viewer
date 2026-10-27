@@ -1,0 +1,45 @@
+.comparison {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--jv-space-md);
+  block-size: 100dvh;
+  box-sizing: border-box;
+  padding: var(--jv-space-lg);
+}
+.table {
+  border-collapse: collapse;
+  font: var(--jv-weight-regular) var(--jv-text-caption) / 1.45
+    var(--jv-font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.caption {
+  padding-block-end: var(--jv-space-xs);
+  color: var(--jv-color-muted);
+  text-align: start;
+}
+.table th,
+.table td {
+  padding: 2px var(--jv-space-md) 2px 0;
+  text-align: start;
+}
+.table thead th {
+  color: var(--jv-color-muted);
+  font-weight: var(--jv-weight-medium);
+}
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--jv-space-md);
+  min-block-size: 0;
+}
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--jv-space-xs);
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+.panel > :last-child {
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+}

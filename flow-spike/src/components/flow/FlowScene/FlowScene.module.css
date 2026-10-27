@@ -1,0 +1,42 @@
+.scene {
+  position: relative;
+  /* Lines that carry meaning stay at or above 3:1 against paper in both themes (DESIGN.md). */
+  --flow-connector: color-mix(
+    in srgb,
+    var(--jv-color-subtle) 80%,
+    var(--jv-color-surface)
+  );
+  isolation: isolate;
+}
+.frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: var(--jv-border-thin) solid
+    color-mix(
+      in srgb,
+      var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 45%,
+      var(--jv-color-border)
+    );
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-surface);
+}
+.frame:not([data-depth="0"]) {
+  background: color-mix(
+    in srgb,
+    var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 4%,
+    var(--jv-color-surface)
+  );
+}
+.lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.block {
+  position: absolute;
+  isolation: isolate;
+}
+.fill {
+  inline-size: 100%;
+  block-size: 100%;
+}

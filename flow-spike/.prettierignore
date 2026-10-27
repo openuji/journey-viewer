@@ -1,0 +1,7 @@
+# Mirrors the repository root: Markdown and lockfiles are not formatted; build output is ignored.
+*.md
+pnpm-lock.yaml
+storybook-static/
+.test-output/
+.impeccable/hook.cache.json
+.impeccable/live/

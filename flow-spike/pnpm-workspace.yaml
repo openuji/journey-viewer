@@ -1,0 +1,5 @@
+# Independent workspace boundary: the parent workspace never discovers this folder.
+packages: []
+
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,169 @@
+{
+  "renderedArtifacts": {
+    "flow-collapsed-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 24,
+      "connectors": 12,
+      "width": 661,
+      "height": 415
+    },
+    "flow-collapsed-375.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 24,
+      "connectors": 12,
+      "width": 661,
+      "height": 415
+    },
+    "flow-idp-open-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 49,
+      "bends": 190,
+      "connectors": 59,
+      "width": 1145,
+      "height": 949
+    },
+    "flow-idp-open-1440-dark.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 49,
+      "bends": 190,
+      "connectors": 59,
+      "width": 1145,
+      "height": 949
+    },
+    "flow-idp-open-1099.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 49,
+      "bends": 190,
+      "connectors": 59,
+      "width": 1145,
+      "height": 949
+    },
+    "flow-idp-open-375.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 49,
+      "bends": 190,
+      "connectors": 59,
+      "width": 1145,
+      "height": 949
+    },
+    "flow-everything-open-spec-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 157,
+      "bends": 356,
+      "connectors": 134,
+      "width": 2732,
+      "height": 2255
+    },
+    "scope-recursion-reuse-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 0,
+      "connectors": 5,
+      "width": 2897,
+      "height": 307
+    },
+    "scope-sibling-children-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 0,
+      "connectors": 0,
+      "width": 1142,
+      "height": 233
+    },
+    "scope-childless-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 0,
+      "connectors": 0,
+      "width": 540,
+      "height": 154
+    },
+    "scope-outgoing-1440.png": {
+      "diagonals": 0,
+      "jogs": 0,
+      "throughBoxes": 0,
+      "borderCrossings": 0,
+      "overlaps": 0,
+      "crossings": 0,
+      "bends": 2,
+      "connectors": 12,
+      "width": 2163,
+      "height": 447
+    }
+  },
+  "fitScale": "0.357",
+  "disclosureDisplacement": {
+    "collapseIdp": { "dx": -0.5, "dy": 0 },
+    "expandIdp": { "dx": -0.5, "dy": 0 },
+    "expandMfaInsideIdp": { "dx": -0.4, "dy": 0 }
+  },
+  "contextStrip": {
+    "visible": true,
+    "items": ["Authenticate with identity provider", "MFA challenge"]
+  },
+  "sharedState": {
+    "flowSelectedAfterTreeClick": ["Login"],
+    "idpOpenInFlow": true,
+    "treeSelectedAfterReturn": ["Tree", "Login"]
+  },
+  "detail": {
+    "sameGeometryAcrossDetail": true,
+    "stakeholderShowsIdentifiers": false,
+    "specShowsIdentifiers": true,
+    "stakeholderCountChips": 0,
+    "specCountChips": 4
+  },
+  "screens": { "distinct": 37, "broken": [] },
+  "axe": {
+    "study-flowstudy--app-with-idp-open (light)": [],
+    "study-flowstudy--app-with-idp-open (dark)": [],
+    "study-flowstudy--everything-open-spec (light)": [],
+    "primitives-contractglyph--entries-on-the-top-border (light)": [],
+    "flow-contextstrip--inside-two-open-frames (light)": [],
+    "flow-flowkey--spec (light)": [],
+    "flow-flowkey--spec (dark)": []
+  },
+  "pageErrors": []
+}

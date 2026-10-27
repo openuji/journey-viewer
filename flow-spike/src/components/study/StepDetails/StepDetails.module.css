@@ -1,0 +1,53 @@
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jv-space-md);
+  padding: var(--jv-space-lg);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+}
+.where {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jv-space-xs);
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  padding: var(--jv-space-xs) var(--jv-space-sm);
+  border: 0;
+  border-radius: var(--jv-radius-md);
+  background: transparent;
+  color: var(--jv-color-foreground);
+  text-align: start;
+  cursor: pointer;
+}
+.step:hover {
+  background: var(--jv-color-hover);
+}
+.step:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: 1px;
+}
+.stepTarget {
+  font: var(--jv-weight-medium) var(--jv-text-body) / 1.45 var(--jv-font-sans);
+}
+.stepVia {
+  color: var(--jv-color-muted);
+  font: var(--jv-weight-regular) var(--jv-text-caption) / 1.45
+    var(--jv-font-sans);
+}

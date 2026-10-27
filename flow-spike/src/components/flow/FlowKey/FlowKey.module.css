@@ -1,0 +1,118 @@
+.key {
+  position: relative;
+}
+.summary {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--jv-size-control-sm);
+  padding: 0 var(--jv-space-md);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-muted-surface);
+  color: var(--jv-color-foreground);
+  font: var(--jv-weight-medium) var(--jv-text-label) / 1.25 var(--jv-font-sans);
+  list-style: none;
+  cursor: pointer;
+}
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: 2px;
+}
+.panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--jv-space-xs));
+  inset-inline-start: 0;
+  z-index: 3;
+  display: grid;
+  gap: var(--jv-space-sm);
+  inline-size: max-content;
+  max-inline-size: min(22rem, calc(100vw - 2 * var(--jv-space-lg)));
+  margin: 0;
+  padding: var(--jv-space-md);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+  box-shadow: var(--jv-shadow-popover);
+}
+.row {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: var(--jv-space-sm);
+}
+.row dt,
+.row dd {
+  margin: 0;
+}
+.row dd {
+  color: var(--jv-color-foreground);
+  font: var(--jv-weight-regular) var(--jv-text-caption) / 1.45
+    var(--jv-font-sans);
+}
+.sample {
+  overflow: visible;
+}
+.line {
+  fill: none;
+  stroke: color-mix(
+    in srgb,
+    var(--jv-color-subtle) 80%,
+    var(--jv-color-surface)
+  );
+  stroke-width: 1.3;
+}
+.tip {
+  fill: color-mix(in srgb, var(--jv-color-subtle) 80%, var(--jv-color-surface));
+}
+.hollow {
+  fill: var(--jv-color-surface);
+  stroke: color-mix(
+    in srgb,
+    var(--jv-color-subtle) 80%,
+    var(--jv-color-surface)
+  );
+  stroke-width: 1.1;
+}
+.incoming {
+  stroke: var(--jv-color-entry);
+  stroke-width: 2;
+}
+.incomingTip {
+  fill: var(--jv-color-entry);
+}
+.outgoing {
+  stroke: var(--jv-color-exit);
+  stroke-width: 2;
+}
+.outgoingTip {
+  fill: var(--jv-color-exit);
+}
+.entry,
+.entryDefault,
+.exit {
+  fill: var(--jv-color-surface);
+  stroke-width: 1.5;
+}
+.entry,
+.entryDefault {
+  stroke: var(--jv-color-entry);
+}
+.entryDefault {
+  fill: var(--jv-color-entry);
+}
+.exit {
+  stroke: var(--jv-color-exit);
+}
+.exitCore {
+  fill: var(--jv-color-exit);
+}
+.chip {
+  fill: var(--jv-color-surface);
+  stroke: var(--jv-color-border-strong);
+}
+.chipText {
+  fill: var(--jv-color-muted);
+  font: var(--jv-weight-medium) var(--jv-text-caption) var(--jv-font-sans);
+}

@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T15:07:45.572Z",
+  "title": "Design System: Journey Viewer",
+  "extensions": {
+    "colorMeta": {
+      "focus-blue": {
+        "role": "primary",
+        "displayName": "Focus Blue",
+        "canonical": "var(--jv-color-accent)",
+        "dark": "rgb(162 189 255)",
+        "tonalRamp": [
+          "oklch(15% 0.15 264)",
+          "oklch(25% 0.15 264)",
+          "oklch(35% 0.15 264)",
+          "oklch(45% 0.15 264)",
+          "oklch(55% 0.15 264)",
+          "oklch(65% 0.15 264)",
+          "oklch(80% 0.15 264)",
+          "oklch(95% 0.15 264)"
+        ]
+      },
+      "way-in-teal": {
+        "role": "secondary",
+        "displayName": "Way In Teal",
+        "canonical": "var(--jv-color-entry)",
+        "dark": "rgb(119 216 195)",
+        "tonalRamp": [
+          "oklch(15% 0.1 178)",
+          "oklch(25% 0.1 178)",
+          "oklch(35% 0.1 178)",
+          "oklch(45% 0.1 178)",
+          "oklch(55% 0.1 178)",
+          "oklch(65% 0.1 178)",
+          "oklch(80% 0.1 178)",
+          "oklch(95% 0.1 178)"
+        ]
+      },
+      "way-out-violet": {
+        "role": "secondary",
+        "displayName": "Way Out Violet",
+        "canonical": "var(--jv-color-exit)",
+        "dark": "rgb(208 176 255)",
+        "tonalRamp": [
+          "oklch(15% 0.15 297)",
+          "oklch(25% 0.15 297)",
+          "oklch(35% 0.15 297)",
+          "oklch(45% 0.15 297)",
+          "oklch(55% 0.15 297)",
+          "oklch(65% 0.15 297)",
+          "oklch(80% 0.15 297)",
+          "oklch(95% 0.15 297)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Cool Ground",
+        "canonical": "var(--jv-color-background)",
+        "dark": "rgb(20 27 39)",
+        "tonalRamp": [
+          "oklch(15% 0.01 255)",
+          "oklch(25% 0.01 255)",
+          "oklch(35% 0.01 255)",
+          "oklch(45% 0.01 255)",
+          "oklch(55% 0.01 255)",
+          "oklch(65% 0.01 255)",
+          "oklch(80% 0.01 255)",
+          "oklch(95% 0.01 255)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "var(--jv-color-surface)",
+        "dark": "rgb(27 37 52)",
+        "tonalRamp": [
+          "oklch(15% 0.005 255)",
+          "oklch(25% 0.005 255)",
+          "oklch(35% 0.005 255)",
+          "oklch(45% 0.005 255)",
+          "oklch(55% 0.005 255)",
+          "oklch(65% 0.005 255)",
+          "oklch(80% 0.005 255)",
+          "oklch(95% 0.005 255)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "var(--jv-color-foreground)",
+        "dark": "rgb(237 242 250)",
+        "tonalRamp": [
+          "oklch(15% 0.03 260)",
+          "oklch(25% 0.03 260)",
+          "oklch(35% 0.03 260)",
+          "oklch(45% 0.03 260)",
+          "oklch(55% 0.03 260)",
+          "oklch(65% 0.03 260)",
+          "oklch(80% 0.03 260)",
+          "oklch(95% 0.03 260)"
+        ]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "var(--jv-color-muted)",
+        "dark": "rgb(181 192 210)",
+        "tonalRamp": [
+          "oklch(15% 0.025 258)",
+          "oklch(25% 0.025 258)",
+          "oklch(35% 0.025 258)",
+          "oklch(45% 0.025 258)",
+          "oklch(55% 0.025 258)",
+          "oklch(65% 0.025 258)",
+          "oklch(80% 0.025 258)",
+          "oklch(95% 0.025 258)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "var(--jv-color-border)",
+        "dark": "rgb(58 72 94)",
+        "tonalRamp": [
+          "oklch(15% 0.015 255)",
+          "oklch(25% 0.015 255)",
+          "oklch(35% 0.015 255)",
+          "oklch(45% 0.015 255)",
+          "oklch(55% 0.015 255)",
+          "oklch(65% 0.015 255)",
+          "oklch(80% 0.015 255)",
+          "oklch(95% 0.015 255)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "State labels, rows, inspector text, flow node labels (13px)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Controls and composite card titles."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Counts, summaries, contract labels (12px)."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Canonical identifiers, spec detail only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "subtle",
+        "value": "0px 1px 2px 0px rgb(16 24 40 / 0.08)",
+        "purpose": "Optional hairline lift for small controls."
+      },
+      {
+        "name": "raised",
+        "value": "0px 2px 6px 0px rgb(16 24 40 / 0.12)",
+        "purpose": "Raised bars such as the explorer bar."
+      },
+      {
+        "name": "popover",
+        "value": "0px 12px 32px 0px rgb(16 24 40 / 0.12)",
+        "purpose": "Floating popovers, hover previews, context strip."
+      },
+      {
+        "name": "lightbox",
+        "value": "0px 24px 60px 0px rgb(0 0 0 / 0.35)",
+        "purpose": "Screen lightbox over its scrim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "State changes; flow node movement on disclosure (off under reduced motion)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "48rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Solid Button",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "The single primary action.",
+      "html": "<button class=\"ds-btn-solid\">Open file</button>",
+      "css": ".ds-btn-solid{font:500 0.8125rem/1.25 Inter,ui-sans-serif,system-ui,sans-serif;min-height:1.875rem;padding:0.25rem 0.5rem;border:1px solid transparent;border-radius:var(--jv-radius-sm);background:var(--jv-color-accent);color:var(--jv-color-on-accent);cursor:pointer}.ds-btn-solid:focus-visible{outline:2px solid var(--jv-color-accent);outline-offset:2px}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Default toolbar and canvas control.",
+      "html": "<button class=\"ds-btn-outline\">Fit</button>",
+      "css": ".ds-btn-outline{font:500 0.8125rem/1.25 Inter,ui-sans-serif,system-ui,sans-serif;min-height:1.875rem;padding:0.25rem 0.5rem;border:1px solid var(--jv-color-border);border-radius:var(--jv-radius-sm);background:var(--jv-color-surface);color:var(--jv-color-muted);cursor:pointer}.ds-btn-outline:hover{background:var(--jv-color-hover)}.ds-btn-outline:focus-visible{outline:2px solid var(--jv-color-accent);outline-offset:2px}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-control",
+      "description": "View and detail switches.",
+      "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Tree</button><button aria-pressed=\"false\">Columns</button><button aria-pressed=\"false\">Flow</button></div>",
+      "css": ".ds-seg{display:inline-flex;gap:0.125rem;padding:0.125rem;border-radius:var(--jv-radius-md);background:var(--jv-color-muted-surface)}.ds-seg button{font:500 0.8125rem/1.25 Inter,ui-sans-serif,system-ui,sans-serif;padding:0.25rem 0.75rem;border:0;border-radius:var(--jv-radius-sm);background:transparent;color:var(--jv-color-muted);cursor:pointer}.ds-seg button[aria-pressed=true]{background:var(--jv-color-surface);color:var(--jv-color-foreground);box-shadow:var(--jv-shadow-subtle)}.ds-seg button:focus-visible{outline:2px solid var(--jv-color-accent)}"
+    },
+    {
+      "name": "State Row",
+      "kind": "custom",
+      "refersTo": "state-row",
+      "description": "Hierarchy row with relation stripe.",
+      "html": "<div class=\"ds-row ds-row-in\">Login</div>",
+      "css": ".ds-row{position:relative;display:flex;align-items:center;min-height:2rem;padding:0 0.5rem 0 0.75rem;border-radius:var(--jv-radius-md);font:400 0.8125rem/1.45 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--jv-color-foreground)}.ds-row::before{content:\"\";position:absolute;left:0;top:0.5rem;bottom:0.5rem;width:3px;border-radius:var(--jv-radius-sm)}.ds-row:hover{background:var(--jv-color-hover)}.ds-row-in{background:var(--jv-color-entry-soft)}.ds-row-in::before{background:var(--jv-color-entry)}"
+    },
+    {
+      "name": "Flow State Node",
+      "kind": "card",
+      "refersTo": "flow-state-node",
+      "description": "A state on the flow canvas.",
+      "html": "<div class=\"ds-node\">Select account</div>",
+      "css": ".ds-node{position:relative;display:inline-block;padding:0.5rem 0.75rem 0.5rem 1rem;border:1px solid var(--jv-color-border);border-radius:var(--jv-radius-md);background:var(--jv-color-surface);font:400 0.8125rem/1.25 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--jv-color-foreground)}.ds-node-stripe{position:absolute;left:0.25rem;top:0.375rem;bottom:0.375rem;width:3px;border-radius:2px;background:var(--jv-color-category-blue)}"
+    },
+    {
+      "name": "Contract Glyphs",
+      "kind": "custom",
+      "refersTo": "flow-composite-card",
+      "description": "Entry and exit glyphs on a frame border.",
+      "html": "<span class=\"ds-glyph\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><circle cx=\"6\" cy=\"6\" r=\"4.5\" fill=\"var(--jv-color-entry)\"/></svg>Start at login</span> <span class=\"ds-glyph\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><circle cx=\"6\" cy=\"6\" r=\"4.5\" fill=\"var(--jv-color-surface)\" stroke=\"var(--jv-color-exit)\" stroke-width=\"1.5\"/><circle cx=\"6\" cy=\"6\" r=\"2\" fill=\"var(--jv-color-exit)\"/></svg>IdP auth success</span>",
+      "css": ".ds-glyph{display:inline-flex;align-items:center;gap:0.25rem;font:400 0.75rem/1.45 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--jv-color-muted)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Map",
+    "overview": "Journey Viewer reads like a well-made map: a neutral ground, thin lines and small, exact marks. Structure carries the meaning. Colour appears only where it says something: a touchpoint\u2019s identity, a way in, a way out, the current focus. Everything else stays ink on paper. Depth is flat: white surfaces on a cool grey ground, separated by 1px hairlines; floating layers are the only things that cast a shadow.",
+    "keyCharacteristics": [
+      "Neutral ground with white surfaces and hairline borders.",
+      "One accent, Focus Blue, reserved for selection and primary action.",
+      "Relation colours with fixed meaning: Way In Teal and Way Out Violet.",
+      "Touchpoint identity as small dots and 3px stripes, never as large fills.",
+      "Inter at 13px for everything a reader scans.",
+      "Scoped light and dark themes from the same DTCG tokens."
+    ],
+    "rules": [
+      {
+        "name": "The Meaningful Hue Rule",
+        "body": "A hue appears only when it means something: focus, way in, way out, or a touchpoint. A decorative colour is a lie on a map.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Line Rule",
+        "body": "Lines that carry meaning (flow connectors and arrowheads) reach at least 3:1 against their ground in both themes. Hairlines are reserved for borders that only group content.",
+        "section": "colors"
+      },
+      {
+        "name": "The Thirteen Rule",
+        "body": "Anything a reader scans is set at 13px. Smaller text is reserved for captions that qualify something already readable.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper Map Rule",
+        "body": "Flow nodes and frames never cast shadows. The chart is printed on the ground, and only overlays float above it.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do take every colour from the --jv-* custom properties so both themes follow automatically.",
+      "Do keep Focus Blue for selection and the one primary action per view.",
+      "Do mark relations with stripes plus soft fills (3px stripe, *-soft background), as the state row does.",
+      "Do set scanned text at 13px Inter and qualifiers at 12px.",
+      "Do give meaningful lines and glyphs at least 3:1 contrast against their ground in light and dark."
+    ],
+    "donts": [
+      "Don\u2019t draw two lines between the same pair of blocks. Bundle them and count them instead.",
+      "Don\u2019t put entries or exits in boxes or pills. They are glyphs on a border.",
+      "Don\u2019t add shadows to flow nodes, frames or cards at rest.",
+      "Don\u2019t use a touchpoint colour as a large fill. Dots, stripes and faint tints only.",
+      "Don\u2019t hard-code hex values in component styles.",
+      "Don\u2019t suggest depth with offset outlines (stacked-card edges); state lives in the toggle."
+    ]
+  }
+}

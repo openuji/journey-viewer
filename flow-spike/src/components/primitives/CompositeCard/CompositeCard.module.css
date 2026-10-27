@@ -1,0 +1,95 @@
+.card {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  border: var(--jv-border-thin) solid var(--jv-color-border-strong);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  transition:
+    background-color var(--jv-duration-fast) ease-out,
+    border-color var(--jv-duration-fast) ease-out;
+}
+.card[data-open] {
+  border-color: color-mix(
+    in srgb,
+    var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 55%,
+    var(--jv-color-border-strong)
+  );
+}
+.card:hover {
+  border-color: var(--jv-color-muted);
+}
+.card[data-selected] {
+  border-color: var(--jv-color-accent);
+  background: var(--jv-color-accent-soft);
+}
+.card[data-tone="incoming"] {
+  background: var(--jv-color-entry-soft);
+}
+.card[data-tone="outgoing"] {
+  background: var(--jv-color-exit-soft);
+}
+.card[data-tone="both"] {
+  background: linear-gradient(
+    90deg,
+    var(--jv-color-entry-soft),
+    var(--jv-color-exit-soft)
+  );
+}
+.select {
+  flex: 1;
+  min-inline-size: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--jv-space-md) 0 var(--jv-space-lg);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.select:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: 2px;
+}
+.title {
+  font: var(--jv-weight-semibold) var(--jv-text-label) / 17px
+    var(--jv-font-sans);
+  white-space: nowrap;
+}
+.caption {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--jv-color-muted);
+  font: var(--jv-weight-regular) var(--jv-text-caption) / 16px
+    var(--jv-font-sans);
+}
+.captionText {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+.dot {
+  display: inline-flex;
+  transform: translateY(-1px);
+}
+.toggle {
+  margin: var(--jv-space-xs) var(--jv-space-xs) 0 0;
+}
+.toggle svg {
+  transition: transform var(--jv-duration-fast) ease-out;
+}
+.card[data-open] .toggle svg {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle svg {
+    transition: none;
+  }
+}
