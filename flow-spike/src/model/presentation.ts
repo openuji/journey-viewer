@@ -1,5 +1,7 @@
 import type { ViewerSelection } from "@journey-viewer/viewer";
-import type { Connector, FlowLayout } from "@/layout/compose";
+import type { FlowLayout } from "@/layout/compose";
+import { occurrenceKey, terminalKey } from "@/model/flow-scene";
+import type { FlowFrame, FlowTerminal } from "@/model/flow-scene";
 
 /**
  * How much canonical detail the flow exposes. Explicit, readonly configuration supplied by the
@@ -34,12 +36,22 @@ export const specDetail: FlowDetail = Object.freeze({
 });
 
 export type Tone = "incoming" | "outgoing" | "both";
+export type End = "start" | "end";
 
-/** Derived per render from the shared selection; nothing here is stored. */
+/**
+ * How one connector takes part in the active step's routes: for each direction, the ends that carry
+ * an arrowhead. A connector can carry both, e.g. a return along the corridor of an arrival.
+ */
+export interface ActiveRoute {
+  readonly incoming: readonly End[];
+  readonly outgoing: readonly End[];
+}
+
+/** Derived per render from the active step; nothing here is stored. */
 export interface FlowHighlight {
   readonly selected: ReadonlySet<string>;
   readonly related: ReadonlyMap<string, Tone>;
-  readonly connectors: ReadonlyMap<string, Tone>;
+  readonly routes: ReadonlyMap<string, ActiveRoute>;
 }
 
 const merge = (current: Tone | undefined, next: Tone): Tone =>
@@ -50,6 +62,8 @@ export function flowHighlight(
   selection: ViewerSelection | null,
 ): FlowHighlight {
   const selected = new Set<string>();
+  // An entry or exit is also present where its frame exposes it: the parent's connectors attach there.
+  const ports = new Set<string>();
   if (selection) {
     const matches = (node: { "@id": string }, journey: { "@id": string }) =>
       node["@id"] === selection.nodeRef &&
@@ -72,49 +86,70 @@ export function flowHighlight(
           selected.add(c.key),
       );
     } else {
-      layout.contracts.forEach(
-        (c) =>
-          c.contract.kind === selection.kind &&
-          matches(c.contract.node, c.contract.journey) &&
-          selected.add(c.key),
-      );
+      for (const c of layout.contracts) {
+        if (
+          c.contract.kind !== selection.kind ||
+          !matches(c.contract.node, c.contract.journey)
+        )
+          continue;
+        selected.add(c.key);
+        const occurrence = occurrenceKey(c.contract.occurrence);
+        const holds = (frame: FlowFrame) =>
+          frame.content.kind === "journey" &&
+          frame.content.journey === c.contract.journey &&
+          occurrenceKey(frame.content.occurrence) === occurrence;
+        for (const box of layout.frames)
+          if (
+            holds(box.frame) ||
+            (box.frame.content.kind === "row" &&
+              box.frame.content.frames.some(holds))
+          )
+            ports.add(
+              `${box.key}#${c.contract.kind}:${c.contract.node["@id"]}`,
+            );
+      }
     }
   }
+  const active = (terminal: FlowTerminal) =>
+    selected.has(terminal.vertex) ||
+    (terminal.port !== undefined && ports.has(terminalKey(terminal)));
   const related = new Map<string, Tone>();
-  const connectors = new Map<string, Tone>();
-  const directions = (connector: Connector) =>
-    connector.kind === "association"
-      ? { forward: true, backward: false }
-      : {
-          forward: (connector.bundle?.forward.length ?? 0) > 0,
-          backward: (connector.bundle?.backward.length ?? 0) > 0,
-        };
+  const routes = new Map<string, ActiveRoute>();
   for (const connector of layout.connectors) {
-    const { forward, backward } = directions(connector);
-    for (const [end, other, out] of [
-      [connector.from, connector.to, forward],
-      [connector.to, connector.from, backward],
-    ] as const) {
-      if (!selected.has(end)) continue;
-      const leaves = out;
-      const arrives = end === connector.from ? backward : forward;
-      if (leaves) {
-        connectors.set(
-          connector.key,
-          merge(connectors.get(connector.key), "outgoing"),
-        );
-        if (!selected.has(other))
-          related.set(other, merge(related.get(other), "outgoing"));
-      }
-      if (arrives) {
-        connectors.set(
-          connector.key,
-          merge(connectors.get(connector.key), "incoming"),
-        );
-        if (!selected.has(other))
-          related.set(other, merge(related.get(other), "incoming"));
-      }
+    const a: FlowTerminal = connector.bundle?.a ?? { vertex: connector.from };
+    const b: FlowTerminal =
+      connector.bundle?.b ?? connector.association!.target;
+    const forward =
+      connector.kind === "association" ||
+      (connector.bundle?.forward.length ?? 0) > 0;
+    const backward = (connector.bundle?.backward.length ?? 0) > 0;
+    const atA = active(a);
+    const atB = active(b);
+    if (!atA && !atB) continue;
+    const incoming: End[] = [];
+    const outgoing: End[] = [];
+    if (forward && atA) outgoing.push("end");
+    if (forward && atB) incoming.push("end");
+    if (backward && atB) outgoing.push("start");
+    if (backward && atA) incoming.push("start");
+    if (incoming.length + outgoing.length === 0) continue;
+    routes.set(connector.key, { incoming, outgoing });
+    if (atA !== atB) {
+      const other = atA ? b.vertex : a.vertex;
+      const leaves = atA ? forward : backward;
+      const arrives = atA ? backward : forward;
+      if (leaves) related.set(other, merge(related.get(other), "outgoing"));
+      if (arrives) related.set(other, merge(related.get(other), "incoming"));
     }
   }
-  return { selected, related, connectors };
+  return { selected, related, routes };
 }
+
+export const toneOf = (route: ActiveRoute | undefined): Tone | undefined =>
+  !route
+    ? undefined
+    : route.incoming.length && route.outgoing.length
+      ? "both"
+      : route.incoming.length
+        ? "incoming"
+        : "outgoing";

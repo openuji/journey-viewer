@@ -1,0 +1,30 @@
+.overlay {
+  pointer-events: none;
+}
+.stroke {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+.stroke[data-shared] {
+  stroke-width: 1.2;
+}
+.stroke[data-tone="incoming"],
+.tip[data-tone="incoming"] {
+  --route: var(--jv-color-entry);
+}
+.stroke[data-tone="outgoing"],
+.tip[data-tone="outgoing"] {
+  --route: var(--jv-color-exit);
+}
+.stroke {
+  stroke: var(--route);
+}
+.tip {
+  fill: var(--route);
+}
+.tip[data-hollow] {
+  fill: var(--jv-color-surface);
+  stroke: var(--route);
+  stroke-width: 1.1;
+}

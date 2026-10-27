@@ -7,83 +7,130 @@ fixtures for UJG cases the sample lacks. Reference: ebremer/lws-ujg `web/flow.js
 ## Recommendation
 
 **Keep the flow chart as an optional third view beside Tree and Columns, built on this spike's
-composition model: frames grow from their cards, contracts sit on borders, one connector per pair
-of blocks, and one shared interaction state. Use the own layout engine; do not adopt elkjs.**
-The decisive fix for the reference's line artifacts is the per-level composer, not the choice of
-engine. The own engine wins on the things the user named (no ambiguous overlaps, contracts on
-borders, the card staying the frame's corner, stable sibling order) and on cost (synchronous,
-3–4× faster, no 1.6 MB dependency). It loses on raw crossing counts in the largest disclosures.
+composition model, and lay it out with the spike's own engine rather than elkjs:**
 
-Scope the view honestly: it reads well for one journey with its composites closed and for one
-open composite. With nested composites open (IdP plus MFA, or everything), it becomes a dense
-wiring diagram that complements the Tree rather than replacing it.
+- Frames grow from their cards, and contracts sit on borders.
+- Connectors share metro-style corridors at rest; activating a step draws its own routes.
+- One interaction state is shared with Tree and Columns.
+
+The decisive fix for the reference's line artifacts is the per-level composer, not the choice of
+engine. In metro mode the own engine draws less ink than ELK once IdP or a consent journey is open
+(23% less fully open) and 2–11% more in the MFA scopes, with a fraction of ELK's crossings and no
+kinks. It also keeps contracts on borders and the card at the frame's corner, holds sibling order
+when a composite opens, and stays synchronous and 3–5× faster with composites open, without a
+1.6 MB dependency. ELK still draws fewer distinct line runs.
+
+Four iterations shaped this:
+
+1. **Strict routing:** every connector kept its own line, with no shared segments.
+2. **Metro corridors, at your direction:** parallel vertical runs merge into one trunk, each
+   channel between layers uses one horizontal bus, and hover, focus or selection reveals how a step
+   connects. Once composites are open, this cut drawn ink by 35–41% and crossings by 88–96%, and it
+   removed the remaining kinks.
+3. **Route legibility, from your review of iteration 2:**
+   - The rest network has no arrowheads; arrowheads appear only on the active step's routes, where
+     each one arrives.
+   - Arrivals (teal) and departures (violet) were drawn 1px to either side of a shared corridor
+     (replaced in iteration 4).
+   - An active entry or exit also lights the parent connectors at its port, so an exit shows who
+     takes it.
+4. **Line handling, from your review of iteration 3:**
+   - Each state and composite has one contact point per side: the centre of its top and bottom
+     edges. Returns no longer use inset ports, and snapping no longer nudges contact points, so
+     every connector end at a block is at its centre (unit tested, all 11 scopes).
+   - An active route is 2.4px on the corridor's centre line, so a lone line meets its glyph or block
+     at the centre (an exit's departure, `flow-hover-exit-denied-1440.png`).
+   - Only where an arrival and a departure share a stretch does it split into two halves within the
+     same 2.4px. Their arrowheads there are half-arrowheads on their route's half
+     (`flow-hover-access-denied-collapsed-1440.png`, `route-overlay.png`), and every line ends at its
+     arrowhead's base so the head reads as a point. Routes meeting at one point from one direction
+     share one arrowhead.
+   - **Correction after your review:** the first version put arrivals right/down and departures
+     left/up by screen direction. On a line that turns both ways, the halves swapped sides at each
+     corner and crossed. Now each route keeps a constant side relative to its own travel, drawn as a
+     true parallel. Each stretch between junctions decides which half the arrival takes, so the two
+     directions are always on opposite halves. The stretches are then oriented to leave the fewest
+     crossings. Checked on all 570 activations in the 11 scopes: no arrival and departure ever share
+     a half, and none cross along a line. 32 crossings and 10 half switches remain, all at junctions
+     where one direction branches off while the other continues. Two halves cannot always pass there,
+     and a brute-force search over every choice of halves finds no fewer.
+   - The rest network is unchanged. The active ink is a pure pass over the composed connectors
+     (`src/layout/strokes.ts`) drawn by one overlay (`RouteOverlay`); `Connector` is the resting line
+     only.
 
 ## Before and after, on the same data
 
 The reference viewer was served locally with the Solid-OIDC JSON-LD in place of its LWS data:
 `evidence/reference-flow-collapsed-1440.png`, `reference-flow-errors-1440.png`,
 `reference-flow-idp-open-1440.png`. It hides tag-matched error and recovery paths by default.
-This spike always draws every transition, so at equal zoom it carries more lines.
+This spike always draws every transition.
 
-| User's point | Reference on Solid-OIDC | Spike |
+| Your point | Reference on Solid-OIDC | Spike |
 | --- | --- | --- |
-| 1. Several lines between one pair of blocks | Five lines Sign-in required → IdP card; six Login → MFA | One connector per pair of terminals (`×N` at Spec detail); every transition is in exactly one bundle (unit tested, all 11 scopes) |
-| 2. Disclosure loses overview and identity | Opening re-fits the view; the open frame has a small `▾` header unlike the card | The same card is the open frame's top-left corner, toggle in place; the card stays on screen within 0.5px on collapse, expand and nested expand; a context strip names enclosing open frames with their collapse action |
-| 3. Line artifacts | Diagonal joins across hierarchy levels, lines through group headers | No diagonals, no lines through blocks, no off-port border crossings, no ambiguous overlaps in any scope; see residual steps below |
-| 4. Entries/exits look like states | Green ▶ and violet ⇥ pills, sized like states | Statechart glyphs on frame borders: entry circle (filled = default) on the top border, exit circled-× on the bottom border, plain captions |
+| 1. Several lines between one pair of blocks | Five lines Sign-in required → IdP card; six Login → MFA | One connector per pair of terminals, and parallel connectors share corridors. Pointing at a step (or focusing or selecting it) draws its own routes in the relation colours; `×N` shows on those routes at Spec detail. Every transition is in exactly one bundle (unit tested, all 11 scopes). |
+| 2. Disclosure loses overview and identity | Opening re-fits the view; the open frame has a small `▾` header unlike the card | The same card is the open frame's top-left corner, with the toggle in place. The card stays on screen within 0.5px on collapse, expand and nested expand. A context strip names the enclosing open frames, each with its collapse action. |
+| 3. Line artifacts | Diagonal joins across hierarchy levels, lines through group headers | No diagonals, kinks, lines through blocks or off-port frame crossings in any scope, in Node and in the browser. |
+| 4. Entries/exits look like states | Green ▶ and violet ⇥ pills, sized like states | Statechart glyphs on frame borders: an entry circle (filled = default) on the top border, an exit ring with a centre on the bottom border, plain captions. |
 
-Captures: `flow-collapsed-1440.png`, `flow-idp-open-1440.png` (also `-dark`, `1099`, `375`),
-`flow-mfa-open-anchored-1440.png`, `flow-context-strip-1440.png`,
-`flow-everything-open-spec-1440.png`, `flow-everything-open-fit-1440.png`, and the primitive
-studies `card-both-states.png`, `contracts-entries.png`, `contracts-exits.png`, `connectors.png`.
+Captures:
+
+- Flow view: `flow-collapsed-1440.png`, `flow-idp-open-1440.png` (also `-dark`, `1099`, `375`),
+  `flow-idp-open-hover-1440.png` (activation), `flow-mfa-open-anchored-1440.png`,
+  `flow-context-strip-1440.png`, `flow-everything-open-spec-1440.png`,
+  `flow-everything-open-fit-1440.png`.
+- Activation of the review cases: `flow-hover-access-denied-collapsed-1440.png`,
+  `flow-hover-access-denied-open-1440.png`, `flow-hover-account-recovery-1440.png`,
+  `flow-hover-login-1440.png`, `flow-hover-exit-denied-1440.png`, `flow-hover-exit-1440.png`,
+  `flow-hover-mfa-choice-1440.png`.
+- Primitive studies: `card-both-states.png`, `contracts-entries.png`, `contracts-exits.png`,
+  `connectors.png`, `route-overlay.png`, `key-spec.png`.
 
 ## Point 3: own engine or elkjs
 
-Both engines receive identical input from the same composer: one journey level at a time, open
-composites as fixed boxes with fixed ports, bundled connectors. Raw numbers are in
-`evidence/metrics.json` (estimator text metrics, Node; median of 7 warm runs).
+Both engines get identical input from the same composer: one journey level at a time, with open
+composites as fixed boxes with fixed ports, and bundled connectors. "Ink" is the drawn line length
+with shared segments counted once; "runs" are distinct straight runs. Raw numbers are in
+`evidence/metrics.json` (estimator text metrics, Node, median of 7 warm runs).
 
-| Scope | Own: jogs / overlaps / crossings / ms | ELK, merged edges: jogs / overlaps / crossings / ms | ELK, unmerged: jogs / overlaps / crossings |
+| Scope | Own, metro: ink / runs / crossings / kinks / ms | ELK, merged edges: ink / runs / crossings / kinks / ms | ELK, unmerged: ink / runs / crossings |
 | --- | --- | --- | --- |
-| All collapsed | 0 / 0 / 0 / 0.6 | 0 / 1 / 0 / 6.9 | 2 / 0 / 1 |
-| IdP open | 0 / 0 / 49 / 11.1 | 2 / 76 / 5 / 28.3 | 2 / 0 / 49 |
-| IdP + identity consent | 0 / 0 / 56 / 11.2 | 1 / 63 / 10 / 32.2 | 3 / 0 / 50 |
-| IdP + resource consent | 1 / 0 / 86 / 12.0 | 0 / 56 / 15 / 34.1 | 4 / 0 / 62 |
-| IdP + MFA | 1 / 0 / 124 / 14.9 | 1 / 95 / 32 / 43.2 | 7 / 0 / 87 |
-| IdP + MFA + one channel (5 scopes) | 1 / 0 / 119–135 / ~15 | 1–3 / 79–104 / 26–36 / ~43 | 4–8 / 0 / 84–87 |
-| All open | 0 / 0 / 157 / 16.0 | 2 / 32 / 82 / 67.1 | 9 / 0 / 93 |
+| All collapsed | 1,278 / 22 / 0 / 0 / 0.4 | 1,175 / 14 / 0 / 0 / 6.4 | 1,141 / 28 / 1 |
+| IdP open | 9,349 / 78 / 3 / 0 / 9.9 | 10,436 / 63 / 5 / 0 / 28.7 | 20,151 / 150 / 49 |
+| IdP + identity consent | 11,588 / 90 / 4 / 0 / 9.5 | 13,516 / 73 / 10 / 0 / 30.4 | 29,124 / 170 / 50 |
+| IdP + resource consent | 14,860 / 102 / 3 / 0 / 9.5 | 18,790 / 83 / 15 / 0 / 33.1 | 34,977 / 181 / 62 |
+| IdP + MFA | 25,032 / 132 / 5 / 0 / 14.3 | 23,012 / 110 / 32 / 1 / 45.8 | 52,421 / 278 / 87 |
+| IdP + MFA + one channel (5 scopes) | 27,346–28,738 / 131–138 / 4–7 / 0 / ~13 | 25,839–28,069 / 114–123 / 26–36 / 1–3 / ~43 | ~61,000 / ~280 / 84–87 |
+| All open | 43,630 / 198 / 5 / 0 / 13.4 | 56,880 / 186 / 82 / 2 / 67.1 | 82,003 / 332 / 93 |
 
-Diagonals, lines through blocks and off-port border crossings are zero for both engines in every
-scope: per-level composition removes the cross-hierarchy routing that produced the reference's
-kinks. What differs:
+Iteration 4's single contact points changed these numbers only slightly, all in the own engine's
+favour: fully open, ink 43,701 → 43,630, runs 205 → 198, crossings 6 → 5; IdP open, crossings
+6 → 3.
 
-- **Ambiguous overlaps.** ELK's few crossings come from `mergeEdges`, which runs unrelated
-  connectors along shared segments (up to 104 overlaps), so a reader cannot tell which line goes
-  where. Without merging, ELK's crossings match the own engine on IdP (49) and are lower in the
-  large scopes (84–93 vs 119–157), with 2–9 jogs per scope.
+What the numbers show:
+
+- **Line economy.** Corridors and one bus per channel give the own engine less ink than ELK with IdP
+  or a consent journey open (10–21% less) and fully open (23% less). It draws 2–11% more in the six
+  MFA scopes and 9% more fully collapsed, and 6–24% more distinct runs than ELK in opened scopes.
+- **Crossings.** 3–7 in every opened scope against ELK's 5–82: lines that share a bus do not cross
+  each other.
+- **Kinks.** None in any scope. ELK merged has up to 3; ELK unmerged up to 9.
 - **Control.** ELK puts entries in a first layer below the card instead of on the border, so the
-  parent's arrows end at the frame edge while the glyphs sit lower (`engines-idp-open-1440.png`).
-  The own engine pins the card to the corner, keeps sibling order when a composite opens (tested),
-  never draws ambiguous buses, and routes returns into a frame through one shared lane per side.
-- **Cost.** The own engine is synchronous and deterministic, 0.6–16 ms per layout here versus
-  7–67 ms; ELK adds 1.6 MB (`elk.bundled.js`). The own layout source is about 2.3k formatted lines.
-- **Weakness.** Crossing minimisation is simpler than ELK's: about 1.3–1.7× ELK-unmerged
-  crossings in the largest scopes.
+  parent's arrows end at the frame edge while the glyphs sit lower
+  (`engines-idp-open-1440.png`). The own engine pins the card to the corner and keeps sibling order
+  when a composite opens (tested).
+- **Cost.** The own engine is synchronous and deterministic, at 0.5–14 ms per layout against
+  7–71 ms. Its layout source is about 2.0k formatted lines; ELK adds 1.6 MB (`elk.bundled.js`).
 
-**Residual steps.** In 7 of 11 scopes one connector keeps an 8–9px step where several chains to
-IdP's left exits are packed against the frame's left padding (Node estimator). They are pinned in
-`tests/layout.test.ts` so any change is noticed. In the browser, with real text metrics, the
-captured stories show none (`evidence/browser.json`). Removing them for certain needs a globally
-optimised horizontal placement (Brandes–Köpf or a small constraint solver), which this spike did
-not build. "Jog" here means an interior segment under 16px: shorter steps turn into S-curves once
-corners are rounded (6px), which is what read as kinks in the reference.
+"Kink" means an interior step under 16px that is not part of a longer line another connector also
+draws. Shorter steps become S-curves once corners are rounded (6px), which is what read as kinks
+in the reference.
 
 ## UJG scope fit
 
 - **Boundaries follow the Editor's Draft.** `toEntryRef` lands on its entry port. An arrival
   without one uses the single child's `defaultEntryRef` (16 OIDC transitions, hollow arrowhead at
-  Spec detail) or else the composite's card; entries are never inferred from order.
-  `fromExitRef` leaves from its exit port.
+  Spec detail) or else the composite's card. Entries are never inferred from order. `fromExitRef`
+  leaves from its exit port.
 - **Recursion** stops with a marker on the card and no toggle (viewer `hierarchy` fixture).
 - **Several child journeys** of one composite open as sibling frames with no edges between them
   (`screens` fixture); their ports lie on the composite's border.
@@ -92,70 +139,98 @@ corners are rounded (6px), which is what read as kinks in the reference.
 - **Shared state.** Tree, Columns and Flow use one `ViewerSnapshot`: a selection in the Tree is the
   selected Flow node, IdP stays open, and returning keeps it (browser check). Selecting a closed
   composite opens it, exactly as in the Tree; disclosure is never restricted.
-- Canonical objects are kept by reference; no topology is invented. Not evaluated: multiple root
+- Canonical objects are kept by reference and no topology is invented. Not evaluated: multiple root
   journeys with cross-root reuse at scale, commands, multi-instance states, imports.
 
-## Detail levels
+## Detail levels and activation
 
-Stakeholder detail shows the flow, screen access (all 37 screens open in the public lightbox)
-and a compact step card without identifiers or tags. Spec detail adds `×N` chips, default-entry
-marks, outgoing-navigation markers and the full public inspector. Switching changes presentation
-only: node geometry is identical across the switch (browser check).
+- **Stakeholder detail** shows the flow, screen access (all 37 screens open in the public
+  lightbox) and a compact step card without identifiers or tags; "Leads to" is grouped by
+  destination.
+- **Spec detail** adds `×N` counts on the active step's routes, default-entry marks,
+  outgoing-navigation markers and the full public inspector.
+- **Switching detail** changes presentation only: node geometry is identical across the switch
+  (browser check).
+- **Activation** (hover or keyboard focus) is presentation state, never stored in the snapshot.
+  Selection keeps its own look while another step is active. Evidence:
+  `flow-hover-access-denied-collapsed-1440.png` and `-open-` (an arrival and a return on one line,
+  as halves with half-arrowheads), `flow-hover-account-recovery-1440.png` and
+  `flow-hover-login-1440.png` (one contact point per side), `flow-hover-exit-denied-1440.png` and
+  `flow-hover-exit-1440.png` (arrivals into an exit and the parent continuation, centred on the
+  glyph), `flow-hover-mfa-choice-1440.png` (departures and returns sharing a bus).
 
 ## Styling conformance (Impeccable)
 
 PRODUCT.md and DESIGN.md ("The Quiet Map") were written from the design system before any UI
-code; every colour comes from `--jv-*` tokens, light and dark. One spike-local value,
-`--flow-connector` (the `subtle` token mixed 80% with `surface`), keeps meaningful lines at
-3.25:1 against paper in light and 4.98:1 in dark (WCAG 1.4.11 asks 3:1); the design system's
-`border-strong` (1.78:1 in light) and the reference's `#a3a9b6` (2.36:1) do not. Proposed token:
-`color.connector`.
+code, and every colour comes from `--jv-*` tokens in light and dark. One spike-local value,
+`--flow-connector` (the `subtle` token mixed 80% with `surface`), keeps meaningful lines at 3.25:1
+against paper in light and 4.98:1 in dark (WCAG 1.4.11 asks 3:1). The design system's
+`border-strong` (1.78:1 in light) and the reference's `#a3a9b6` (2.36:1) fall short. Proposed
+token: `color.connector`.
 
-**Critique** (two isolated assessments; snapshot in `.impeccable/critique/`): 24/40, "Acceptable".
-Specific to this product while collapsed: the card that becomes its frame's corner, border glyphs and
-the context strip are not category defaults. Open frames turn into a line web. The detector found
-nothing in `src`. The browser overlay flagged Inter as an overused font, which is the design
-system's own face, and a flat type hierarchy, a false positive from hidden SVG tooltips.
+**Critique** (two isolated assessments, snapshot in `.impeccable/critique/`, taken before metro
+mode): 24/40, "Acceptable".
+
+- It found the design specific to this product while collapsed, and open frames a line web.
+- The detector found nothing in `src`.
+- The browser overlay flagged Inter as overused, which is the design system's own face, and a flat
+  type hierarchy, which was a false positive from hidden SVG tooltips.
 
 **Polish**, from its P1/P2 findings:
 
-- Unrelated connectors rest at 1px (same colour, so contrast holds) while the selection's lines
-  carry the relation colours at 2px.
+- Unrelated connectors rest at 1px in the same colour; the active routes are 2.4px in the relation
+  colours (since iteration 4).
 - Blocks render in reading order, so Tab follows the flow.
-- Clicking a connector selects where it starts, so the inspector lists its transitions.
-- `×N` and `↗N` marks use the 12px caption token; the chip sits on the line's longest run.
+- Clicking a connector selects where it starts.
+- `×N` and `↗N` use the 12px caption token.
 - A Key lists only the marks visible at the current detail.
-- Exits became a ring with a centre: ⊗ read as failure on "IdP auth success".
-- The card toggle became the tree's chevron at a 30px target.
-- The closed card's stacked edge was removed; it read as a hard offset shadow.
-- Stakeholder "Leads to" groups transitions by destination.
+- Exits became a ring with a centre, because ⊗ read as failure on "IdP auth success".
+- The card toggle is the tree's chevron at a 30px target.
+- The closed card's stacked edge, which read as a hard offset shadow, was removed.
 
-**Audit** after polish: 15/20, "Good". Detector clean, no colour literals, axe clean on seven
-page/theme combinations, focus visible (5.9:1 light, 8.3:1 dark), all text at least 4.5:1.
+Metro corridors then addressed the critique's main finding, the line web.
+
+**Audit** after polish: 15/20, "Good". Detector clean, no colour literals, axe clean on eight
+page/theme combinations (re-checked after iteration 4, including the route overlay story), focus
+visible (5.9:1 light, 8.3:1 dark), all text at least 4.5:1.
 
 | Dimension | Score | Key finding |
 | --- | --- | --- |
-| Accessibility | 3 | Connections are announced only through the inspector's lists; there is no arrow-key traversal along the flow |
-| Performance | 3 | Layout 0.6–16 ms, re-run only on document or expansion change; ELK stays out of the canvas bundle |
+| Accessibility | 3 | Connections are announced only through the inspector's lists; no arrow-key traversal along the flow |
+| Performance | 3 | Layout 0.5–14 ms, re-run only on document or expansion change; ELK stays out of the canvas bundle |
 | Theming | 4 | Tokens only; dark theme verified; one documented spike-local mix |
 | Responsive | 2 | No page overflow at 375px, but the toolbar wraps to three rows; diagram reading on phones is not established |
-| Implementation integrity | 3 | Coherent, product-specific grammar; the remaining density is the topology itself |
+| Implementation integrity | 3 | Coherent, product-specific grammar |
 
-Open items: P2 arrow-key traversal and screen-reader exposure of connections, P2 a compact
-toolbar under 768px, P3 a legibility floor or structural mode for Fit, P3 contract buttons are
-22px tall (they pass WCAG 2.5.8 by spacing, not size).
+Open items:
+
+- P2: arrow-key traversal and screen-reader exposure of connections.
+- P2: a compact toolbar under 768px.
+- P3: a legibility floor or structural mode for Fit.
+- P3: contract buttons are 22px tall, so they pass WCAG 2.5.8 by spacing, not size.
 
 ## Limits
 
-- The full disclosure fits only at 36% scale on a 1440px viewport; readable work happens at
-  100% with scrolling and the context strip. Mobile diagram use is not claimed; Tree/Columns stay
-  the mobile reading views.
-- No user study: comprehension and speed benefits are not measured.
-- The source grew to about 5.9k lines including stories and styles (plan estimate: 2.6k), mostly
-  in the router's placement repairs.
+- **Shared corridors are ambiguous at rest by design**, and the rest network carries no arrowheads.
+  Which line leads where, and in which direction, is read by activating a step; touch devices
+  activate by tapping (selection), not hovering.
+- **Halves are thin.** A shared stretch gives each direction 1.2px, one device pixel at 1×
+  (measured in `route-overlay.png`); half-arrowheads reach 4.4px to one side. They read clearly at
+  2× and above; at 1× the two-colour band is legible but small.
+- **Junction crossings.** Where one direction branches off a shared stretch while the other
+  continues, a 1.2px half may have to cross the other half. These crossings are minimised and
+  occur in 30 of 570 activations (32 crossings), plus 10 places where a route switches halves.
+- **Fit.** The full disclosure fits only at 36% scale on a 1440px viewport; readable work happens at
+  100% with scrolling and the context strip. Mobile diagram use is not claimed; Tree and Columns
+  stay the mobile reading views.
+- **No user study.** Comprehension and speed benefits are not measured.
+- **Size.** `src` is about 6.4k lines including stories and styles (plan estimate: 2.6k).
 
 ## Next step, if taken forward
 
-A separately scoped stage: move the primitives into the design system, the projection and
-composer into the viewer behind an explicit `Flow` presentation, replace the placement repairs
-with a proper horizontal-placement pass, and run an author/stakeholder review.
+A separately scoped stage would:
+
+1. Move the primitives into the design system.
+2. Move the projection and composer into the viewer behind an explicit `Flow` presentation.
+3. Add keyboard traversal along routes.
+4. Run an author and stakeholder review.

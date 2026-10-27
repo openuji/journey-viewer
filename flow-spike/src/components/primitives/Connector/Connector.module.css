@@ -1,44 +1,25 @@
 .connector {
-  --flow-line: var(--flow-connector, var(--jv-color-subtle));
   cursor: pointer;
 }
 .line {
   fill: none;
-  stroke: var(--flow-line);
+  stroke: var(--flow-connector, var(--jv-color-subtle));
   stroke-width: 1.3;
   stroke-linejoin: round;
 }
 .connector[data-kind="association"] .line {
   stroke-dasharray: 2 3;
 }
-.tip {
-  fill: var(--flow-line);
+.connector[data-rest] .line {
+  stroke-width: 1;
 }
-.tip[data-hollow] {
-  fill: var(--jv-color-surface);
-  stroke: var(--flow-line);
-  stroke-width: 1.1;
+.connector:hover .line {
+  stroke-width: 2;
 }
 .hit {
   fill: none;
   stroke: transparent;
   stroke-width: 10;
-}
-.connector:hover .line {
-  stroke-width: 2;
-}
-.connector[data-tone="incoming"] {
-  --flow-line: var(--jv-color-entry);
-}
-.connector[data-tone="outgoing"],
-.connector[data-tone="both"] {
-  --flow-line: var(--jv-color-exit);
-}
-.connector[data-tone] .line {
-  stroke-width: 2;
-}
-.connector[data-rest] .line {
-  stroke-width: 1;
 }
 .chip rect {
   fill: var(--jv-color-surface);

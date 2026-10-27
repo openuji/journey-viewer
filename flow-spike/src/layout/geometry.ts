@@ -108,3 +108,32 @@ export function straighten(points: readonly Point[]): readonly Point[] {
   }
   return simplify(out);
 }
+
+/** Corner radius of drawn connectors. */
+export const CORNER_RADIUS = 6;
+
+/**
+ * An orthogonal polyline moved `offset` to the right of its direction of travel (to the left when
+ * negative). Each leg keeps its side through every corner, so two parallels never cross.
+ */
+export function parallel(points: readonly Point[], offset: number): Point[] {
+  if (offset === 0 || points.length < 2) return [...points];
+  const normal = (a: Point, b: Point): Point => {
+    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    return { x: -(b.y - a.y) / length, y: (b.x - a.x) / length };
+  };
+  return points.map((point, i) => {
+    const before = i > 0 ? normal(points[i - 1]!, point) : undefined;
+    const after =
+      i < points.length - 1 ? normal(point, points[i + 1]!) : undefined;
+    // At a corner both legs' shifts apply; on a straight joint the shared one applies once.
+    const turns =
+      before &&
+      after &&
+      Math.abs(before.x * after.x + before.y * after.y) < 0.5;
+    const shift = turns
+      ? { x: before.x + after.x, y: before.y + after.y }
+      : (before ?? after)!;
+    return { x: point.x + shift.x * offset, y: point.y + shift.y * offset };
+  });
+}

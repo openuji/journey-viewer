@@ -26,13 +26,14 @@ export interface EngineComparisonProps {
 }
 
 const rows: readonly [keyof ArtifactReport, string][] = [
+  ["ink", "Drawn line length (shared counted once)"],
+  ["runs", "Distinct straight runs"],
+  ["crossings", "Crossings"],
+  ["overlaps", "Connector pairs sharing a corridor"],
   ["diagonals", "Diagonal segments"],
-  ["jogs", "Jogs under 16px"],
+  ["jogs", "Kinks under 16px"],
   ["throughBoxes", "Lines through blocks"],
   ["borderCrossings", "Frame borders crossed off-port"],
-  ["overlaps", "Ambiguous overlaps"],
-  ["crossings", "Crossings"],
-  ["bends", "Bends"],
 ];
 
 /**

@@ -24,22 +24,7 @@ const layout = (
   interaction: Parameters<typeof buildFlowScene>[1],
 ) => composeFlow(buildFlowScene(document, interaction), layeredLevel, estimate);
 
-/**
- * Known residuals, recorded in REPORT.md: where IdP's chains to its left exits are packed against
- * the frame's left padding, one connector keeps an 8–9px step (Node text estimator). Pinned per
- * scope so that any change, better or worse, is noticed.
- */
-const knownJogs: Readonly<Record<string, number>> = {
-  "oidc idp-mfa-challenge open": 1,
-  "oidc idp-resource-consent-flow open": 1,
-  "oidc mfa-authenticator-code open": 1,
-  "oidc mfa-sms-message open": 1,
-  "oidc mfa-email-message open": 1,
-  "oidc mfa-push-approval open": 1,
-  "oidc mfa-security-key-prompt open": 1,
-};
-
-test("the own engine draws no diagonals, crossings through blocks or borders, overlaps or new jogs", () => {
+test("the own engine draws no diagonals, kinks, or lines through blocks or frame borders", () => {
   const cases = [
     ...scopes(oidcDocument).map(
       ([name, i]) => [`oidc ${name}`, oidcDocument, i] as const,
@@ -59,17 +44,41 @@ test("the own engine draws no diagonals, crossings through blocks or borders, ov
         jogs: report.jogs,
         throughBoxes: report.throughBoxes,
         borderCrossings: report.borderCrossings,
-        overlaps: report.overlaps,
       },
-      {
-        diagonals: 0,
-        jogs: knownJogs[name] ?? 0,
-        throughBoxes: 0,
-        borderCrossings: 0,
-        overlaps: 0,
-      },
+      { diagonals: 0, jogs: 0, throughBoxes: 0, borderCrossings: 0 },
       `${name}: ${report.examples.join("; ")}`,
     );
+  }
+});
+
+test("states and closed composites have one contact point per side, at its centre", () => {
+  for (const [name, interaction] of scopes(oidcDocument)) {
+    const result = layout(oidcDocument, interaction);
+    // An open composite shares its key with its frame; its connectors attach to the frame's ports.
+    const open = new Set(result.frames.map((f) => f.key));
+    const boxes = new Map(
+      [...result.states, ...result.cards]
+        .filter((b) => !open.has(b.key))
+        .map((b) => [b.key, b.rect] as const),
+    );
+    for (const connector of result.connectors)
+      for (const [key, point] of [
+        [connector.from, connector.points[0]!],
+        [connector.to, connector.points[connector.points.length - 1]!],
+      ] as const) {
+        const rect = boxes.get(key);
+        if (!rect) continue;
+        const where = `${name}: ${connector.key} at ${key}`;
+        assert.ok(
+          Math.abs(point.y - rect.y) <= 0.5 ||
+            Math.abs(point.y - (rect.y + rect.height)) <= 0.5,
+          `${where} is on the top or bottom border`,
+        );
+        assert.ok(
+          Math.abs(point.x - (rect.x + rect.width / 2)) <= 0.5,
+          `${where} is at the centre`,
+        );
+      }
   }
 });
 

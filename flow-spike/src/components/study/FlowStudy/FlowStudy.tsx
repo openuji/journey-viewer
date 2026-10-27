@@ -74,6 +74,8 @@ interface Session {
   readonly zoom: "actual" | "fit";
   /** The block a disclosure must keep in place on screen. */
   readonly anchor: string | null;
+  /** The block under the pointer or keyboard focus; presentation only, never in the snapshot. */
+  readonly active: FlowSelectable | null;
 }
 
 const nameOf = (
@@ -102,6 +104,7 @@ export function FlowStudy({
     detail,
     zoom: "actual",
     anchor: null,
+    active: null,
   });
   const [session, setSession] = useState<Session>(start);
   // Layout depends on the document and the expansion only: selection and detail never re-run it.
@@ -143,7 +146,6 @@ export function FlowStudy({
       openScreenshot(document, screenshots, current, target, surfaceRef),
     );
 
-  const highlight = flowHighlight(layout, snapshot.interaction.selection);
   const selected: ViewerTarget | null =
     snapshot.interaction.selection && snapshot.navigation.occurrence
       ? {
@@ -211,6 +213,14 @@ export function FlowStudy({
       block: `card:${card.key}`,
     };
   };
+  // Activation (hover or focus) shows a block's routes; the selection keeps its own look.
+  const chosen = flowHighlight(layout, snapshot.interaction.selection);
+  const highlight = session.active
+    ? {
+        ...flowHighlight(layout, targetOf(session.active).target.selection),
+        selected: chosen.selected,
+      }
+    : chosen;
   const toggle = (card: FlowCard) =>
     update(
       (current) => ({
@@ -369,6 +379,9 @@ export function FlowStudy({
                     onOpen: () => openScreen(target, screen.surface["@id"]),
                   };
                 }}
+                onActivate={(item) =>
+                  change((current) => ({ ...current, active: item }))
+                }
                 onSelect={(item) => {
                   const { target, block } = targetOf(item);
                   navigate(target, block);

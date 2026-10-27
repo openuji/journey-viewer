@@ -20,11 +20,8 @@ const FRAME_CLEARANCE = 44;
 const FRAME_TRACK_CLEARANCE = 22;
 const TRACK = 8;
 const MIN_CHANNEL = 28;
-const BACK_INSET = 14;
 /** Shorter steps render as S-curves once corners are rounded (6px), so they read as kinks. */
 const MIN_JOG = 16;
-/** Separating unrelated terminals moves one aside by a full step, never into kink range. */
-const NUDGE = MIN_JOG;
 const SWEEPS = 16;
 const PLACEMENT_ROUNDS = 8;
 
@@ -72,8 +69,6 @@ interface Piece {
   readonly channel: number;
   readonly a: Terminal;
   readonly b: Terminal;
-  /** Where the paths through this piece start and end, so merges into one place are recognised. */
-  readonly ends: Set<string>;
 }
 
 const pairKey = (a: string, b: string) => (a < b ? `${a}\n${b}` : `${b}\n${a}`);
@@ -354,15 +349,14 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     layer.filter((id) => isReal(vertex(id))),
   );
 
-  // 5. Paths and attachments. Ordinary vertices take forward connectors at their centre and
-  // returns at a separate inset port; contract glyphs and frame ports are fixed.
+  // 5. Paths and attachments. Ordinary vertices have one contact point per side, top centre and
+  // bottom centre, for arrivals and departures alike; contract glyphs and frame ports are fixed.
   const portOf = (edge: LevelEdge, id: string) =>
     id === edge.source ? edge.sourcePort : edge.targetPort;
   const attach = (
     edge: LevelEdge,
     id: string,
     end: "upper" | "lower",
-    downward: boolean,
   ): Attach => {
     const v = vertex(id);
     if (v.kind === "frame") {
@@ -380,44 +374,24 @@ export function layeredLevel(input: LevelInput): LevelLayout {
         side: end === "upper" ? "bottom" : "top",
       };
     return end === "upper"
-      ? { vertex: id, port: downward ? "out" : "back-in", side: "bottom" }
-      : { vertex: id, port: downward ? "in" : "back-out", side: "top" };
-  };
-  // Returns attach on the side facing the rest of their path, so they do not cut across forward lines.
-  const facing = (path: Path, end: "upper" | "lower"): Attach => {
-    const a = end === "upper" ? path.upperAttach : path.lowerAttach;
-    if (a.port !== "back-in" && a.port !== "back-out") return a;
-    const other =
-      end === "upper"
-        ? (path.chain[0] ?? path.lower)
-        : (path.chain[path.chain.length - 1] ?? path.upper);
-    const layerOfA = layers[vertex(a.vertex).layer]!;
-    const layerOfOther = layers[vertex(other).layer]!;
-    const left =
-      layerOfOther.indexOf(other) / Math.max(1, layerOfOther.length - 1) <
-      layerOfA.indexOf(a.vertex) / Math.max(1, layerOfA.length - 1);
-    return { ...a, port: `${a.port}-${left ? "left" : "right"}` };
+      ? { vertex: id, port: "out", side: "bottom" }
+      : { vertex: id, port: "in", side: "top" };
   };
   const paths: Path[] = links.map((edge) => {
     const key = pairKey(edge.source, edge.target);
     const upper = upperOf.get(key)!;
     const sourceIsUpper = upper === edge.source;
     const lower = sourceIsUpper ? edge.target : edge.source;
-    const downward = sourceIsUpper ? edge.forward : edge.backward;
     return {
       edge,
       upper,
       lower,
       sourceIsUpper,
-      upperAttach: attach(edge, upper, "upper", downward),
-      lowerAttach: attach(edge, lower, "lower", downward),
+      upperAttach: attach(edge, upper, "upper"),
+      lowerAttach: attach(edge, lower, "lower"),
       chain: chains.get(key)!,
     };
   });
-  for (const path of paths) {
-    (path as { upperAttach: Attach }).upperAttach = facing(path, "upper");
-    (path as { lowerAttach: Attach }).lowerAttach = facing(path, "lower");
-  }
 
   // 6. Lanes: a frame port on the "wrong" side (a return into an entry, a departure from an exit
   // that climbs) turns in the adjacent channel and passes the frame in a lane beside it.
@@ -461,103 +435,35 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     }
   }
 
-  // 7. Concentration: neighbouring dummy chains bound for the same port merge into one trunk
-  // (and chains leaving the same port stay merged while they remain neighbours), so several
-  // connectors into one block never run side by side.
-  const attachKey = (a: Attach) => `${a.vertex}@${a.port}`;
-  const chainEnds = new Map<
-    string,
-    { upper: Set<string>; lower: Set<string> }
-  >();
-  for (const path of paths) {
-    if (path.chain.length === 0) continue;
-    const key = pairKey(path.upper, path.lower);
-    const ends = chainEnds.get(key) ?? {
-      upper: new Set<string>(),
-      lower: new Set<string>(),
-    };
-    ends.upper.add(
-      path.upperLane ? path.upperLane : attachKey(path.upperAttach),
-    );
-    ends.lower.add(
-      path.lowerLane ? path.lowerLane : attachKey(path.lowerAttach),
-    );
-    chainEnds.set(key, ends);
-  }
+  // 7. Corridors, metro style: neighbouring dummy chains and frame lanes in a layer share one line. At rest a
+  // corridor carries several connectors; activating a block draws its own routes on top of it.
   const replacement = new Map<string, string>();
-  const resolve = (id: string): string => {
-    const next = replacement.get(id);
-    return next === undefined ? id : resolve(next);
-  };
-  // A dummy joins at most one kind of merge: a fan-in trunk never also becomes a fan-out trunk,
-  // which would draw an ambiguous bus.
-  const merged = new Set<string>();
-  const concentrate = (fromLowerEnd: boolean) => {
-    const keys = [...chainEnds.keys()];
-    const depth = Math.max(0, ...keys.map((k) => chains.get(k)!.length));
-    for (let step = 0; step < depth; step++) {
-      // Group chains by their shared end and by their already merged neighbour toward that end.
-      const groups = new Map<string, string[]>();
-      for (const key of keys) {
-        const chain = chains.get(key)!;
-        const ends = chainEnds.get(key)!;
-        const end = fromLowerEnd ? ends.lower : ends.upper;
-        if (end.size !== 1 || step >= chain.length) continue;
-        const id = chain[fromLowerEnd ? chain.length - 1 - step : step]!;
-        if (!fromLowerEnd && merged.has(resolve(id))) continue;
-        const toward =
-          step === 0
-            ? [...end][0]!
-            : resolve(chain[fromLowerEnd ? chain.length - step : step - 1]!);
-        const group = `${vertex(id).layer}\n${toward}`;
-        groups.set(group, [...(groups.get(group) ?? []), id]);
+  for (const layer of layers) {
+    let start = 0;
+    while (start < layer.length) {
+      if (isReal(vertex(layer[start]!))) {
+        start += 1;
+        continue;
       }
-      for (const ids of groups.values()) {
-        if (ids.length < 2) continue;
-        const layer = layers[vertex(ids[0]!).layer]!;
-        const sorted = ids
-          .map(resolve)
-          .filter((id, i, all) => all.indexOf(id) === i)
-          .sort((a, b) => layer.indexOf(a) - layer.indexOf(b));
-        // Merge only runs of dummies that are direct neighbours in the layer order.
-        let run = [sorted[0]!];
-        const flush = () => {
-          if (run.length > 1) {
-            const keep = run[Math.floor((run.length - 1) / 2)]!;
-            merged.add(keep);
-            for (const id of run)
-              if (id !== keep) {
-                replacement.set(id, keep);
-                layer.splice(layer.indexOf(id), 1);
-              }
-          }
-        };
-        for (const id of sorted.slice(1)) {
-          const previous = run[run.length - 1]!;
-          const gap = layer.slice(
-            layer.indexOf(previous) + 1,
-            layer.indexOf(id),
-          );
-          if (gap.length === 0) run.push(id);
-          else {
-            flush();
-            run = [id];
-          }
-        }
-        flush();
-      }
+      let end = start;
+      while (end + 1 < layer.length && !isReal(vertex(layer[end + 1]!)))
+        end += 1;
+      const run = layer.slice(start, end + 1);
+      const keep = run[Math.floor((run.length - 1) / 2)]!;
+      for (const id of run) if (id !== keep) replacement.set(id, keep);
+      layer.splice(start, run.length, keep);
+      start += 1;
     }
-  };
-  concentrate(true);
-  concentrate(false);
-  const concentrated = (chain: readonly string[]) =>
-    chain.map(resolve).filter((id, i, all) => i === 0 || all[i - 1] !== id);
-  for (const path of paths)
-    (path as { chain: readonly string[] }).chain = concentrated(path.chain);
+  }
+  const merged = (id: string) => replacement.get(id) ?? id;
+  for (const path of paths) {
+    (path as { chain: readonly string[] }).chain = path.chain.map(merged);
+    if (path.upperLane) path.upperLane = merged(path.upperLane);
+    if (path.lowerLane) path.lowerLane = merged(path.lowerLane);
+  }
 
   // 8. Horizontal placement: per layer, weighted isotonic regression towards the median of the
   // neighbouring attachments, alternating downward and upward passes.
-  const nudges = new Map<string, number>();
   const offset = (a: Attach) => {
     const v = vertex(a.vertex);
     if (v.kind === "dummy" || v.kind === "lane") return 0;
@@ -565,13 +471,8 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       return v.node?.anchor ?? v.width / 2;
     if (v.kind === "frame")
       return v.node?.ports?.find((p) => p.id === a.port)?.x ?? v.width / 2;
-    const base =
-      a.port === "out" || a.port === "in"
-        ? v.width / 2
-        : a.port.endsWith("-left")
-          ? BACK_INSET
-          : v.width - BACK_INSET;
-    return base + (nudges.get(`${a.vertex}@${a.port}`) ?? 0);
+    // States and composites have one contact point per side, at its centre.
+    return v.width / 2;
   };
   const plain = (id: string): Attach => ({
     vertex: id,
@@ -691,22 +592,6 @@ export function layeredLevel(input: LevelInput): LevelLayout {
   // Whole pixels: equal attachments are exactly equal, so straight lines stay straight when drawn.
   const attachX = (a: Attach) => Math.round(x.get(a.vertex)! + offset(a));
   const rawX = (a: Attach) => x.get(a.vertex)! + offset(a);
-  const canMove = (id: string, dx: number) => {
-    const v = vertex(id);
-    if (v.kind === "card") return false;
-    const layer = layers[v.layer]!;
-    const i = layer.indexOf(id);
-    const next = x.get(id)! + dx;
-    const left = layer[i - 1];
-    const right = layer[i + 1];
-    return (
-      next >= lowerBound(id) - 0.01 &&
-      (left === undefined ||
-        x.get(left)! + separation(left, id) <= next + 0.01) &&
-      (right === undefined ||
-        next + separation(id, right) <= x.get(right)! + 0.01)
-    );
-  };
 
   // 9. Channel pieces. A dummy or lane is one terminal per channel; real vertices attach at ports.
   const terminalKey = (a: Attach) =>
@@ -722,8 +607,6 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       b,
       ends: new Set<string>(),
     };
-    piece.ends.add(`from ${path.upperAttach.vertex}@${path.upperAttach.port}`);
-    piece.ends.add(`to ${path.lowerAttach.vertex}@${path.lowerAttach.port}`);
     pieces.set(key, piece);
     pathPieces.set(path, [...(pathPieces.get(path) ?? []), piece]);
   };
@@ -768,14 +651,12 @@ export function layeredLevel(input: LevelInput): LevelLayout {
   }
   const allPieces = [...pieces.values()];
 
-  // 10. Remove near-misses that would draw tiny jogs, then separate unrelated terminals that share
-  // an x: one net would otherwise appear to continue into another.
+  // 10. Remove near-misses that would draw tiny jogs.
   const move = (id: string, dx: number) => x.set(id, x.get(id)! + dx);
   const touching = (id: string) =>
     allPieces.filter(
       (p) => p.a.attach.vertex === id || p.b.attach.vertex === id,
     );
-  const portKey = (a: Attach) => `${a.vertex}@${a.port}`;
   const opposite = (p: Piece) => p.a.boundary !== p.b.boundary;
   const gapOf = (p: Piece) =>
     Math.abs(attachX(p.a.attach) - attachX(p.b.attach));
@@ -797,41 +678,6 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     grow(id);
     return [...run];
   };
-  /** Unrelated terminals sharing an x across a channel, which would read as one continuing line. */
-  /**
-   * Unrelated terminals sharing an x across a channel would read as one continuing line. Lines that
-   * start or end at the same place may join: that join is the truth.
-   */
-  const conflicts = (channel: number): [Attach, Attach][] => {
-    const inChannel = allPieces.filter((p) => p.channel === channel);
-    const connected = new Set(inChannel.map((p) => `${p.a.key}\n${p.b.key}`));
-    const tops = new Map<string, { attach: Attach; ends: Set<string> }>();
-    const bottoms = new Map<string, { attach: Attach; ends: Set<string> }>();
-    for (const p of inChannel)
-      for (const t of [p.a, p.b]) {
-        const side = t.boundary === "top" ? tops : bottoms;
-        const entry = side.get(t.key) ?? {
-          attach: t.attach,
-          ends: new Set<string>(),
-        };
-        p.ends.forEach((end) => entry.ends.add(end));
-        side.set(t.key, entry);
-      }
-    const found: [Attach, Attach][] = [];
-    for (const [topKey, top] of tops)
-      for (const [bottomKey, bottom] of bottoms) {
-        if (
-          topKey === bottomKey ||
-          Math.abs(attachX(top.attach) - attachX(bottom.attach)) >= 3
-        )
-          continue;
-        if (connected.has(`${topKey}\n${bottomKey}`)) continue;
-        if ([...top.ends].some((end) => bottom.ends.has(end))) continue;
-        found.push([top.attach, bottom.attach]);
-      }
-    return found;
-  };
-  const coincides = (channel: number) => conflicts(channel).length > 0;
   /** Whether a set of vertices can move together; neighbours outside the set must keep their gap. */
   const canMoveAll = (ids: readonly string[], dx: number) => {
     const set = new Set(ids);
@@ -883,69 +729,38 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     target: Piece,
     moves: readonly string[],
     dx: number,
-    port?: Attach,
     goal: "straight" | "wide" = "straight",
   ): boolean => {
     if (!canMoveAll(moves, dx)) return false;
-    if (port) {
-      const v = vertex(port.vertex);
-      const next = offset(port) + dx;
-      if (
-        (v.kind !== "state" && v.kind !== "composite") ||
-        next < 8 ||
-        next > v.width - 8
-      )
-        return false;
-    }
     const affected = new Set<Piece>();
     for (const id of moves) touching(id).forEach((p) => affected.add(p));
-    if (port)
-      touching(port.vertex)
-        .filter(
-          (p) =>
-            portKey(p.a.attach) === portKey(port) ||
-            portKey(p.b.attach) === portKey(port),
-        )
-        .forEach((p) => affected.add(p));
     const before = new Map([...affected].map((p) => [p, gapOf(p)]));
     for (const id of moves) move(id, dx);
-    if (port) nudges.set(portKey(port), (nudges.get(portKey(port)) ?? 0) + dx);
-    const ok =
-      [...affected].every((p) => {
-        if (!opposite(p)) return true;
-        const gap = gapOf(p);
-        if (p === target)
-          return goal === "straight" ? gap <= 0.5 : gap >= MIN_JOG - 0.01;
-        if (before.get(p)! <= 0.5) return gap <= 0.5;
-        return gap <= 0.5 || gap >= MIN_JOG - 0.01;
-      }) && ![...new Set([...affected].map((p) => p.channel))].some(coincides);
+    const ok = [...affected].every((p) => {
+      if (!opposite(p)) return true;
+      const gap = gapOf(p);
+      if (p === target)
+        return goal === "straight" ? gap <= 0.5 : gap >= MIN_JOG - 0.01;
+      if (before.get(p)! <= 0.5) return gap <= 0.5;
+      return gap <= 0.5 || gap >= MIN_JOG - 0.01;
+    });
     if (ok) return true;
     for (const id of moves) move(id, -dx);
-    if (port) nudges.set(portKey(port), (nudges.get(portKey(port)) ?? 0) - dx);
     return false;
   };
   /** When a step cannot be aligned, make it a deliberate step of at least MIN_JOG. */
   const widen = (piece: Piece, dx: number) => {
     const more = Math.sign(dx) * (MIN_JOG - Math.abs(dx));
     return (
-      attempt(piece, column(piece.b.attach.vertex), -more, undefined, "wide") ||
-      attempt(piece, column(piece.a.attach.vertex), more, undefined, "wide") ||
-      attempt(piece, [], more, piece.a.attach, "wide") ||
-      attempt(piece, [], -more, piece.b.attach, "wide") ||
+      attempt(piece, column(piece.b.attach.vertex), -more, "wide") ||
+      attempt(piece, column(piece.a.attach.vertex), more, "wide") ||
       attempt(
         piece,
         pushed(column(piece.b.attach.vertex), -more),
         -more,
-        undefined,
         "wide",
       ) ||
-      attempt(
-        piece,
-        pushed(column(piece.a.attach.vertex), more),
-        more,
-        undefined,
-        "wide",
-      )
+      attempt(piece, pushed(column(piece.a.attach.vertex), more), more, "wide")
     );
   };
   const snap = () => {
@@ -958,8 +773,6 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       const fixed =
         attempt(piece, column(piece.b.attach.vertex), dx) ||
         attempt(piece, column(piece.a.attach.vertex), -dx) ||
-        attempt(piece, [], dx, piece.b.attach) ||
-        attempt(piece, [], -dx, piece.a.attach) ||
         attempt(piece, pushed(column(piece.b.attach.vertex), dx), dx) ||
         attempt(piece, pushed(column(piece.a.attach.vertex), -dx), -dx) ||
         widen(piece, dx);
@@ -967,45 +780,10 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     }
     return changed;
   };
-  const nudge = (a: Attach): boolean => {
-    const v = vertex(a.vertex);
-    if (v.kind === "dummy" || v.kind === "lane") {
-      for (const dx of [NUDGE, -NUDGE, 2 * NUDGE, -2 * NUDGE])
-        if (canMove(v.id, dx)) {
-          move(v.id, dx);
-          return true;
-        }
-      return false;
-    }
-    if (v.kind === "state" || v.kind === "composite") {
-      const key = `${a.vertex}@${a.port}`;
-      const current = nudges.get(key) ?? 0;
-      for (const dx of [NUDGE, -NUDGE, 2 * NUDGE, -2 * NUDGE]) {
-        const next = offset(a) + dx;
-        if (next >= 8 && next <= v.width - 8) {
-          nudges.set(key, current + dx);
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-  const separate = () => {
-    let changed = false;
-    for (let channel = 0; channel < layerCount; channel++)
-      for (const [top, bottom] of conflicts(channel))
-        if (nudge(bottom) || nudge(top)) changed = true;
-    return changed;
-  };
-  // Separation first; snapping never re-creates a coincidence, so the two converge.
-  for (let round = 0; round < 8; round++) {
-    const separated = separate();
-    const snapped = snap();
-    if (!snapped && !separated) break;
-  }
+  for (let round = 0; round < 8 && snap(); round++);
 
-  // 11. Nets and tracks. Pieces sharing a top terminal form a fan-out comb; remaining pieces
-  // sharing a bottom terminal form a fan-in comb. Nets never merge transitively beyond that.
+  // 11. One bus per channel: every connector that changes x in a channel shares a single
+  // horizontal track, so parallel horizontal runs collapse into one line.
   const channelCount = layerCount - 1 + (trailingChannel ? 1 : 0);
   const trackY = new Map<Piece, number>();
   const channelHeight: number[] = [];
@@ -1013,162 +791,17 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     p.a.boundary !== p.b.boundary &&
     Math.abs(attachX(p.a.attach) - attachX(p.b.attach)) <= 0.5;
   for (let channel = 0; channel < channelCount; channel++) {
-    const inChannel = allPieces.filter((p) => p.channel === channel);
-    const parent = new Map<Piece, Piece>(inChannel.map((p) => [p, p]));
-    const find = (p: Piece): Piece =>
-      parent.get(p) === p ? p : find(parent.get(p)!);
-    const unite = (a: Piece, b: Piece) => parent.set(find(a), find(b));
-    const byTop = new Map<string, Piece>();
-    for (const p of inChannel)
-      for (const t of [p.a, p.b].filter((t) => t.boundary === "top")) {
-        const seen = byTop.get(t.key);
-        if (seen) unite(p, seen);
-        else byTop.set(t.key, p);
-      }
-    const size = new Map<Piece, number>();
-    for (const p of inChannel) size.set(find(p), (size.get(find(p)) ?? 0) + 1);
-    const byBottom = new Map<string, Piece>();
-    for (const p of inChannel) {
-      if (size.get(find(p))! > 1) continue;
-      for (const t of [p.a, p.b].filter((t) => t.boundary === "bottom")) {
-        const seen = byBottom.get(t.key);
-        if (seen && size.get(find(seen))! <= 1) unite(p, seen);
-        else if (!seen) byBottom.set(t.key, p);
-      }
-    }
-    const nets = new Map<Piece, Piece[]>();
-    for (const p of inChannel)
-      nets.set(find(p), [...(nets.get(find(p)) ?? []), p]);
-    const routed = [...nets.values()]
-      .map((members) => {
-        const bent = members.filter((p) => !straight(p));
-        const xs = bent.flatMap((p) => [
-          attachX(p.a.attach),
-          attachX(p.b.attach),
-        ]);
-        const terminals = members.flatMap((p) => [p.a, p.b]);
-        const tops = terminals
-          .filter((t) => t.boundary === "top")
-          .map((t) => attachX(t.attach));
-        const bottoms = terminals
-          .filter((t) => t.boundary === "bottom")
-          .map((t) => attachX(t.attach));
-        const mean = (values: number[]) =>
-          values.reduce((s, v) => s + v, 0) / Math.max(1, values.length);
-        const top = tops.length ? mean(tops) : mean(xs);
-        const bottom = bottoms.length ? mean(bottoms) : mean(xs);
-        return {
-          members,
-          bent,
-          tops,
-          bottoms,
-          from: Math.min(...xs),
-          to: Math.max(...xs),
-          top,
-          rightward: bottom > top,
-        };
-      })
-      .filter((net) => net.bent.length > 0)
-      .sort((a, b) =>
-        a.rightward !== b.rightward
-          ? a.rightward
-            ? -1
-            : 1
-          : a.rightward
-            ? b.top - a.top
-            : a.top - b.top,
-      );
-    // Where one net starts at an x and another ends at the same x (two connectors merging into a
-    // shared trunk), the starting net must turn first, or its line would seem to continue.
-    const above = new Map(routed.map((net) => [net, new Set<typeof net>()]));
-    for (const upper of routed)
-      for (const lower of routed)
-        if (
-          upper !== lower &&
-          upper.tops.some((t) => lower.bottoms.some((b) => Math.abs(t - b) < 3))
-        )
-          above.get(lower)!.add(upper);
-    type Net = (typeof routed)[number];
-    const assign = (order: readonly Net[]) => {
-      const tracks: { from: number; to: number }[][] = [];
-      const trackOf = new Map<Net, number>();
-      const pending = [...order];
-      while (pending.length > 0) {
-        const index = Math.max(
-          0,
-          pending.findIndex((net) =>
-            [...above.get(net)!].every(
-              (u) => trackOf.has(u) || !pending.includes(u),
-            ),
-          ),
-        );
-        const net = pending.splice(index, 1)[0]!;
-        let track = Math.max(
-          0,
-          ...[...above.get(net)!]
-            .filter((u) => trackOf.has(u))
-            .map((u) => trackOf.get(u)! + 1),
-        );
-        while (
-          tracks[track]?.some(
-            (span) => net.from - TRACK < span.to && span.from < net.to + TRACK,
-          )
-        )
-          track += 1;
-        (tracks[track] ??= []).push({ from: net.from, to: net.to });
-        trackOf.set(net, track);
-      }
-      return { tracks, trackOf };
-    };
-    // Drawn crossings inside this channel for one assignment: verticals against other nets' tracks.
-    const straightPieces = inChannel
-      .filter(straight)
-      .map((p) => attachX(p.a.attach));
-    const cost = ({ trackOf }: ReturnType<typeof assign>) => {
-      let count = 0;
-      for (const [a, ta] of trackOf) {
-        for (const [b, tb] of trackOf) {
-          if (a === b) continue;
-          for (const x of a.tops)
-            if (x > b.from + 0.5 && x < b.to - 0.5 && tb < ta) count += 1;
-          for (const x of a.bottoms)
-            if (x > b.from + 0.5 && x < b.to - 0.5 && tb > ta) count += 1;
-        }
-        for (const x of straightPieces)
-          if (x > a.from + 0.5 && x < a.to - 0.5) count += 1;
-      }
-      return count;
-    };
-    const candidates = [
-      routed,
-      [...routed].reverse(),
-      [...routed].sort((a, b) => a.from - b.from),
-      [...routed].sort((a, b) => b.to - a.to),
-      [...routed].sort((a, b) => a.to - a.from - (b.to - b.from)),
-    ].map(assign);
-    const chosen = candidates.reduce((best, next) =>
-      cost(next) < cost(best) ? next : best,
-    );
-    const tracks = chosen.tracks;
-    const assigned = new Map<Piece, number>();
-    for (const [net, track] of chosen.trackOf)
-      for (const p of net.members) assigned.set(p, track);
     const frameAbove =
       layers[channel]?.some((id) => vertex(id).kind === "frame") ?? false;
     const frameBelow =
       layers[channel + 1]?.some((id) => vertex(id).kind === "frame") ?? false;
     const padTop = frameAbove ? FRAME_TRACK_CLEARANCE : TRACK;
     const padBottom = frameBelow ? FRAME_TRACK_CLEARANCE : TRACK;
-    const height = Math.max(
-      MIN_CHANNEL,
-      padTop + padBottom + Math.max(0, tracks.length - 1) * TRACK,
-    );
+    const height = Math.max(MIN_CHANNEL, padTop + padBottom);
     channelHeight.push(height);
-    const first =
-      padTop +
-      (height - padTop - padBottom - Math.max(0, tracks.length - 1) * TRACK) /
-        2;
-    for (const [p, track] of assigned) trackY.set(p, first + track * TRACK);
+    const bus = padTop + (height - padTop - padBottom) / 2;
+    for (const p of allPieces)
+      if (p.channel === channel && !straight(p)) trackY.set(p, bus);
   }
 
   // 12. Vertical placement: nodes top-aligned in their layer; exits bottom-aligned on the border.

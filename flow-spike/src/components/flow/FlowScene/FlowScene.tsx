@@ -14,6 +14,8 @@ import type { FlowDetail, FlowHighlight } from "@/model/presentation";
 import { CompositeCard } from "@/components/primitives/CompositeCard/CompositeCard";
 import { ContractGlyph } from "@/components/primitives/ContractGlyph/ContractGlyph";
 import { Connector } from "@/components/primitives/Connector/Connector";
+import { RouteOverlay } from "@/components/flow/RouteOverlay/RouteOverlay";
+import { activeStrokes } from "@/layout/strokes";
 import { StateNode } from "@/components/primitives/StateNode/StateNode";
 import styles from "@/components/flow/FlowScene/FlowScene.module.css";
 
@@ -36,6 +38,8 @@ export interface FlowSceneProps {
   ) => Readonly<{ label: string; onOpen: () => void }> | undefined;
   readonly onSelect: (item: FlowSelectable) => void;
   readonly onToggle: (card: FlowCard) => void;
+  /** Hover or keyboard focus activates a block, so its routes show without selecting it. */
+  readonly onActivate?: (item: FlowSelectable | null) => void;
 }
 
 const label = (node: { readonly label?: unknown; readonly "@id": string }) =>
@@ -65,6 +69,7 @@ export function FlowScene({
   screenOf,
   onSelect,
   onToggle,
+  onActivate,
 }: FlowSceneProps) {
   const cardTouchpoint = (card: CardBox) =>
     touchpointOf(
@@ -81,10 +86,16 @@ export function FlowScene({
     return transitions.map((t) => label(t.node)).join("\n");
   };
   // One list in reading order (top to bottom, then left to right), so Tab follows the flow.
-  const blocks: { key: string; rect: Rect; render: () => ReactNode }[] = [
+  const blocks: {
+    key: string;
+    rect: Rect;
+    item: FlowSelectable;
+    render: () => ReactNode;
+  }[] = [
     ...layout.cards.map((card) => ({
       key: `card:${card.key}`,
       rect: card.rect,
+      item: { kind: "card" as const, card: card.card },
       render: () => {
         const tone = highlight.related.get(card.key);
         const tp = cardTouchpoint(card);
@@ -106,6 +117,7 @@ export function FlowScene({
     ...layout.states.map((state) => ({
       key: `state:${state.key}`,
       rect: state.rect,
+      item: { kind: "state" as const, vertex: state.vertex },
       render: () => {
         const tone = highlight.related.get(state.key);
         const screen = screenOf?.(state.vertex);
@@ -134,6 +146,7 @@ export function FlowScene({
     ...layout.contracts.map((contract) => ({
       key: `contract:${contract.key}`,
       rect: contract.rect,
+      item: { kind: "contract" as const, contract: contract.contract },
       render: () => (
         <ContractGlyph
           className={styles.fill}
@@ -161,11 +174,11 @@ export function FlowScene({
       (c) => [c.key, { kind: "contract", contract: c.contract }] as const,
     ),
   ]);
-  const focused = highlight.connectors.size > 0;
+  const focused = highlight.routes.size > 0;
+  const ink = activeStrokes(layout.connectors, highlight.routes);
   const ordered = [...layout.connectors].sort(
     (a, b) =>
-      Number(highlight.connectors.has(a.key)) -
-      Number(highlight.connectors.has(b.key)),
+      Number(highlight.routes.has(a.key)) - Number(highlight.routes.has(b.key)),
   );
   return (
     <div
@@ -204,28 +217,24 @@ export function FlowScene({
             ...(connector.bundle?.forward ?? []),
             ...(connector.bundle?.backward ?? []),
           ];
-          const tone = highlight.connectors.get(connector.key);
+          const route = highlight.routes.get(connector.key);
           return (
             <Connector
               key={connector.key}
               points={connector.points}
               kind={connector.kind}
-              arrowStart={connector.arrowStart}
-              arrowEnd={connector.arrowEnd}
-              {...(tone ? { tone } : {})}
-              count={detail.bundleCounts ? transitions.length : 1}
-              viaDefault={
-                detail.boundaryMarks &&
-                (connector.bundle?.forward.some((t) => t.viaDefault) ?? false)
-              }
+              active={route !== undefined}
+              // Corridors are shared, so counts appear only on the active step's routes.
+              count={detail.bundleCounts && route ? transitions.length : 1}
               title={connectorTitle(connector)}
-              rest={focused && !tone}
+              rest={focused && !route}
               {...(sources.has(connector.from)
                 ? { onSelect: () => onSelect(sources.get(connector.from)!) }
                 : {})}
             />
           );
         })}
+        <RouteOverlay ink={ink} boundaryMarks={detail.boundaryMarks} />
       </svg>
       {blocks
         .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x)
@@ -235,6 +244,10 @@ export function FlowScene({
             className={styles.block}
             style={box(block.rect)}
             data-flow-key={block.key}
+            onPointerEnter={() => onActivate?.(block.item)}
+            onPointerLeave={() => onActivate?.(null)}
+            onFocus={() => onActivate?.(block.item)}
+            onBlur={() => onActivate?.(null)}
           >
             {block.render()}
           </div>

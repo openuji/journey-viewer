@@ -22,6 +22,8 @@ const pick = (report: ReturnType<typeof measureArtifacts>) => ({
   throughBoxes: report.throughBoxes,
   borderCrossings: report.borderCrossings,
   overlaps: report.overlaps,
+  ink: report.ink,
+  runs: report.runs,
   crossings: report.crossings,
   bends: report.bends,
   connectors: report.connectors,
@@ -75,13 +77,12 @@ const result = {
 };
 const target = new URL("../evidence/metrics.json", import.meta.url);
 writeFileSync(target, await format(JSON.stringify(result), { parser: "json" }));
-const cell = (value: number) => String(value);
 console.log(
-  "| Scope | Own: jogs / overlaps / crossings / bends / ms | ELK merged: jogs / overlaps / crossings / bends / ms | ELK unmerged: jogs / overlaps / crossings |",
+  "| Scope | Own: ink / runs / crossings / kinks / ms | ELK merged: ink / runs / crossings / kinks / ms | ELK unmerged: ink / runs / crossings / kinks |",
 );
 console.log("| --- | --- | --- | --- |");
 for (const row of rows)
   console.log(
-    `| ${row.scope} | ${cell(row.own.jogs)} / ${row.own.overlaps} / ${row.own.crossings} / ${row.own.bends} / ${row.own.milliseconds} | ${row.elk.jogs} / ${row.elk.overlaps} / ${row.elk.crossings} / ${row.elk.bends} / ${row.elk.milliseconds} | ${row.elkUnmerged.jogs} / ${row.elkUnmerged.overlaps} / ${row.elkUnmerged.crossings} |`,
+    `| ${row.scope} | ${row.own.ink} / ${row.own.runs} / ${row.own.crossings} / ${row.own.jogs} / ${row.own.milliseconds} | ${row.elk.ink} / ${row.elk.runs} / ${row.elk.crossings} / ${row.elk.jogs} / ${row.elk.milliseconds} | ${row.elkUnmerged.ink} / ${row.elkUnmerged.runs} / ${row.elkUnmerged.crossings} / ${row.elkUnmerged.jogs} |`,
   );
 console.log(JSON.stringify(result.sizes));

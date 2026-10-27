@@ -1,44 +1,37 @@
 import type { Point } from "@/layout/geometry";
-import type { Tone } from "@/model/presentation";
-import { arrowPath, roundedPath } from "@/components/flow/FlowScene/paths";
+import { roundedPath } from "@/components/flow/FlowScene/paths";
 import styles from "@/components/primitives/Connector/Connector.module.css";
 
 export interface ConnectorProps {
   readonly points: readonly Point[];
   readonly kind: "bundle" | "association";
-  readonly arrowStart: boolean;
-  readonly arrowEnd: boolean;
-  readonly tone?: Tone;
-  /** Something else is selected: draw at rest weight (same colour, so contrast holds). */
+  /** Carries one of the active step's routes; the route itself is drawn by the route overlay. */
+  readonly active?: boolean;
+  /** Another step is active: draw at rest weight (same colour, so contrast holds). */
   readonly rest?: boolean;
-  /** Transitions bundled into this one line; shown as `×N` when above one. */
+  /** Transitions bundled into this one line; shown as `×N` while active when above one. */
   readonly count?: number;
-  /** Arrival resolved through a child's default entry: hollow arrowhead. */
-  readonly viaDefault?: boolean;
   /** Full text for the native tooltip. */
   readonly title?: string;
   readonly onSelect?: () => void;
 }
 
-/** One connector between two blocks, rendered inside an SVG. Never two lines for one pair. */
+/**
+ * One connector of the resting network, metro style: a plain line without arrowheads that may share
+ * its corridor with others. Direction and colour belong to the active route overlay.
+ */
 export function Connector({
   points,
   kind,
-  arrowStart,
-  arrowEnd,
-  tone,
+  active = false,
   rest = false,
   count = 1,
-  viaDefault = false,
   title,
   onSelect,
 }: ConnectorProps) {
   if (points.length < 2) return null;
   const d = roundedPath(points);
-  const n = points.length;
-  const end = points[n - 1]!;
-  const before = points[n - 2]!;
-  // The count sits beside the longest straight run, clear of the blocks at either end.
+  // The count sits beside the longest straight run.
   const longest = points
     .slice(1)
     .map((point, i) => [points[i]!, point] as const)
@@ -55,32 +48,21 @@ export function Connector({
   const vertical = Math.abs(longest[0].x - longest[1].x) < 0.5;
   const chipWidth = String(count).length * 8 + 16;
   const chip =
-    count > 1
+    active && count > 1
       ? vertical
-        ? { x: middle.x + 4, y: middle.y - 9 }
-        : { x: middle.x - chipWidth / 2, y: middle.y - 22 }
+        ? { x: middle.x + 5, y: middle.y - 9 }
+        : { x: middle.x - chipWidth / 2, y: middle.y - 23 }
       : undefined;
   return (
     <g
       className={styles.connector}
       data-kind={kind}
-      data-tone={tone}
       data-rest={rest || undefined}
       onClick={onSelect}
     >
       {title && <title>{title}</title>}
       <path className={styles.hit} d={d} />
       <path className={styles.line} d={d} />
-      {arrowEnd && (
-        <path
-          className={styles.tip}
-          data-hollow={viaDefault || undefined}
-          d={arrowPath(before, end)}
-        />
-      )}
-      {arrowStart && (
-        <path className={styles.tip} d={arrowPath(points[1]!, points[0]!)} />
-      )}
       {chip && (
         <g className={styles.chip} transform={`translate(${chip.x},${chip.y})`}>
           <rect width={chipWidth} height="18" rx="9" />

@@ -163,6 +163,7 @@ const shots: [string, string, number, number, string?][] = [
     200,
   ],
   ["primitives-connector--gallery", "connectors.png", 1440, 220],
+  ["flow-routeoverlay--gallery", "route-overlay.png", 900, 420],
   [
     "study-enginecomparison--app-with-idp-open",
     "engines-idp-open-1440.png",
@@ -221,6 +222,90 @@ results.renderedArtifacts = rendered;
     path: join(evidence, "flow-mfa-open-anchored-1440.png"),
   });
   await page.close();
+}
+
+// 3b. Activation: pointing at a block draws its own routes over the shared corridors.
+{
+  const page = await open("study-flowstudy--app-with-idp-open", 1440, 900);
+  await page
+    .locator('[data-flow-key*="0:urn:ujg:solid-oidc:idp-account-selection"]')
+    .first()
+    .hover();
+  await page.waitForTimeout(200);
+  await page.screenshot({
+    path: join(evidence, "flow-idp-open-hover-1440.png"),
+  });
+  results.activation = {
+    routeMarks: await page.locator("svg path[data-tone]").count(),
+    restingConnectors: await page.locator("svg g[data-rest]").count(),
+  };
+  await page.close();
+}
+
+// 3c. Activation of the cases raised in review: two-way lines with a return, single contact points,
+// exits with and without a parent continuation, and a choice inside MFA.
+{
+  const routes: Record<string, unknown> = {};
+  const hover = async (
+    page: Awaited<ReturnType<typeof open>>,
+    fragment: string,
+    file: string,
+  ) => {
+    // Fragments name a block key, so entries, exits and states with similar ids are not confused.
+    const block = page.locator(`[data-flow-key*="${fragment}"]`).first();
+    await block.scrollIntoViewIfNeeded();
+    await block.hover();
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: join(evidence, file) });
+    routes[file] = {
+      marks: await page.locator("svg path[data-tone]").count(),
+      sharedHalves: await page.locator("svg path[data-shared]").count(),
+      halfArrowheads: await page.locator("svg path[data-half]").count(),
+    };
+  };
+  const collapsedPage = await open("study-flowstudy--collapsed", 1440, 900);
+  await hover(
+    collapsedPage,
+    "|4:urn:ujg:solid-oidc:app-access-denied",
+    "flow-hover-access-denied-collapsed-1440.png",
+  );
+  await collapsedPage.close();
+
+  const page = await open("study-flowstudy--app-with-idp-open", 1440, 900);
+  await hover(
+    page,
+    "|4:urn:ujg:solid-oidc:app-access-denied",
+    "flow-hover-access-denied-open-1440.png",
+  );
+  await hover(
+    page,
+    "|3:urn:ujg:solid-oidc:idp-account-recovery",
+    "flow-hover-account-recovery-1440.png",
+  );
+  await hover(
+    page,
+    "|1:urn:ujg:solid-oidc:idp-login",
+    "flow-hover-login-1440.png",
+  );
+  await hover(
+    page,
+    "exit:urn:ujg:solid-oidc:idp-auth-denied",
+    "flow-hover-exit-denied-1440.png",
+  );
+  await hover(
+    page,
+    "exit:urn:ujg:solid-oidc:idp-auth-success",
+    "flow-hover-exit-1440.png",
+  );
+  await page.locator(`${card(MFA)} button[aria-expanded]`).click();
+  await page.waitForTimeout(450);
+  await hover(
+    page,
+    "|0:urn:ujg:solid-oidc:mfa-method-choice",
+    "flow-hover-mfa-choice-1440.png",
+  );
+  await page.close();
+  results.reviewHovers = routes;
 }
 
 // 4. Context strip: scrolled inside open frames whose cards are out of view.
@@ -348,6 +433,7 @@ if (axePath) {
     ["flow-contextstrip--inside-two-open-frames", "light"],
     ["flow-flowkey--spec", "light"],
     ["flow-flowkey--spec", "dark"],
+    ["flow-routeoverlay--gallery", "light"],
   ] as const) {
     const page = await open(id, 1440, 900, theme);
     await page.addScriptTag({ content: axe });

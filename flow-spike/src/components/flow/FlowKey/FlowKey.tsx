@@ -49,11 +49,8 @@ export function FlowKey({ detail }: FlowKeyProps) {
       "Way out of a journey",
     ],
     [
-      <Sample>
-        {line()}
-        {arrow()}
-      </Sample>,
-      "Leads to (one line per pair of steps)",
+      <Sample>{line()}</Sample>,
+      "Routes share lines; point at a step to see its own, with direction",
     ],
     [<Sample>{line("2 3")}</Sample>, "Where a way in starts"],
     [
@@ -61,14 +58,23 @@ export function FlowKey({ detail }: FlowKeyProps) {
         <path d="M2 8H32" className={styles.incoming} />
         <path d="M38 8L31 4.4V11.6Z" className={styles.incomingTip} />
       </Sample>,
-      "Leads into the selected step",
+      "Arrives at the active step",
     ],
     [
       <Sample>
         <path d="M2 8H32" className={styles.outgoing} />
         <path d="M38 8L31 4.4V11.6Z" className={styles.outgoingTip} />
       </Sample>,
-      "Follows from the selected step",
+      "Leaves the active step",
+    ],
+    [
+      <Sample>
+        <path d="M9 7.4H38" className={styles.outgoingHalf} />
+        <path d="M2 8L9 3.6V8Z" className={styles.outgoingTip} />
+        <path d="M2 8.6H31" className={styles.incomingHalf} />
+        <path d="M38 8L31 12.4V8Z" className={styles.incomingTip} />
+      </Sample>,
+      "Both directions on one line: each keeps to its half, with half an arrowhead",
     ],
   ];
   if (detail.bundleCounts)
@@ -86,7 +92,7 @@ export function FlowKey({ detail }: FlowKeyProps) {
           ×3
         </text>
       </Sample>,
-      "Several transitions on one line",
+      "Several transitions behind one of the active step's routes",
     ]);
   if (detail.boundaryMarks)
     items.push([

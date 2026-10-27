@@ -1,6 +1,8 @@
 {
   "renderedArtifacts": {
     "flow-collapsed-1440.png": {
+      "ink": 1260,
+      "runs": 22,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -13,6 +15,8 @@
       "height": 415
     },
     "flow-collapsed-375.png": {
+      "ink": 1260,
+      "runs": 22,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -25,66 +29,78 @@
       "height": 415
     },
     "flow-idp-open-1440.png": {
+      "ink": 9236,
+      "runs": 78,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 0,
-      "crossings": 49,
-      "bends": 190,
+      "overlaps": 92,
+      "crossings": 3,
+      "bends": 246,
       "connectors": 59,
-      "width": 1145,
-      "height": 949
+      "width": 1084,
+      "height": 901
     },
     "flow-idp-open-1440-dark.png": {
+      "ink": 9236,
+      "runs": 78,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 0,
-      "crossings": 49,
-      "bends": 190,
+      "overlaps": 92,
+      "crossings": 3,
+      "bends": 246,
       "connectors": 59,
-      "width": 1145,
-      "height": 949
+      "width": 1084,
+      "height": 901
     },
     "flow-idp-open-1099.png": {
+      "ink": 9236,
+      "runs": 78,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 0,
-      "crossings": 49,
-      "bends": 190,
+      "overlaps": 92,
+      "crossings": 3,
+      "bends": 246,
       "connectors": 59,
-      "width": 1145,
-      "height": 949
+      "width": 1084,
+      "height": 901
     },
     "flow-idp-open-375.png": {
+      "ink": 9236,
+      "runs": 78,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 0,
-      "crossings": 49,
-      "bends": 190,
+      "overlaps": 92,
+      "crossings": 3,
+      "bends": 246,
       "connectors": 59,
-      "width": 1145,
-      "height": 949
+      "width": 1084,
+      "height": 901
     },
     "flow-everything-open-spec-1440.png": {
+      "ink": 43168,
+      "runs": 196,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 0,
-      "crossings": 157,
-      "bends": 356,
+      "overlaps": 198,
+      "crossings": 5,
+      "bends": 410,
       "connectors": 134,
-      "width": 2732,
-      "height": 2255
+      "width": 2513,
+      "height": 2019
     },
     "scope-recursion-reuse-1440.png": {
+      "ink": 498,
+      "runs": 5,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -97,6 +113,8 @@
       "height": 307
     },
     "scope-sibling-children-1440.png": {
+      "ink": 0,
+      "runs": 0,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -109,6 +127,8 @@
       "height": 233
     },
     "scope-childless-1440.png": {
+      "ink": 0,
+      "runs": 0,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -121,6 +141,8 @@
       "height": 154
     },
     "scope-outgoing-1440.png": {
+      "ink": 1011,
+      "runs": 14,
       "diagonals": 0,
       "jogs": 0,
       "throughBoxes": 0,
@@ -133,11 +155,49 @@
       "height": 447
     }
   },
-  "fitScale": "0.357",
+  "fitScale": "0.399",
   "disclosureDisplacement": {
     "collapseIdp": { "dx": -0.5, "dy": 0 },
     "expandIdp": { "dx": -0.5, "dy": 0 },
-    "expandMfaInsideIdp": { "dx": -0.4, "dy": 0 }
+    "expandMfaInsideIdp": { "dx": -0.2, "dy": 0 }
+  },
+  "activation": { "routeMarks": 18, "restingConnectors": 52 },
+  "reviewHovers": {
+    "flow-hover-access-denied-collapsed-1440.png": {
+      "marks": 6,
+      "sharedHalves": 2,
+      "halfArrowheads": 2
+    },
+    "flow-hover-access-denied-open-1440.png": {
+      "marks": 8,
+      "sharedHalves": 2,
+      "halfArrowheads": 1
+    },
+    "flow-hover-account-recovery-1440.png": {
+      "marks": 8,
+      "sharedHalves": 2,
+      "halfArrowheads": 1
+    },
+    "flow-hover-login-1440.png": {
+      "marks": 23,
+      "sharedHalves": 7,
+      "halfArrowheads": 4
+    },
+    "flow-hover-exit-denied-1440.png": {
+      "marks": 5,
+      "sharedHalves": 0,
+      "halfArrowheads": 0
+    },
+    "flow-hover-exit-1440.png": {
+      "marks": 6,
+      "sharedHalves": 0,
+      "halfArrowheads": 0
+    },
+    "flow-hover-mfa-choice-1440.png": {
+      "marks": 26,
+      "sharedHalves": 7,
+      "halfArrowheads": 1
+    }
   },
   "contextStrip": {
     "visible": true,
@@ -163,7 +223,8 @@
     "primitives-contractglyph--entries-on-the-top-border (light)": [],
     "flow-contextstrip--inside-two-open-frames (light)": [],
     "flow-flowkey--spec (light)": [],
-    "flow-flowkey--spec (dark)": []
+    "flow-flowkey--spec (dark)": [],
+    "flow-routeoverlay--gallery (light)": []
   },
   "pageErrors": []
 }

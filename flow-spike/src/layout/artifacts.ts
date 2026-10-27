@@ -14,8 +14,12 @@ export interface ArtifactReport {
   readonly throughBoxes: number;
   /** Frame borders crossed, or run along, anywhere other than at a port. */
   readonly borderCrossings: number;
-  /** Collinear overlap between connectors that share no end. */
+  /** Pairs of connectors that share no end but run along a common segment (metro corridors). */
   readonly overlaps: number;
+  /** Total drawn length with shared segments counted once: the ink a reader sees. */
+  readonly ink: number;
+  /** Distinct straight runs drawn, with shared segments counted once. */
+  readonly runs: number;
   readonly crossings: number;
   readonly bends: number;
   readonly connectors: number;
@@ -119,12 +123,11 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
   for (const port of layout.ports)
     portsOf.set(port.frame, [...(portsOf.get(port.frame) ?? []), port.point]);
 
-  // A short step on a longer track that a related connector shares is a junction, not a kink.
+  // A short step on a longer line that another connector also draws is a junction, not a kink.
   const onBus = (connector: Connector, segment: Segment) =>
     layout.connectors.some(
       (other) =>
         other !== connector &&
-        shareEnd(connector, other) &&
         segments
           .get(other)!
           .some(
@@ -254,7 +257,46 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
       }
     }
 
+  const union = (axis: "x" | "y") => {
+    // Horizontal runs grouped by y (axis "x" spans), vertical runs grouped by x.
+    const groups = new Map<number, [number, number][]>();
+    for (const list of segments.values())
+      for (const segment of list) {
+        const along = axis === "x" ? horizontal(segment) : vertical(segment);
+        if (!along || length(segment) < EPS) continue;
+        const at = Math.round(axis === "x" ? segment[0].y : segment[0].x);
+        const [a, b] =
+          axis === "x"
+            ? [segment[0].x, segment[1].x]
+            : [segment[0].y, segment[1].y];
+        groups.set(at, [
+          ...(groups.get(at) ?? []),
+          [Math.min(a, b), Math.max(a, b)],
+        ]);
+      }
+    let total = 0;
+    let count = 0;
+    for (const spans of groups.values()) {
+      spans.sort((p, q) => p[0] - q[0]);
+      let [from, to] = spans[0]!;
+      for (const [a, b] of spans.slice(1)) {
+        if (a <= to + EPS) to = Math.max(to, b);
+        else {
+          total += to - from;
+          count += 1;
+          [from, to] = [a, b];
+        }
+      }
+      total += to - from;
+      count += 1;
+    }
+    return { total, count };
+  };
+  const horizontalInk = union("x");
+  const verticalInk = union("y");
   return {
+    ink: Math.round(horizontalInk.total + verticalInk.total),
+    runs: horizontalInk.count + verticalInk.count,
     diagonals,
     jogs,
     throughBoxes,

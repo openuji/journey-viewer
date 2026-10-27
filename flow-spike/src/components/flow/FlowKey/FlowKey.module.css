@@ -75,16 +75,22 @@
   );
   stroke-width: 1.1;
 }
-.incoming {
+.incoming,
+.incomingHalf {
   stroke: var(--jv-color-entry);
-  stroke-width: 2;
+  stroke-width: 2.4;
 }
 .incomingTip {
   fill: var(--jv-color-entry);
 }
-.outgoing {
+.outgoing,
+.outgoingHalf {
   stroke: var(--jv-color-exit);
-  stroke-width: 2;
+  stroke-width: 2.4;
+}
+.incomingHalf,
+.outgoingHalf {
+  stroke-width: 1.2;
 }
 .outgoingTip {
   fill: var(--jv-color-exit);

@@ -258,8 +258,9 @@ and only overlays float above it.
 Gently rounded rectangles throughout: 6px (`sm`) for controls, 7px (`md`) for rows and flow nodes, and
 12px (`lg`) for panels and cards. Full radius is reserved for dots, pills and contract glyphs. Borders
 are 1px hairlines and focus rings are 2px. Flow connectors are orthogonal 1.3px lines with 6px rounded
-corners and small filled arrowheads (7 × 3.6px). Entries are circles and exits are rings with a
-centre (an ending, not a failure): the only round shapes on the chart apart from touchpoint dots.
+corners. Active routes are 2.4px with small filled arrowheads (7 × 3.6px), halved where two directions
+share a line. Entries are circles and exits are rings with a centre (an ending, not a failure): the
+only round shapes on the chart apart from touchpoint dots.
 
 ## Components
 
@@ -303,9 +304,20 @@ gradient for both. A phone glyph opens the state's screen. Counts read as `→5`
   no separate header.
 - **Contract glyphs:** entry (Way In Teal circle, filled when default) on the frame's top border, and
   exit (Way Out Violet ring with a centre) on its bottom border. Captions are plain text with no box.
-- **Connector:** one orthogonal line per pair of blocks, carrying a 12px `×N` chip on its longest
-  run when it bundles several transitions (spec detail only). In and out highlights use Way In Teal
-  and Way Out Violet at 2px; unrelated lines rest at 1px. Clicking a line selects where it starts.
+- **Connector:** one orthogonal line per pair of blocks. Each state and composite has exactly one
+  contact point per side, at the centre of its top and bottom edges; returns leave from the top and
+  arrive at the bottom. Like a metro map, connectors that run side by side share one corridor (a
+  vertical trunk, one horizontal bus per channel between layers), drawn at rest without arrowheads.
+  Activating a step (hover, focus or selection) draws its routes on top, 2.4px and centred on the
+  corridor: arrivals in Way In Teal, departures in Way Out Violet. Only where an arrival and a
+  departure share a stretch does that stretch split in two within the same 2.4px. Each route keeps
+  to its half on the same side of its travel through every corner, so the halves run parallel and
+  never cross along the line. Where routes join or part, the halves are chosen to leave the fewest
+  crossings. Each arrowhead there is a half-arrowhead on its route's half, and every line ends at its
+  arrowhead's base. Routes that meet at one point from one direction share one arrowhead. An active
+  entry or exit also lights the parent's connectors at its port. At spec detail, active routes carry a
+  12px `×N` chip when they bundle several transitions, and arrivals through a default entry have a
+  hollow arrowhead. Clicking a line selects where it starts.
 - **Key:** a toolbar disclosure listing only the marks visible at the current detail.
 
 ## Do's and Don'ts
@@ -322,7 +334,12 @@ gradient for both. A phone glyph opens the state's screen. Counts read as `→5`
 
 ### Don't:
 
-- **Don't** draw two lines between the same pair of blocks. Bundle them and count them instead.
+- **Don't** draw two lines between the same pair of blocks, or two parallel lines where one corridor
+  can carry both. Activation, not extra ink, tells routes apart.
+- **Don't** offset a route that shares nothing, or give a block extra contact points for returns.
+  Lines stay on the centre line of the corridor and meet blocks at one point per side.
+- **Don't** place halves by screen direction (always right, always down): on a line that turns both
+  ways they swap sides at the corners and cross. Sides follow the direction of travel.
 - **Don't** put entries or exits in boxes or pills. They are glyphs on a border.
 - **Don't** suggest depth with offset outlines (stacked-card edges); state lives in the toggle.
 - **Don't** add shadows to flow nodes, frames or cards at rest.

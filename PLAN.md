@@ -6,7 +6,7 @@
   The independent root `flow-spike/` folder owns the experiment, Storybook,
   dependencies, tests, report and evidence. Recommendation: keep Flow as an
   optional third view built on the spike's composition model and own layout
-  engine, not elkjs; no application mode or public API is added. Decisions and
+  engine with metro-style corridors, not elkjs; no application mode or public API is added. Decisions and
   verification are recorded in "Stage-12 verification evidence".
 - Previous checkpoint: **11C — library cleanup and library source conventions**.
   Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
@@ -1919,8 +1919,7 @@ the library source conventions into 11C.
   bundles) and a bottom-up composer that lays out each journey level separately,
   with open composites as fixed boxes with fixed ports, so lines cross a frame only at
   a port. The own engine (`src/layout/layered.ts`) does layered placement and
-  orthogonal channel routing, with combs, chain concentration and shared return
-  lanes. Boundary rules follow UJG ED Graph: explicit `toEntryRef`/`fromExitRef`,
+  orthogonal channel routing; corridors merge neighbouring chains and lanes. Boundary rules follow UJG ED Graph: explicit `toEntryRef`/`fromExitRef`,
   a single child's `defaultEntryRef` otherwise, never inference from order.
 - **Evidence:** `flow-spike/REPORT.md` and `flow-spike/evidence/`.
   - **Bundling:** every transition is in exactly one bundle, one connector per
@@ -1928,19 +1927,42 @@ the library source conventions into 11C.
   - **Disclosure:** the toggled card keeps its screen position within 0.5px on
     collapse, expand and nested expand (browser). Sibling order is unchanged when a
     composite opens (unit test). The context strip lists the enclosing open frames.
-  - **Artifacts:** no diagonals, lines through blocks, off-port frame crossings or
-    ambiguous overlaps in any scope or fixture, and none of any kind in the
-    browser-rendered stories. **Residual:** in 7 of 11 scopes one connector keeps an
-    8–9px step at IdP's packed left edge (Node estimator), pinned per scope in
-    `tests/layout.test.ts`.
-  - **Own vs ELK on identical input (`evidence/metrics.json`):**
+  - **Artifacts:** no diagonals, kinks, lines through blocks or off-port frame
+    crossings in any scope or fixture (Node) or in the browser-rendered stories.
+  - **Metro corridors (user decision, 2026-10-27):** parallel connectors share
+    corridors (merged dummy chains and frame lanes, one horizontal bus per
+    channel). Hover, focus or selection draws a step's own routes on top. Compared
+    with the first, strict routing: drawn ink falls 35–41% and crossings 88–96%
+    once composites are open.
+  - **Route legibility (from user review):** arrowheads appear only on active
+    routes. An active entry or exit lights the parent connectors at its port (unit
+    tested, browser evidence).
+  - **Line handling (iteration 4, from user review):** states and composites have
+    one contact point per side, at the centre of the top and bottom edges. Inset
+    return ports and snapping's port nudges are removed, and every connector end at
+    a block is centred (unit test, 11 scopes). Active routes are 2.4px on the centre
+    line. Only a stretch shared by an arrival and a departure splits into halves
+    within that width, with half-arrowheads on each route's half; lines end at the
+    arrowhead's base. After user review, halves follow each route's direction of
+    travel (not screen direction, which crossed at corners): no arrival and
+    departure share a half or cross along a line in all 570 activations. 32
+    junction crossings and 10 half switches remain, the minimum by brute-force
+    search (unit tests on `activeStrokes`, browser hovers: Access denied collapsed
+    and open, Account recovery, Login, IdP auth denied). The active
+    ink is a pure pass (`src/layout/strokes.ts`) drawn by a new `RouteOverlay`;
+    `Connector` became the resting line only. Agreed responsibilities and public
+    interfaces are unchanged.
+  - **Own engine (metro) vs ELK, merged edges, on identical input
+    (`evidence/metrics.json`):**
 
-    | | Own engine | ELK, merged edges | ELK, unmerged |
-    | --- | --- | --- | --- |
-    | Overlaps | 0 | 1–104 | 0 |
-    | Crossings | 0–157 | 0–82 | 1–93 |
-    | Jogs | 0–1 | 0–3 | 2–9 |
-    | Layout time | 0.6–16 ms | 7–67 ms | — |
+    | | Own engine | ELK, merged edges |
+    | --- | --- | --- |
+    | Ink, fully open | 43,630 | 56,880 |
+    | Ink, MFA scopes | 2–11% more | — |
+    | Distinct runs, opened scopes | 6–24% more | — |
+    | Crossings | 3–7 | 5–82 |
+    | Kinks | 0 | 0–3 |
+    | Layout time | 0.5–14 ms | 7–71 ms |
 
     elkjs adds a 1.6 MB dependency, and ELK placed entries below the card rather
     than on the border.
@@ -1949,16 +1971,17 @@ the library source conventions into 11C.
     navigation as markers only.
   - **Shared state and detail (browser):** Tree↔Flow keep selection and expansion.
     The detail switch keeps node geometry, shows no identifiers at stakeholder
-    detail, and shows identifiers and `×N` chips at spec detail. All 37 screens open
-    in the lightbox.
+    detail, and shows identifiers and `×N` on the active routes at spec detail. All
+    37 screens open in the lightbox.
   - **Styling (Impeccable):** PRODUCT.md, DESIGN.md and the sidecar live in
     `flow-spike/`. Critique 24/40, with P1/P2 findings polished; audit 15/20.
-    Detector clean, no colour literals, axe clean on seven page/theme combinations,
+    Detector clean, no colour literals, axe clean on eight page/theme combinations,
     text at least 4.5:1, connectors 3.25:1 light and 4.98:1 dark, via a spike-local
     mix proposed as token `color.connector`.
 - **Verification:**
-  - Spike: `pnpm --dir flow-spike test` (9/9), `measure`, `build` (tsc + static
-    Storybook), `capture`, and `format:check` all pass.
+  - Spike: `pnpm --dir flow-spike test` (18/18), `measure`, `build` (tsc + static
+    Storybook), `capture`, and `format:check` all pass after iteration 4. Disclosure
+    displacement stays within 0.5px; rendered artifacts are 0 in all captured stories.
   - Root: `pnpm test` passes. `git status` shows only `PLAN.md`, the pre-existing
     untracked `.codex/` and `flow-spike/`.
   - Housekeeping: Impeccable's design hook writes `flow-spike/.impeccable/hook.cache.json`
@@ -1967,7 +1990,6 @@ the library source conventions into 11C.
     remove them before a root `pnpm test`.
   - No commit, staging, deployment or library change was made.
 - **Open (not scoped):**
-  - A globally optimised horizontal placement for the residual steps and crossings.
   - Arrow-key traversal and screen-reader exposure of connections.
   - A compact toolbar on phones.
   - A Fit legibility floor.

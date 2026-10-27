@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Connector } from "@/components/primitives/Connector/Connector";
 import type { ConnectorProps } from "@/components/primitives/Connector/Connector";
@@ -5,22 +6,32 @@ import type { ConnectorProps } from "@/components/primitives/Connector/Connector
 const meta = {
   title: "Primitives/Connector",
   component: Connector,
-  args: { points: [], kind: "bundle", arrowStart: false, arrowEnd: true },
+  args: { points: [], kind: "bundle" },
 } satisfies Meta<typeof Connector>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const route = [
+  { x: 40, y: 12 },
+  { x: 40, y: 50 },
+  { x: 140, y: 50 },
+  { x: 140, y: 98 },
+];
 const cases: readonly (Partial<ConnectorProps> & { caption: string })[] = [
-  { caption: "One transition" },
-  { caption: "Six transitions, one line (spec ×6)", count: 6 },
-  { caption: "Both directions", arrowStart: true },
-  { caption: "Entry state (association)", kind: "association" },
-  { caption: "Via default entry (spec)", viaDefault: true },
-  { caption: "Leads into selection", tone: "incoming" },
-  { caption: "Reached from selection", tone: "outgoing" },
+  { caption: "At rest: no arrowheads, may share a corridor" },
+  { caption: "Another step is active: rest weight", rest: true },
+  {
+    caption: "Six transitions on an active route (spec)",
+    active: true,
+    count: 6,
+  },
+  { caption: "Where a way in starts", kind: "association" },
 ];
 
-/** Point 1: never two lines between one pair of blocks; multiplicity is a count, not more lines. */
+/**
+ * Point 1, metro style: the resting network only. Colour, direction and arrowheads belong to the
+ * active step's routes (Flow/RouteOverlay).
+ */
 export const Gallery: Story = {
   render: () => (
     <div
@@ -29,7 +40,7 @@ export const Gallery: Story = {
         {
           "--flow-connector":
             "color-mix(in srgb, var(--jv-color-subtle) 80%, var(--jv-color-surface))",
-        } as React.CSSProperties
+        } as CSSProperties
       }
     >
       {cases.map(({ caption, ...props }) => (
@@ -44,18 +55,7 @@ export const Gallery: Story = {
               borderRadius: 7,
             }}
           >
-            <Connector
-              points={[
-                { x: 40, y: 12 },
-                { x: 40, y: 50 },
-                { x: 140, y: 50 },
-                { x: 140, y: 98 },
-              ]}
-              kind="bundle"
-              arrowStart={false}
-              arrowEnd
-              {...props}
-            />
+            <Connector points={route} kind="bundle" {...props} />
           </svg>
         </figure>
       ))}
