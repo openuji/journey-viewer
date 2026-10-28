@@ -9,7 +9,8 @@ import { format } from "prettier";
 /**
  * Browser evidence against the built Storybook (`pnpm build` first): screenshots, the artifact
  * readout of the layout actually rendered, disclosure displacement, the journey path, shared
- * Tree/Flow state, detail switching, every mapped screen and axe results. Writes `evidence/`.
+ * Tree/Flow state, detail and placement switching, every mapped screen and axe results. Writes
+ * `evidence/`.
  */
 const root = new URL("../storybook-static/", import.meta.url).pathname;
 const evidence = new URL("../evidence/", import.meta.url).pathname;
@@ -484,6 +485,48 @@ results.renderedArtifacts = rendered;
       .locator("svg text", { hasText: /^×\d+$/ })
       .count(),
   };
+  await page.close();
+}
+
+// 5b. Placement re-lays out the canvas: the IdP main path's left edges and centres, and the artifact
+// readout with browser text metrics, for each placement.
+{
+  const page = await open("study-flowstudy--app-with-idp-open", 1440, 900);
+  const path = [
+    "idp-account-selection",
+    "idp-login",
+    "idp-mfa-challenge",
+    "idp-after-mfa",
+    "idp-identity-consent-flow",
+    "idp-resource-consent-flow",
+  ];
+  const placements: Record<string, unknown> = {};
+  for (const [label, file] of [
+    ["Aligned centre", "flow-placement-aligned-center-1440.png"],
+    ["Aligned left", "flow-placement-aligned-left-1440.png"],
+    ["Median", "flow-placement-median-1440.png"],
+  ] as const) {
+    await page.getByRole("button", { name: label, exact: true }).click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: join(evidence, file) });
+    const boxes = await Promise.all(
+      path.map(
+        async (id) =>
+          (await page
+            .locator(`[data-flow-key$="urn:ujg:solid-oidc:${id}"]`)
+            .first()
+            .boundingBox())!,
+      ),
+    );
+    const spread = (values: number[]) =>
+      Math.round((Math.max(...values) - Math.min(...values)) * 10) / 10;
+    placements[label] = {
+      leftEdgeSpread: spread(boxes.map((b) => b.x)),
+      centreSpread: spread(boxes.map((b) => b.x + b.width / 2)),
+      artifacts: await artifacts(page),
+    };
+  }
+  results.placement = placements;
   await page.close();
 }
 

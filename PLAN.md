@@ -2122,6 +2122,87 @@ the library source conventions into 11C.
         geometry changed.
       - Root Prettier passes on `PLAN.md` and the changed spike files. Root
         `pnpm test` was not run: no library or root file changed.
+  - **Placement option: median, aligned centre, aligned left (2026-10-28, from user
+    review):**
+    - **Problem:** the user found ELK's layout of the IdP journey more readable. ELK
+      keeps the main path in one left-aligned column; the own engine drew it as a
+      staircase.
+    - **Cause:** step 8 moves each block towards the median of all its connections,
+      layer by layer. The IdP main path connects to entries and exits several layers
+      away, and its entries run left to right while their targets run bottom to top,
+      so the path drifts diagonally. Node alignment was never a goal or a metric.
+    - **Design (user decision: add both aligned placements; median stays):**
+      - `layeredLevel(input, placement = "median")`, with `Placement` =
+        `"median" | "aligned-center" | "aligned-left"`. Median runs the unchanged
+        step 8. The aligned placements replace only step 8; ordering, corridors,
+        snapping, channels and arrival room are shared.
+      - Aligned (`alignColumns` in `layered.ts`): Brandes–Köpf vertical alignment,
+        upward and to the left, then left compaction by longest path over the columns.
+        Each vertex joins the column of its median upper neighbour unless that crosses
+        a column already formed. Members keep their offsets in the column, so its
+        connectors are straight.
+        - A block prefers the blocks directly above it, so corridors bend around
+          columns, not the other way round.
+        - The card and the entries never anchor a column: the entries stay on the
+          border beside the heading and their connectors turn into the columns. Open
+          frames do join columns, through their ports: the main path flows into a
+          frame's entry and out of its exit.
+      - Aligned left: a column's states and closed composites share one contact line,
+        the narrowest member's centre, which lies inside every member. Each block
+        still has one contact point per side, so the iteration-4 rule changes only in
+        where that point is (centre in median and aligned centre).
+      - `FlowStudy`: the unused `engine` prop is replaced by a `placement` start value
+        (like `detail`), with a Median / Aligned centre / Aligned left segmented
+        control (design-system `SegmentedControl`, no new styles) in the toolbar.
+        Layout re-runs on document, expansion or placement.
+      - `measure` adds `ownAlignedCenter` and `ownAlignedLeft` per scope; `capture`
+        adds a placement block.
+      - No library, public type or root config change.
+    - **Rejected iterations:**
+      - The standard Brandes–Köpf rule that a long edge's straight run takes priority
+        made blocks yield to merged corridors. The IdP main path split into three
+        columns.
+      - Letting entries anchor columns hung the main column under the default entry,
+        right of the heading: widths grew 38–79%.
+      - Keeping open frames out of columns let Login continue into Login error, right
+        of the open MFA challenge frame, and widened 8 of 11 scopes.
+    - **Effect, OIDC scopes (`evidence/metrics.json`), aligned vs median:**
+
+      | | Median | Aligned centre | Aligned left |
+      | --- | --- | --- | --- |
+      | Width | 667–2548 | +7–38% | +7–41% |
+      | Bends | 24–414 | −16–33% | −16–33% |
+      | Ink | 1,383–46,083 | +12–35% | +4–36% |
+      | Crossings, opened scopes | 3–7 | 8–21 | 8–21 |
+
+      ELK's widths are 716–3116 and its crossings in opened scopes 5–82.
+    - **Evidence:**
+      - `pnpm --dir flow-spike test`: 27/27.
+        - The artifact gate (diagonals, kinks, short arrivals, lines through blocks,
+          off-port border crossings) holds for all three placements in all 11 OIDC
+          scopes and the four fixtures.
+        - One contact point per side in every placement: at the centre in median and
+          aligned centre, inside the block in aligned left.
+        - Card at the frame's corner and contracts on the borders in every placement;
+          layout deterministic in every placement.
+        - New: in IdP open, the main path (Select account, Login, MFA challenge, MFA
+          completed, Identity consent, Resource consent) shares one centre (aligned
+          centre) or one left edge (aligned left).
+      - Browser (`browser.json` `placement`, `flow-placement-*-1440.png`), clicking the
+        toolbar control on `AppWithIdpOpen` with real text metrics:
+        - Aligned centre spreads the main path's centres by 0px, aligned left its left
+          edges by 0px, median by 167px (centres) and 221px (left edges).
+        - 0 artifacts in all three.
+      - `build`, `measure`, `capture` and `format:check` pass. All 11 rendered
+        readouts show 0 artifacts; disclosure displacement ≤0.5px; 37 screens; axe 0
+        violations on 8 combinations; no page errors. Every FlowStudy screenshot changed
+        because the toolbar has one more control.
+      - The design hook found no issues in the toolbar change. No Impeccable critique
+        was run for this one design-system control.
+    - **Open:**
+      - Aligned placements roughly triple crossings and widen the canvas.
+      - At 375px the toolbar wraps to four rows (one more); this joins the open
+        compact-toolbar item.
   - **Own engine (metro) vs ELK, merged edges, on identical input
     (`evidence/metrics.json`, refreshed after the arrival fix):**
 

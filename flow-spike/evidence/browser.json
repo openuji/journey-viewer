@@ -319,6 +319,65 @@
     "stakeholderCountChips": 0,
     "specCountChips": 4
   },
+  "placement": {
+    "Aligned centre": {
+      "leftEdgeSpread": 53.5,
+      "centreSpread": 0,
+      "artifacts": {
+        "ink": 11198,
+        "runs": 62,
+        "diagonals": 0,
+        "jogs": 0,
+        "shortArrivals": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 98,
+        "crossings": 8,
+        "bends": 178,
+        "connectors": 59,
+        "width": 1159,
+        "height": 1027
+      }
+    },
+    "Aligned left": {
+      "leftEdgeSpread": 0,
+      "centreSpread": 53.5,
+      "artifacts": {
+        "ink": 11098,
+        "runs": 61,
+        "diagonals": 0,
+        "jogs": 0,
+        "shortArrivals": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 98,
+        "crossings": 8,
+        "bends": 174,
+        "connectors": 59,
+        "width": 1159,
+        "height": 1027
+      }
+    },
+    "Median": {
+      "leftEdgeSpread": 220.9,
+      "centreSpread": 167.4,
+      "artifacts": {
+        "ink": 9870,
+        "runs": 76,
+        "diagonals": 0,
+        "jogs": 0,
+        "shortArrivals": 0,
+        "throughBoxes": 0,
+        "borderCrossings": 0,
+        "overlaps": 92,
+        "crossings": 3,
+        "bends": 240,
+        "connectors": 59,
+        "width": 1084,
+        "height": 1027
+      }
+    }
+  },
   "screens": { "distinct": 37, "broken": [] },
   "axe": {
     "study-flowstudy--app-with-idp-open (light)": [],

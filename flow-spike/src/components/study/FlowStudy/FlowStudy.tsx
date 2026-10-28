@@ -24,8 +24,8 @@ import type {
 } from "@journey-viewer/viewer";
 import { composeFlow } from "@/layout/compose";
 import { measureArtifacts } from "@/layout/artifacts";
-import type { LevelInput, LevelLayout } from "@/layout/geometry";
 import { layeredLevel } from "@/layout/layered";
+import type { Placement } from "@/layout/layered";
 import { buildFlowScene, cardTarget, frameShows } from "@/model/flow-scene";
 import type { FlowCard, FlowFrame } from "@/model/flow-scene";
 import { disclose } from "@/model/disclosure";
@@ -54,12 +54,13 @@ export interface FlowStudyProps {
   readonly touchpoints?: TouchpointPresentation;
   readonly view?: View;
   readonly detail?: FlowDetail;
+  /** Starting placement of blocks across each level. */
+  readonly placement?: Placement;
   /** Starting disclosure, derived from the tree's default snapshot. */
   readonly prepare?: (
     document: UjgDocument,
     snapshot: ViewerSnapshot,
   ) => ViewerSnapshot;
-  readonly engine?: (input: LevelInput) => LevelLayout;
 }
 
 interface Session {
@@ -67,6 +68,7 @@ interface Session {
   readonly snapshot: ViewerSnapshot;
   readonly view: View;
   readonly detail: FlowDetail;
+  readonly placement: Placement;
   readonly zoom: "actual" | "fit";
   /** The block a disclosure must keep in place on screen. */
   readonly anchor: string | null;
@@ -86,7 +88,7 @@ const nameOf = (
 /**
  * The evaluation surface: Tree, Columns and Flow over one viewer snapshot, so switching keeps the
  * selection and what is open. Flow detail is explicit configuration; layout runs only when the
- * document or the expansion changes.
+ * document, the expansion or the placement changes.
  */
 export function FlowStudy({
   document,
@@ -94,14 +96,15 @@ export function FlowStudy({
   touchpoints = {},
   view = "flow",
   detail = stakeholderDetail,
+  placement = "median",
   prepare = (_, snapshot) => snapshot,
-  engine = layeredLevel,
 }: FlowStudyProps) {
   const start = (): Session => ({
     document,
     snapshot: prepare(document, createViewerSnapshot(document)),
     view,
     detail,
+    placement,
     zoom: "actual",
     anchor: null,
     reveal: null,
@@ -109,15 +112,21 @@ export function FlowStudy({
     active: null,
   });
   const [session, setSession] = useState<Session>(start);
-  // Layout depends on the document and the expansion only: selection and detail never re-run it.
+  // Layout depends on the document, the expansion and the placement only: selection and detail
+  // never re-run it.
   const expanded = session.snapshot.interaction.expandedJourneys;
   const scene = useMemo(
     () => buildFlowScene(document, { expandedJourneys: expanded }),
     [document, expanded],
   );
   const layout = useMemo(
-    () => composeFlow(scene, engine, canvasMeasure),
-    [scene, engine],
+    () =>
+      composeFlow(
+        scene,
+        (input) => layeredLevel(input, session.placement),
+        canvasMeasure,
+      ),
+    [scene, session.placement],
   );
   // Evaluation readout of the layout actually rendered (browser text metrics), for the capture script.
   const artifacts = useMemo(
@@ -246,6 +255,11 @@ export function FlowStudy({
     { value: "Stakeholder", label: "Stakeholder" },
     { value: "Spec", label: "Spec" },
   ] as const;
+  const placements = [
+    { value: "median", label: "Median" },
+    { value: "aligned-center", label: "Aligned centre" },
+    { value: "aligned-left", label: "Aligned left" },
+  ] as const;
   const inspector =
     session.view !== "flow" || session.detail.details === "inspector";
   const title = nameOf(
@@ -289,6 +303,14 @@ export function FlowStudy({
                   ...current,
                   detail: value === "Spec" ? specDetail : stakeholderDetail,
                 }))
+              }
+            />
+            <SegmentedControl
+              label="Placement"
+              options={placements}
+              value={session.placement}
+              onChange={(value) =>
+                change((current) => ({ ...current, placement: value }))
               }
             />
             <SegmentedControl

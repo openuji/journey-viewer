@@ -59,6 +59,24 @@ for (const [name, interaction] of scopes(oidcDocument)) {
       milliseconds: Number(median(elkTimes).toFixed(1)),
     },
     elkUnmerged: pick(measureArtifacts(unmerged)),
+    ownAlignedCenter: pick(
+      measureArtifacts(
+        composeFlow(
+          scene,
+          (input) => layeredLevel(input, "aligned-center"),
+          estimate,
+        ),
+      ),
+    ),
+    ownAlignedLeft: pick(
+      measureArtifacts(
+        composeFlow(
+          scene,
+          (input) => layeredLevel(input, "aligned-left"),
+          estimate,
+        ),
+      ),
+    ),
   });
 }
 

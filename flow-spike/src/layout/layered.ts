@@ -79,11 +79,22 @@ interface Piece {
   readonly b: Terminal;
 }
 
+/**
+ * How a level places its blocks across. `median` puts each one under the median of its
+ * connections, for the fewest bends. The aligned placements stack each block in a column under
+ * one neighbour and pack the columns to the left: `aligned-center` lines up a column's centres,
+ * `aligned-left` its left edges.
+ */
+export type Placement = "median" | "aligned-center" | "aligned-left";
+
 const pairKey = (a: string, b: string) => (a < b ? `${a}\n${b}` : `${b}\n${a}`);
 const isReal = (vertex: Vertex) =>
   vertex.kind !== "dummy" && vertex.kind !== "lane";
 
-export function layeredLevel(input: LevelInput): LevelLayout {
+export function layeredLevel(
+  input: LevelInput,
+  placement: Placement = "median",
+): LevelLayout {
   const vertices = new Map<string, Vertex>(
     input.nodes.map((node, index) => [
       node.id,
@@ -470,8 +481,10 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     if (path.lowerLane) path.lowerLane = merged(path.lowerLane);
   }
 
-  // 8. Horizontal placement: per layer, weighted isotonic regression towards the median of the
-  // neighbouring attachments, alternating downward and upward passes.
+  // 8. Horizontal placement. Median: per layer, weighted isotonic regression towards the median of
+  // the neighbouring attachments, alternating downward and upward passes. Aligned: columns (below).
+  /** Contact points that are not at a block's centre: a left-aligned column's shared line. */
+  const contact = new Map<string, number>();
   const offset = (a: Attach) => {
     const v = vertex(a.vertex);
     if (v.kind === "dummy" || v.kind === "lane") return 0;
@@ -479,8 +492,8 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       return v.node?.anchor ?? v.width / 2;
     if (v.kind === "frame")
       return v.node?.ports?.find((p) => p.id === a.port)?.x ?? v.width / 2;
-    // States and composites have one contact point per side, at its centre.
-    return v.width / 2;
+    // States and composites have one contact point per side, at its centre unless a column sets it.
+    return contact.get(v.id) ?? v.width / 2;
   };
   const plain = (id: string): Attach => ({
     vertex: id,
@@ -591,11 +604,129 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       ),
     );
   };
-  for (let round = 0; round < PLACEMENT_ROUNDS; round++) {
+  /**
+   * Brandes–Köpf vertical alignment, upward and to the left: each vertex joins the column of its
+   * median upper neighbour, a block preferring the blocks directly above it, unless that crosses a
+   * column already formed. Members keep their offsets within a column, so its connectors are
+   * straight; the columns are then packed to the left as units.
+   */
+  const alignColumns = (left: boolean) => {
+    const position = new Map<string, number>();
+    layers.forEach((ids) => ids.forEach((id, i) => position.set(id, i)));
+    // One pair per attachment. The card stays at (0, 0) and the entries beside it on the border, so
+    // neither anchors a column: their connectors turn into the columns below.
+    const uppers = new Map<string, [Attach, Attach][]>();
+    for (const [u, l] of alignment) {
+      if (vertex(u.vertex).layer === 0) continue;
+      const list = uppers.get(l.vertex) ?? [];
+      if (
+        !list.some(
+          ([a, b]) =>
+            a.vertex === u.vertex && a.port === u.port && b.port === l.port,
+        )
+      )
+        list.push([u, l]);
+      uppers.set(l.vertex, list);
+    }
+    const root = new Map<string, string>();
+    const link = new Map<string, [Attach, Attach]>();
+    layers.forEach((ids) => ids.forEach((id) => root.set(id, id)));
+    for (let layer = 1; layer < layerCount; layer++) {
+      let reach = -1;
+      for (const id of layers[layer]!) {
+        // A block joins a block directly above it when it has one; corridors bend around columns.
+        const all = uppers.get(id) ?? [];
+        const blocks = isReal(vertex(id))
+          ? all.filter(([u]) => isReal(vertex(u.vertex)))
+          : [];
+        const candidates = (blocks.length > 0 ? blocks : all).sort(
+          ([a], [b]) => position.get(a.vertex)! - position.get(b.vertex)!,
+        );
+        const d = candidates.length;
+        for (const m of new Set([
+          Math.floor((d - 1) / 2),
+          Math.ceil((d - 1) / 2),
+        ])) {
+          const pair = candidates[m];
+          if (!pair || link.has(id)) continue;
+          const at = position.get(pair[0].vertex)!;
+          if (at <= reach) continue;
+          root.set(id, root.get(pair[0].vertex)!);
+          link.set(id, pair);
+          reach = at;
+        }
+      }
+    }
+    // A left-aligned column's states and composites share one contact line: the narrowest one's
+    // centre, which lies inside every member.
+    if (left) {
+      const block = (id: string) =>
+        vertex(id).kind === "state" || vertex(id).kind === "composite";
+      const narrowest = new Map<string, number>();
+      for (const [id, r] of root)
+        if (block(id))
+          narrowest.set(
+            r,
+            Math.min(narrowest.get(r) ?? Infinity, vertex(id).width / 2),
+          );
+      for (const [id, r] of root)
+        if (block(id)) contact.set(id, narrowest.get(r)!);
+    }
+    const rel = new Map<string, number>();
+    for (const ids of layers)
+      for (const id of ids) {
+        const pair = link.get(id);
+        rel.set(
+          id,
+          pair
+            ? rel.get(pair[0].vertex)! + offset(pair[0]) - offset(pair[1])
+            : 0,
+        );
+      }
+
+    // Longest path over the columns, left to right: each keeps its separation from the column to
+    // its left in every layer they share, and the frame padding.
+    const least = new Map<string, number>();
+    const right = new Map<string, [string, number][]>();
+    for (const ids of layers)
+      ids.forEach((id, i) => {
+        const r = root.get(id)!;
+        least.set(
+          r,
+          Math.max(least.get(r) ?? -Infinity, lowerBound(id) - rel.get(id)!),
+        );
+        if (i === 0) return;
+        const w = ids[i - 1]!;
+        const list = right.get(root.get(w)!) ?? [];
+        list.push([r, rel.get(w)! + separation(w, id) - rel.get(id)!]);
+        right.set(root.get(w)!, list);
+      });
+    const columns = [...new Set(root.values())];
+    const pending = new Map(columns.map((c) => [c, 0]));
+    for (const list of right.values())
+      for (const [c] of list) pending.set(c, pending.get(c)! + 1);
+    const ready = columns.filter((c) => pending.get(c) === 0);
+    const at = new Map(columns.map((c) => [c, least.get(c)!]));
+    let placed = 0;
+    while (ready.length > 0) {
+      const c = ready.pop()!;
+      placed += 1;
+      for (const [next, gap] of right.get(c) ?? []) {
+        at.set(next, Math.max(at.get(next)!, at.get(c)! + gap));
+        pending.set(next, pending.get(next)! - 1);
+        if (pending.get(next) === 0) ready.push(next);
+      }
+    }
+    if (placed < columns.length) throw new Error("Aligned columns cross");
+    for (const [id, r] of root) x.set(id, at.get(r)! + rel.get(id)!);
+  };
+  if (placement === "median") {
+    for (let round = 0; round < PLACEMENT_ROUNDS; round++) {
+      for (let layer = 1; layer < layerCount; layer++) place(layer, true);
+      for (let layer = layerCount - 2; layer >= 0; layer--) place(layer, false);
+    }
     for (let layer = 1; layer < layerCount; layer++) place(layer, true);
-    for (let layer = layerCount - 2; layer >= 0; layer--) place(layer, false);
-  }
-  for (let layer = 1; layer < layerCount; layer++) place(layer, true);
+  } else alignColumns(placement === "aligned-left");
 
   // Whole pixels: equal attachments are exactly equal, so straight lines stay straight when drawn.
   const attachX = (a: Attach) => Math.round(x.get(a.vertex)! + offset(a));

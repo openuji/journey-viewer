@@ -46,6 +46,7 @@ const meta = {
     screenshots: oidcScreenshots,
     touchpoints: oidcTouchpoints,
     detail: stakeholderDetail,
+    placement: "median"
   },
 } satisfies Meta<typeof FlowStudy>;
 export default meta;
