@@ -381,6 +381,58 @@ results.renderedArtifacts = rendered;
   results.contextPath = paths;
 }
 
+// 4b. A card click that opens a composite moves the path and the paper frame, as its chevron does:
+// the story's own play function, then the same clicks by mouse on a story without one.
+{
+  const SMS =
+    "urn:ujg:solid-oidc:app-auth-journey 1.0 6.0|3:urn:ujg:solid-oidc:mfa-sms-message";
+  const PUSH =
+    "urn:ujg:solid-oidc:app-auth-journey 1.0 6.0|7:urn:ujg:solid-oidc:mfa-push-approval";
+  const state = async (page: Page) => ({
+    steps: await page
+      .getByRole("navigation", { name: "Journey path" })
+      .locator("li")
+      .allInnerTexts(),
+    current: await page
+      .locator('[data-flow-key^="frame:"][data-context="current"]')
+      .evaluateAll((frames) =>
+        frames.map((f) => f.getAttribute("data-flow-key")!.split(":").pop()),
+      ),
+  });
+  const story = await open("study-flowstudy--opened-by-card-click", 1440, 900);
+  await story.waitForTimeout(1500);
+  const played = await state(story);
+  await story.close();
+
+  const page = await open("study-flowstudy--app-with-idp-open", 1440, 900);
+  const clicked: Record<string, unknown> = {};
+  for (const key of [MFA, SMS, PUSH]) {
+    const select = page.locator(`${card(key)} button:not([aria-expanded])`);
+    await select.scrollIntoViewIfNeeded();
+    await select.click();
+    await page.waitForTimeout(450);
+    clicked[key.split(":").pop()!] = await state(page);
+  }
+  await page.mouse.move(5, 890);
+  await page.screenshot({
+    path: join(evidence, "flow-context-card-click-1440.png"),
+  });
+  // A plain state marks its journey: the path ends there and its frame is paper.
+  const login = page
+    .locator(
+      '[data-flow-key="state:urn:ujg:solid-oidc:app-auth-journey 1.0|1:urn:ujg:solid-oidc:idp-login"] button',
+    )
+    .first();
+  await login.click();
+  await page.waitForTimeout(300);
+  clicked["idp-login (plain state)"] = {
+    selected: await login.getAttribute("aria-current"),
+    ...(await state(page)),
+  };
+  await page.close();
+  results.cardClickPath = { played, clicked };
+}
+
 // 5. One snapshot behind Tree and Flow; detail changes presentation only.
 {
   const page = await open("study-flowstudy--shared-with-tree", 1440, 900);

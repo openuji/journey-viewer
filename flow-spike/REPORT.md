@@ -71,10 +71,11 @@ Five iterations shaped this:
      parent. Choosing an earlier step closes what is open inside that journey and brings it to the
      top-left corner (24px, `flow-context-returned-1440.png`); the active journey's own step only
      scrolls. Keyboard focus follows to the heading, which is announced as the current journey.
-   - The path is derived each render from the frame keys last opened or returned to
-     (`src/model/context.ts`, unit tested on the sample and the reuse, recursion and sibling
-     fixtures). Only those keys are study state; the viewer snapshot is unchanged. Closing inside a
-     journey is a pure transition over `expandedJourneys`. Expansion follows journey identity, so
+   - One reducer (`src/model/disclosure.ts`) changes what is open and marks the node the user is
+     at: the last one clicked, expanded or returned to. The path is read each render as the
+     rendered frames that show that node (`frameShows`); the frames inside the last one are paper.
+     Unit tested on the sample and the reuse, recursion and sibling fixtures; the viewer snapshot
+     is unchanged. Closing inside a journey is a pure transition over `expandedJourneys`. Expansion follows journey identity, so
      other occurrences of those journeys close too, as with their own toggles. Geometry is
      unchanged: `metrics.json` differs only in timings.
 

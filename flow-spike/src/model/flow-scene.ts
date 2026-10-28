@@ -19,6 +19,7 @@ import type {
 import type {
   ViewerInteraction,
   ViewerOccurrence,
+  ViewerTarget,
 } from "@journey-viewer/viewer";
 
 /**
@@ -154,6 +155,54 @@ export const occurrenceKey = (occurrence: ViewerOccurrence): string =>
 
 export const terminalKey = (terminal: FlowTerminal): string =>
   terminal.port ? `${terminal.vertex}#${terminal.port}` : terminal.vertex;
+
+/** The selection a card stands for: its composite state, or the journey it heads. */
+export const cardTarget = (card: FlowCard): ViewerTarget => ({
+  selection:
+    card.kind === "journey"
+      ? {
+          kind: "journey",
+          journeyRef: card.node["@id"],
+          nodeRef: card.node["@id"],
+        }
+      : {
+          kind: "state",
+          journeyRef: card.journey["@id"],
+          nodeRef: card.node["@id"],
+        },
+  occurrence: card.occurrence,
+});
+
+/** `outer` is `inner` or a journey `inner` sits in. */
+const encloses = (outer: ViewerOccurrence, inner: ViewerOccurrence) =>
+  outer.startJourneyRef === inner.startJourneyRef &&
+  outer.steps.length <= inner.steps.length &&
+  outer.steps.every(
+    (step, i) =>
+      step.stateIndex === inner.steps[i]!.stateIndex &&
+      step.childIndex === inner.steps[i]!.childIndex,
+  );
+
+/**
+ * `frame` shows `target`: the frame is the target's open composite, or it draws a journey that is
+ * or encloses the target's. The frames showing a node, outermost first, are its journey path.
+ */
+export function frameShows(frame: FlowFrame, target: ViewerTarget): boolean {
+  const { card, content } = frame;
+  const journeys =
+    content.kind === "journey"
+      ? [content]
+      : content.frames.flatMap((f) =>
+          f.content.kind === "journey" ? [f.content] : [],
+        );
+  return (
+    (card.kind === "composite" &&
+      card.node["@id"] === target.selection.nodeRef &&
+      card.occurrence.steps.length === target.occurrence.steps.length &&
+      encloses(card.occurrence, target.occurrence)) ||
+    journeys.some((journey) => encloses(journey.occurrence, target.occurrence))
+  );
+}
 
 const isComposite = (node: UjgState | UjgCompositeState) =>
   "subjourneyRefs" in node;

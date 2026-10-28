@@ -247,6 +247,55 @@
       }
     }
   },
+  "cardClickPath": {
+    "played": {
+      "steps": ["App auth journey", "Authenticate with identity provider"],
+      "current": [
+        "idp-auth-flow",
+        "idp-mfa-challenge",
+        "mfa-sms-message",
+        "mfa-push-approval"
+      ]
+    },
+    "clicked": {
+      "idp-mfa-challenge": {
+        "steps": [
+          "App auth journey",
+          "Authenticate with identity provider",
+          "MFA challenge"
+        ],
+        "current": ["idp-mfa-challenge"]
+      },
+      "mfa-sms-message": {
+        "steps": [
+          "App auth journey",
+          "Authenticate with identity provider",
+          "MFA challenge",
+          "SMS message"
+        ],
+        "current": ["mfa-sms-message"]
+      },
+      "mfa-push-approval": {
+        "steps": [
+          "App auth journey",
+          "Authenticate with identity provider",
+          "MFA challenge",
+          "Push approval"
+        ],
+        "current": ["mfa-push-approval"]
+      },
+      "idp-login (plain state)": {
+        "selected": "true",
+        "steps": ["App auth journey", "Authenticate with identity provider"],
+        "current": [
+          "idp-auth-flow",
+          "idp-mfa-challenge",
+          "mfa-sms-message",
+          "mfa-push-approval"
+        ]
+      }
+    }
+  },
   "sharedState": {
     "flowSelectedAfterTreeClick": ["Login"],
     "idpOpenInFlow": true,

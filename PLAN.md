@@ -1961,14 +1961,16 @@ the library source conventions into 11C.
       ground, the darkest allowed (connectors 3.02:1 there in light).
     - **Journey path:** the context strip became the journey path, always above the
       canvas. It starts at the root journey. Opening a composite extends it and closing
-      one hands it to the parent (user decision: the chevron, not a card click).
+      one hands it to the parent. Since the fix below, any click also marks where the
+      path leads.
       Choosing an earlier step closes what is open inside that journey and reveals it
       top-left at 24px. The active journey's own step only scrolls (user decision after
       critique), and keyboard focus follows to the heading, which is announced as the
       current journey.
-    - **Where the path lives:** it is derived each render from frame keys in study
-      state (`src/model/context.ts`), never in `ViewerSnapshot`. Closing within a
-      journey is a spike-local pure transition over `expandedJourneys`.
+    - **Where the path lives:** it is read each render from the disclosure's
+      `location` over the rendered frames, never in `ViewerSnapshot`. Only the
+      disclosure reducer writes `location` (fix below). Closing within a journey is a
+      spike-local pure transition over `expandedJourneys`.
     - **Geometry:** unchanged, so `metrics.json` differs only in timings and in a stale
       source-line count.
     - **Evidence:**
@@ -1984,6 +1986,81 @@ the library source conventions into 11C.
       - `enclosingFrames` was removed.
 
       No library, public type or root config change.
+  - **Disclosure reducer marks the location; the path only reads it (fix, 2026-10-28,
+    from user review):**
+    - **Problem:** a card click opens its composite through `navigateViewer`, but only
+      the chevron moved the path. The path and the paper frame stayed on the previous
+      journey (MFA challenge and Push approval opened by click while the path still
+      named App auth journey or SMS message).
+    - **Cause:** the path was a key list in study state that each handler had to
+      rewrite next to its expansion change; `navigate` did not.
+    - **Rejected iterations:**
+      - Two were rejected by the user.
+      - The first added one more writer and rebuilt the next scene inside the update.
+      - The second added a reducer but kept `src/model/context.ts` to walk the scene
+        toward a "context".
+      - User direction: the reducer marks the node that is active, by click and/or
+        expand; no `context.ts`.
+    - **Design:**
+      - **State:** `src/model/disclosure.ts` holds `FlowDisclosure`: the shared
+        `ViewerSnapshot` plus `location`, a `ViewerTarget` for the node last clicked,
+        expanded or returned to. It is null until the user acts.
+      - **Reducer:** `disclose(document, screenshots, state, action)` is the only
+        writer. It handles every transition that can open or close journeys:
+        - A click, link or screen marks its target.
+        - A chevron marks its composite, whether it opens or closes.
+        - Return collapses within the step and marks it.
+        - Expand all, collapse all and the Tree's toggle (no occurrence) leave the
+          location.
+      - **Read:** `layout.frames`, already flat and outermost first, filtered by one
+        predicate, `frameShows(frame, target)` in `src/model/flow-scene.ts`. A frame
+        shows a node when it is the node's open composite, or draws a journey that is
+        or encloses the node's (occurrence prefix).
+        - The path is the frames showing `location`; the active journey is the last.
+        - Paper is the frames the active journey shows.
+        - When `location`'s own frame is closed, the path ends at the nearest open
+          journey, with no extra state or write.
+      - **Removed:** `src/model/context.ts` (`framesWithin`, `lineageOf`,
+        `contextPath`, `targetLineage`, `journeyPath`) and `tests/context.test.ts`.
+        `cardTarget` moved to `flow-scene.ts`.
+      - No library, snapshot or component contract change.
+    - **Behaviour changes:**
+      - A plain click now marks its node, superseding the iteration-5 rule that only
+        the chevron moves the path. Clicking Login ends the path at Authenticate with
+        identity provider; clicking an open heading makes that journey active.
+      - The path keeps leading to the last marked node: after collapse all, expand
+        all reopens it there.
+    - **Story:** `Study/FlowStudy/OpenedByCardClick`, on the Solid-OIDC graph. Its play
+      function clicks the cards of MFA challenge, SMS message and Push approval (not the
+      chevrons), then the plain state Login. It asserts the path and `data-context`
+      after each click.
+    - **Evidence:**
+      - `pnpm --dir flow-spike test`: 26/26. `tests/disclosure.test.ts` drives the
+        reducer with actions and reads the path as the study does:
+        - Until the user acts, the path is the first root.
+        - Chevron open/close, collapse all and expand all.
+        - A card click and its chevron give the same path for every closed composite
+          in every scope of OIDC, screens and hierarchy.
+        - A plain state click ends the path at its journey.
+        - A link into closed journeys.
+        - Paper: SMS message beside Push approval is not paper; an open heading's
+          click papers its insides.
+        - Return on OIDC, rows and recursion.
+      - `build` (tsc + static Storybook), `capture` and `format:check` pass.
+      - Browser (`browser.json` `cardClickPath`, `flow-context-card-click-1440.png`):
+        - The story's play run ends at App auth journey → Authenticate with identity
+          provider, with IdP and the frames inside it `current`.
+        - Mouse clicks on `AppWithIdpOpen` give the expected steps after each card,
+          with only Push approval `current` and SMS message `outside` at the end.
+          Clicking Login then gives the same result as the play run.
+        - The chevron path (light and dark) and the return to the root (0 open
+          toggles, heading at 24/24px) are unchanged.
+        - Disclosure displacement ≤0.5px; 37 screens; axe 0 violations on 8
+          combinations; no page errors.
+      - The other re-captured PNGs differed only by antialiasing and thumbnail
+        decoding (≤1,919 px, visually identical). They were restored from HEAD.
+      - Root `pnpm test` passes after removing the git-excluded Impeccable hook caches
+        (`.impeccable/` and `flow-spike/.impeccable/`).
   - **Own engine (metro) vs ELK, merged edges, on identical input
     (`evidence/metrics.json`):**
 

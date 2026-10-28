@@ -12,15 +12,9 @@ import {
   JourneyInspector,
   JourneyLightbox,
   closeScreenshot,
-  collapseAllJourneys,
   createViewerSnapshot,
-  expandAllJourneys,
   getNodeScreens,
-  navigateViewer,
-  openScreenshot,
   setViewMode,
-  stepScreenshot,
-  toggleChildJourneys,
 } from "@journey-viewer/viewer";
 import type {
   ScreenshotMap,
@@ -32,14 +26,10 @@ import { composeFlow } from "@/layout/compose";
 import { measureArtifacts } from "@/layout/artifacts";
 import type { LevelInput, LevelLayout } from "@/layout/geometry";
 import { layeredLevel } from "@/layout/layered";
-import { buildFlowScene } from "@/model/flow-scene";
+import { buildFlowScene, cardTarget, frameShows } from "@/model/flow-scene";
 import type { FlowCard, FlowFrame } from "@/model/flow-scene";
-import {
-  collapseWithin,
-  contextPath,
-  framesWithin,
-  lineageOf,
-} from "@/model/context";
+import { disclose } from "@/model/disclosure";
+import type { DisclosureAction } from "@/model/disclosure";
 import {
   flowHighlight,
   specDetail,
@@ -82,11 +72,8 @@ interface Session {
   readonly anchor: string | null;
   /** The block to bring to the canvas's top-left corner once the next layout is in place. */
   readonly reveal: Readonly<{ block: string }> | null;
-  /**
-   * Frame keys from a root down to the journey last opened or returned to. The active path is
-   * derived from it and stops where a frame is no longer open.
-   */
-  readonly context: readonly string[];
+  /** The node the user is at; written only by `disclose`, with the snapshot. */
+  readonly location: ViewerTarget | null;
   /** The block under the pointer or keyboard focus; presentation only, never in the snapshot. */
   readonly active: FlowSelectable | null;
 }
@@ -118,7 +105,7 @@ export function FlowStudy({
     zoom: "actual",
     anchor: null,
     reveal: null,
-    context: [],
+    location: null,
     active: null,
   });
   const [session, setSession] = useState<Session>(start);
@@ -144,22 +131,23 @@ export function FlowStudy({
   const { snapshot } = session;
   const change = (next: (current: Session) => Session) =>
     setSession((current) => next(current));
-  const update = (
-    next: (current: ViewerSnapshot) => ViewerSnapshot,
+  // Everything that can open or close journeys goes through the disclosure reducer; the viewport
+  // effects (`anchor`, `reveal`) say only where the screen stays.
+  const dispatch = (
+    action: DisclosureAction,
     anchor: string | null = null,
+    reveal: Session["reveal"] = null,
   ) =>
     change((current) => ({
       ...current,
-      snapshot: next(current.snapshot),
+      ...disclose(document, screenshots, current, action),
       anchor,
-      reveal: null,
+      reveal,
     }));
   const navigate = (target: ViewerTarget, anchor: string | null = null) =>
-    update((current) => navigateViewer(document, current, target), anchor);
+    dispatch({ type: "navigate", target }, anchor);
   const openScreen = (target: ViewerTarget, surfaceRef: string) =>
-    update((current) =>
-      openScreenshot(document, screenshots, current, target, surfaceRef),
-    );
+    dispatch({ type: "openScreen", target, surfaceRef });
 
   const selected: ViewerTarget | null =
     snapshot.interaction.selection && snapshot.navigation.occurrence
@@ -205,28 +193,7 @@ export function FlowStudy({
         },
         block: `contract:${item.contract.key}`,
       };
-    const card = item.card;
-    return {
-      target:
-        card.kind === "journey"
-          ? {
-              selection: {
-                kind: "journey",
-                journeyRef: card.node["@id"],
-                nodeRef: card.node["@id"],
-              },
-              occurrence: card.occurrence,
-            }
-          : {
-              selection: {
-                kind: "state",
-                journeyRef: card.journey["@id"],
-                nodeRef: card.node["@id"],
-              },
-              occurrence: card.occurrence,
-            },
-      block: `card:${card.key}`,
-    };
+    return { target: cardTarget(item.card), block: `card:${item.card.key}` };
   };
   // Activation (hover or focus) shows a block's routes; the selection keeps its own look.
   const chosen = flowHighlight(layout, snapshot.interaction.selection);
@@ -236,46 +203,39 @@ export function FlowStudy({
         selected: chosen.selected,
       }
     : chosen;
-  // Opening a composite makes it the active journey; closing one hands that back to its parent.
-  const toggle = (card: FlowCard) => {
-    const lineage = lineageOf(scene, card.key);
-    change((current) => ({
-      ...current,
-      snapshot: {
-        ...current.snapshot,
-        interaction: toggleChildJourneys(
-          document,
-          current.snapshot.interaction,
-          card.journey["@id"],
-          card.node["@id"],
-        ),
+  const toggle = (card: FlowCard) =>
+    dispatch(
+      {
+        type: "toggle",
+        journeyRef: card.journey["@id"],
+        stateRef: card.node["@id"],
+        occurrence: card.occurrence,
       },
-      anchor: `card:${card.key}`,
-      reveal: null,
-      context: card.toggle === "expand" ? lineage : lineage.slice(0, -1),
-    }));
-  };
-  const path = contextPath(scene, session.context);
+      `card:${card.key}`,
+    );
+  // Read from the reducer's location over the rendered frames, which come outermost first: the path
+  // is the frames showing it, the last is the active journey, and the frames inside that are paper.
+  const frames = layout.frames.map((box) => box.frame);
+  const shown = session.location
+    ? frames.filter((frame) => frameShows(frame, session.location!))
+    : [];
+  const path = shown.length > 0 ? shown : frames.slice(0, 1);
   const activeFrame = path.at(-1);
   const inContext = new Set(
-    activeFrame ? framesWithin(activeFrame).map((f) => f.key) : [],
+    activeFrame
+      ? frames
+          .filter((frame) => frameShows(activeFrame, cardTarget(frame.card)))
+          .map((frame) => frame.key)
+      : [],
   );
   // Returning to an earlier journey on the path closes what is open inside it; the active journey's
   // own step only brings it into view.
-  const returnTo = (frame: FlowFrame, depth: number) =>
-    change((current) => ({
-      ...current,
-      snapshot:
-        depth === path.length - 1
-          ? current.snapshot
-          : {
-              ...current.snapshot,
-              interaction: collapseWithin(frame, current.snapshot.interaction),
-            },
-      anchor: `card:${frame.card.key}`,
-      reveal: { block: `card:${frame.card.key}` },
-      context: path.slice(0, depth + 1).map((f) => f.key),
-    }));
+  const returnTo = (frame: FlowFrame, depth: number) => {
+    const block = `card:${frame.card.key}`;
+    if (depth === path.length - 1)
+      change((current) => ({ ...current, anchor: block, reveal: { block } }));
+    else dispatch({ type: "return", frame }, block, { block });
+  };
 
   const views = [
     { value: "tree", label: "Tree" },
@@ -349,30 +309,12 @@ export function FlowStudy({
           <IconButton
             label="Expand all"
             icon={<Icon name="expand-all" />}
-            onClick={() =>
-              update((current) => ({
-                ...current,
-                interaction: expandAllJourneys(document, current.interaction),
-              }))
-            }
+            onClick={() => dispatch({ type: "expandAll" })}
           />
           <IconButton
             label="Collapse all"
             icon={<Icon name="collapse-all" />}
-            onClick={() =>
-              change((current) => ({
-                ...current,
-                snapshot: {
-                  ...current.snapshot,
-                  interaction: collapseAllJourneys(
-                    current.snapshot.interaction,
-                  ),
-                },
-                anchor: null,
-                reveal: null,
-                context: [],
-              }))
-            }
+            onClick={() => dispatch({ type: "collapseAll" })}
           />
         </span>
       </header>
@@ -450,15 +392,7 @@ export function FlowStudy({
                   navigate({ selection, occurrence })
                 }
                 onToggleChildren={(journeyRef, stateRef) =>
-                  update((current) => ({
-                    ...current,
-                    interaction: toggleChildJourneys(
-                      document,
-                      current.interaction,
-                      journeyRef,
-                      stateRef,
-                    ),
-                  }))
+                  dispatch({ type: "toggle", journeyRef, stateRef })
                 }
               />
             </div>
@@ -494,17 +428,16 @@ export function FlowStudy({
           screenshots={screenshots}
           lightbox={snapshot.lightbox}
           touchpoints={touchpoints}
-          onClose={() => update(closeScreenshot)}
-          onPrevious={() =>
-            update((current) =>
-              stepScreenshot(document, screenshots, current, -1),
-            )
+          onClose={() =>
+            change((current) => ({
+              ...current,
+              snapshot: closeScreenshot(current.snapshot),
+              anchor: null,
+              reveal: null,
+            }))
           }
-          onNext={() =>
-            update((current) =>
-              stepScreenshot(document, screenshots, current, 1),
-            )
-          }
+          onPrevious={() => dispatch({ type: "stepScreen", direction: -1 })}
+          onNext={() => dispatch({ type: "stepScreen", direction: 1 })}
         />
       )}
     </div>

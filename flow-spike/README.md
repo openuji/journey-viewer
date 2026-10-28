@@ -30,7 +30,8 @@ or `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 ## Layout of the folder
 
 - `src/model/` — the projection of canonical UJG plus the shared `ViewerInteraction` into a flow
-  scene, the active journey path, and presentation helpers (detail presets, highlights). Pure.
+  scene, the disclosure reducer (what is open and the node the user is at), and presentation
+  helpers (detail presets, highlights). Pure.
 - `src/layout/` — the composer (frames bottom-up, ports), the spike's own layered engine and
   channel router, the measure-only ELK adapter and the artifact metrics. Pure.
 - `src/components/` — `primitives/` (state node, composite card, contract glyph, connector),
