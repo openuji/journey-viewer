@@ -1,108 +1,116 @@
 {
   "renderedArtifacts": {
     "flow-collapsed-1440.png": {
-      "ink": 1260,
-      "runs": 22,
+      "ink": 1350,
+      "runs": 21,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
       "crossings": 0,
-      "bends": 24,
+      "bends": 22,
       "connectors": 12,
       "width": 661,
-      "height": 415
+      "height": 465
     },
     "flow-collapsed-375.png": {
-      "ink": 1260,
-      "runs": 22,
+      "ink": 1350,
+      "runs": 21,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
       "crossings": 0,
-      "bends": 24,
+      "bends": 22,
       "connectors": 12,
       "width": 661,
-      "height": 415
+      "height": 465
     },
     "flow-idp-open-1440.png": {
-      "ink": 9236,
-      "runs": 78,
+      "ink": 9870,
+      "runs": 76,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 92,
       "crossings": 3,
-      "bends": 246,
+      "bends": 240,
       "connectors": 59,
       "width": 1084,
-      "height": 901
+      "height": 1027
     },
     "flow-idp-open-1440-dark.png": {
-      "ink": 9236,
-      "runs": 78,
+      "ink": 9870,
+      "runs": 76,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 92,
       "crossings": 3,
-      "bends": 246,
+      "bends": 240,
       "connectors": 59,
       "width": 1084,
-      "height": 901
+      "height": 1027
     },
     "flow-idp-open-1099.png": {
-      "ink": 9236,
-      "runs": 78,
+      "ink": 9870,
+      "runs": 76,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 92,
       "crossings": 3,
-      "bends": 246,
+      "bends": 240,
       "connectors": 59,
       "width": 1084,
-      "height": 901
+      "height": 1027
     },
     "flow-idp-open-375.png": {
-      "ink": 9236,
-      "runs": 78,
+      "ink": 9870,
+      "runs": 76,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 92,
       "crossings": 3,
-      "bends": 246,
+      "bends": 240,
       "connectors": 59,
       "width": 1084,
-      "height": 901
+      "height": 1027
     },
     "flow-everything-open-spec-1440.png": {
-      "ink": 43168,
-      "runs": 196,
+      "ink": 45604,
+      "runs": 195,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 198,
       "crossings": 5,
-      "bends": 410,
+      "bends": 406,
       "connectors": 134,
       "width": 2513,
-      "height": 2019
+      "height": 2321
     },
     "scope-recursion-reuse-1440.png": {
-      "ink": 498,
+      "ink": 564,
       "runs": 5,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
@@ -110,13 +118,14 @@
       "bends": 0,
       "connectors": 5,
       "width": 2897,
-      "height": 307
+      "height": 343
     },
     "scope-sibling-children-1440.png": {
       "ink": 0,
       "runs": 0,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
@@ -124,13 +133,14 @@
       "bends": 0,
       "connectors": 0,
       "width": 1142,
-      "height": 233
+      "height": 256
     },
     "scope-childless-1440.png": {
       "ink": 0,
       "runs": 0,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
@@ -138,13 +148,14 @@
       "bends": 0,
       "connectors": 0,
       "width": 540,
-      "height": 154
+      "height": 164
     },
     "scope-outgoing-1440.png": {
-      "ink": 1011,
+      "ink": 1169,
       "runs": 14,
       "diagonals": 0,
       "jogs": 0,
+      "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
       "overlaps": 0,
@@ -152,10 +163,10 @@
       "bends": 2,
       "connectors": 12,
       "width": 2163,
-      "height": 447
+      "height": 506
     }
   },
-  "fitScale": "0.385",
+  "fitScale": "0.335",
   "disclosureDisplacement": {
     "collapseIdp": { "dx": -0.5, "dy": 0 },
     "expandIdp": { "dx": -0.5, "dy": 0 },

@@ -1,27 +1,29 @@
 {
   "method": "Solid-OIDC, 7 warm runs per scope after one discarded run, median milliseconds; Node v22.23.3; estimator text metrics.",
-  "sizes": { "ownLayoutSourceLines": 1996, "elkBundledBytes": 1609707 },
+  "sizes": { "ownLayoutSourceLines": 2033, "elkBundledBytes": 1609707 },
   "scopes": [
     {
       "scope": "all collapsed",
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
-        "ink": 1278,
+        "ink": 1383,
         "runs": 22,
         "crossings": 0,
         "bends": 24,
         "connectors": 12,
         "width": 667,
-        "height": 415,
+        "height": 465,
         "milliseconds": 0.5
       },
       "elk": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 10,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 1,
@@ -32,11 +34,12 @@
         "connectors": 12,
         "width": 716,
         "height": 441,
-        "milliseconds": 7
+        "milliseconds": 6.4
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 2,
+        "shortArrivals": 5,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -54,21 +57,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 92,
-        "ink": 9349,
+        "ink": 9953,
         "runs": 78,
         "crossings": 3,
         "bends": 246,
         "connectors": 59,
         "width": 1090,
-        "height": 901,
-        "milliseconds": 10.3
+        "height": 1027,
+        "milliseconds": 9.7
       },
       "elk": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 29,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 76,
@@ -79,11 +84,12 @@
         "connectors": 59,
         "width": 1595,
         "height": 906,
-        "milliseconds": 32.5
+        "milliseconds": 29.3
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 2,
+        "shortArrivals": 15,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -101,21 +107,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 175,
-        "ink": 25032,
-        "runs": 132,
+        "ink": 26382,
+        "runs": 131,
         "crossings": 5,
-        "bends": 370,
+        "bends": 362,
         "connectors": 100,
         "width": 1933,
-        "height": 1304,
-        "milliseconds": 14
+        "height": 1496,
+        "milliseconds": 13.1
       },
       "elk": {
         "diagonals": 0,
         "jogs": 1,
+        "shortArrivals": 45,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 95,
@@ -126,11 +134,12 @@
         "connectors": 100,
         "width": 2532,
         "height": 1218,
-        "milliseconds": 48.3
+        "milliseconds": 43.7
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 7,
+        "shortArrivals": 19,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -148,21 +157,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
-        "overlaps": 96,
-        "ink": 11588,
-        "runs": 90,
+        "overlaps": 97,
+        "ink": 12422,
+        "runs": 91,
         "crossings": 4,
-        "bends": 258,
+        "bends": 260,
         "connectors": 64,
         "width": 1090,
-        "height": 1093,
-        "milliseconds": 9.3
+        "height": 1255,
+        "milliseconds": 9.4
       },
       "elk": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 31,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 63,
@@ -178,6 +189,7 @@
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 3,
+        "shortArrivals": 13,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -195,21 +207,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 104,
-        "ink": 14860,
+        "ink": 15868,
         "runs": 102,
         "crossings": 3,
         "bends": 272,
         "connectors": 73,
         "width": 1224,
-        "height": 1171,
+        "height": 1343,
         "milliseconds": 9.6
       },
       "elk": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 29,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 56,
@@ -220,11 +234,12 @@
         "connectors": 73,
         "width": 2108,
         "height": 1140,
-        "milliseconds": 34
+        "milliseconds": 33.7
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 4,
+        "shortArrivals": 14,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -242,21 +257,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 174,
-        "ink": 27346,
-        "runs": 131,
+        "ink": 29024,
+        "runs": 130,
         "crossings": 6,
-        "bends": 364,
+        "bends": 356,
         "connectors": 102,
         "width": 1933,
-        "height": 1419,
-        "milliseconds": 14.4
+        "height": 1637,
+        "milliseconds": 13.3
       },
       "elk": {
         "diagonals": 0,
         "jogs": 3,
+        "shortArrivals": 42,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 104,
@@ -272,6 +289,7 @@
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 7,
+        "shortArrivals": 17,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -289,21 +307,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 179,
-        "ink": 28543,
-        "runs": 137,
+        "ink": 30245,
+        "runs": 135,
         "crossings": 6,
-        "bends": 368,
+        "bends": 352,
         "connectors": 103,
         "width": 1949,
-        "height": 1435,
-        "milliseconds": 13.5
+        "height": 1653,
+        "milliseconds": 12.7
       },
       "elk": {
         "diagonals": 0,
         "jogs": 1,
+        "shortArrivals": 39,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 80,
@@ -314,11 +334,12 @@
         "connectors": 103,
         "width": 2784,
         "height": 1433,
-        "milliseconds": 46.8
+        "milliseconds": 45.3
       },
       "elkUnmerged": {
         "diagonals": 0,
-        "jogs": 5,
+        "jogs": 6,
+        "shortArrivals": 14,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -336,21 +357,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 174,
-        "ink": 28738,
-        "runs": 136,
+        "ink": 30423,
+        "runs": 135,
         "crossings": 7,
-        "bends": 362,
+        "bends": 354,
         "connectors": 103,
         "width": 2011,
-        "height": 1435,
-        "milliseconds": 12.7
+        "height": 1653,
+        "milliseconds": 13.9
       },
       "elk": {
         "diagonals": 0,
         "jogs": 1,
+        "shortArrivals": 39,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 80,
@@ -361,11 +384,12 @@
         "connectors": 103,
         "width": 2793,
         "height": 1433,
-        "milliseconds": 43.8
+        "milliseconds": 46.9
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 6,
+        "shortArrivals": 15,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -383,21 +407,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 176,
-        "ink": 28658,
-        "runs": 138,
+        "ink": 30343,
+        "runs": 137,
         "crossings": 4,
-        "bends": 368,
+        "bends": 360,
         "connectors": 103,
         "width": 1973,
-        "height": 1435,
-        "milliseconds": 13.5
+        "height": 1653,
+        "milliseconds": 13.3
       },
       "elk": {
         "diagonals": 0,
         "jogs": 1,
+        "shortArrivals": 44,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 79,
@@ -408,11 +434,12 @@
         "connectors": 103,
         "width": 2601,
         "height": 1401,
-        "milliseconds": 47.4
+        "milliseconds": 49.5
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 8,
+        "shortArrivals": 19,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -430,21 +457,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 184,
-        "ink": 28442,
-        "runs": 137,
+        "ink": 30150,
+        "runs": 136,
         "crossings": 6,
-        "bends": 360,
+        "bends": 352,
         "connectors": 104,
         "width": 2024,
-        "height": 1419,
-        "milliseconds": 13.2
+        "height": 1637,
+        "milliseconds": 15.9
       },
       "elk": {
         "diagonals": 0,
         "jogs": 3,
+        "shortArrivals": 40,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 92,
@@ -455,11 +484,12 @@
         "connectors": 104,
         "width": 2753,
         "height": 1393,
-        "milliseconds": 44.6
+        "milliseconds": 43.4
       },
       "elkUnmerged": {
         "diagonals": 0,
         "jogs": 4,
+        "shortArrivals": 15,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
@@ -477,21 +507,23 @@
       "own": {
         "diagonals": 0,
         "jogs": 0,
+        "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 199,
-        "ink": 43630,
+        "ink": 46083,
         "runs": 198,
         "crossings": 5,
         "bends": 414,
         "connectors": 134,
         "width": 2548,
-        "height": 2036,
-        "milliseconds": 13.9
+        "height": 2338,
+        "milliseconds": 14.4
       },
       "elk": {
         "diagonals": 0,
         "jogs": 2,
+        "shortArrivals": 36,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 32,
@@ -502,11 +534,12 @@
         "connectors": 134,
         "width": 3116,
         "height": 2218,
-        "milliseconds": 72.2
+        "milliseconds": 70.6
       },
       "elkUnmerged": {
         "diagonals": 0,
-        "jogs": 9,
+        "jogs": 10,
+        "shortArrivals": 27,
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,

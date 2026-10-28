@@ -112,6 +112,25 @@ export function straighten(points: readonly Point[]): readonly Point[] {
 /** Corner radius of drawn connectors. */
 export const CORNER_RADIUS = 6;
 
+/** Length of an arrowhead, from its tip to its base. */
+export const ARROW_LENGTH = 7;
+
+/** Radius of an entry or exit glyph: a connector at a contract stops at its rim. */
+export const GLYPH_RADIUS = 5;
+
+/**
+ * Shortest leg between two corners that reads as a deliberate step. A drawn corner takes at most
+ * half of each leg it joins, so both corners keep their full radius and one radius of straight
+ * line shows between them. Shorter steps render as S-curves.
+ */
+export const MIN_STEP = 3 * CORNER_RADIUS;
+
+/**
+ * Shortest leg that turns and then ends in an arrowhead: the corner at its full radius, one radius
+ * of straight line, and the head. On a shorter leg the arrowhead sits on the corner.
+ */
+export const ARRIVAL = 2 * CORNER_RADIUS + ARROW_LENGTH;
+
 /**
  * An orthogonal polyline moved `offset` to the right of its direction of travel (to the left when
  * negative). Each leg keeps its side through every corner, so two parallels never cross.

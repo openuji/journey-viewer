@@ -11,6 +11,7 @@ import type { ArtifactReport } from "@/layout/artifacts";
 import { composeFlow, composeFlowAsync } from "@/layout/compose";
 import type { FlowLayout } from "@/layout/compose";
 import { elkLevel } from "@/layout/elk-level";
+import { ARRIVAL, MIN_STEP } from "@/layout/geometry";
 import { layeredLevel } from "@/layout/layered";
 import { buildFlowScene } from "@/model/flow-scene";
 import { flowHighlight, specDetail } from "@/model/presentation";
@@ -31,7 +32,8 @@ const rows: readonly [keyof ArtifactReport, string][] = [
   ["crossings", "Crossings"],
   ["overlaps", "Connector pairs sharing a corridor"],
   ["diagonals", "Diagonal segments"],
-  ["jogs", "Kinks under 16px"],
+  ["jogs", `Kinks under ${MIN_STEP}px`],
+  ["shortArrivals", `Arrowheads under ${ARRIVAL}px after a corner`],
   ["throughBoxes", "Lines through blocks"],
   ["borderCrossings", "Frame borders crossed off-port"],
 ];

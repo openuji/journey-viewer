@@ -42,10 +42,17 @@ test("the own engine draws no diagonals, kinks, or lines through blocks or frame
       {
         diagonals: report.diagonals,
         jogs: report.jogs,
+        shortArrivals: report.shortArrivals,
         throughBoxes: report.throughBoxes,
         borderCrossings: report.borderCrossings,
       },
-      { diagonals: 0, jogs: 0, throughBoxes: 0, borderCrossings: 0 },
+      {
+        diagonals: 0,
+        jogs: 0,
+        shortArrivals: 0,
+        throughBoxes: 0,
+        borderCrossings: 0,
+      },
       `${name}: ${report.examples.join("; ")}`,
     );
   }

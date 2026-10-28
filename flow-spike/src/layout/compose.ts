@@ -1,4 +1,4 @@
-import { FRAME_PAD, simplify } from "@/layout/geometry";
+import { FRAME_PAD, GLYPH_RADIUS, simplify } from "@/layout/geometry";
 import type {
   LevelEdge,
   LevelEngine,
@@ -93,7 +93,6 @@ export interface LevelRecord {
   readonly milliseconds: number;
 }
 
-export const GLYPH_RADIUS = 5;
 const CONTRACT_ANCHOR = 7;
 const CONTRACT_TEXT = 18;
 const ROOT_GAP = 48;

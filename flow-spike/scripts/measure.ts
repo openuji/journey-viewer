@@ -19,6 +19,7 @@ const median = (values: number[]) =>
 const pick = (report: ReturnType<typeof measureArtifacts>) => ({
   diagonals: report.diagonals,
   jogs: report.jogs,
+  shortArrivals: report.shortArrivals,
   throughBoxes: report.throughBoxes,
   borderCrossings: report.borderCrossings,
   overlaps: report.overlaps,

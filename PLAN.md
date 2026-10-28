@@ -2061,17 +2061,79 @@ the library source conventions into 11C.
         decoding (≤1,919 px, visually identical). They were restored from HEAD.
       - Root `pnpm test` passes after removing the git-excluded Impeccable hook caches
         (`.impeccable/` and `flow-spike/.impeccable/`).
+  - **Arrival room derived from the drawn sizes (fix, 2026-10-28, from user review):**
+    - **Problem:** arrowheads sat on corners and corners collapsed into kinks where a
+      connector turned just before a block (Enter email code, MFA channel unavailable
+      with Email message open).
+    - **Cause:** channels were sized from fixed clearances (`TRACK` 8, frame 22,
+      `MIN_CHANNEL` 28). Beside a frame the bus moved 22px from the frame but the
+      channel grew only 2px, leaving 8px on the block side, while an arrowhead and a
+      corner need 13px. The kink rule (`MIN_JOG` 16) checked sideways steps only, and the
+      artifacts gate skipped end legs. At HEAD, in the OIDC scopes, 122 of 886 arrowed
+      ends after a corner had an 8px leg: 98 below a frame and 24 above one.
+    - **Design (user direction: derived, no hardcoding):**
+      - `src/layout/geometry.ts` owns the drawn sizes the layout depends on:
+        `CORNER_RADIUS`, `ARROW_LENGTH` (moved from `strokes.ts`) and `GLYPH_RADIUS`
+        (moved from `compose.ts`). It derives two lengths from them:
+        - `ARRIVAL = 2·CORNER_RADIUS + ARROW_LENGTH`: a full corner, one radius of
+          straight line, then the head. A drawn corner takes at most half of each leg.
+        - `MIN_STEP = 3·CORNER_RADIUS`: two full corners with one radius of straight
+          line between them.
+      - `layered.ts` step 11: each side of a channel keeps `ARRIVAL` from a block
+        layer. Beside a frame it keeps `max(22, GLYPH_RADIUS + ARRIVAL)`, since a port
+        line stops at the glyph's rim. Below the last layer it keeps the same frame
+        clearance (no fixture has such a trailing channel). The channel is the sum of
+        its two sides, with the bus at the upper side's clearance. `TRACK` and
+        `MIN_CHANNEL` are removed.
+      - The snap step uses `MIN_STEP` instead of `MIN_JOG` (18 instead of 16 at
+        today's radius). A self-loop reaches `ARRIVAL` instead of 12px; no fixture has
+        one.
+      - `measureArtifacts` gains `shortArrivals`: ends that can carry an arrowhead
+        (`arrowStart`/`arrowEnd`) whose leg after a corner is shorter than `ARRIVAL`.
+        `jogs` uses `MIN_STEP`. The layout gate, `measure` and the engine comparison
+        include it.
+      - No library, public type, story or component contract change.
+    - **Behaviour change:** channels are 38px between blocks (was 28), 43 between a
+      frame and a block (was 30) and 48 between frames (was 44). Pages are 12–15%
+      taller and ink 5–8% higher. Crossings are unchanged per scope.
+    - **Evidence:**
+      - `pnpm --dir flow-spike test`: 26/26, with `shortArrivals: 0` in the layout
+        gate for all 11 OIDC scopes and the four fixtures. The same gate on HEAD's
+        engine counts 548 short arrivals. The strokes test's cap of 32 junction
+        crossings still holds.
+      - Other drawn sizes (radius/arrow), swept over all 32 scope/fixture cases:
+        - 3/4, 2/3 and 6/14: all 26 tests pass, with 0 short arrivals and 0 kinks.
+        - 10/7 and 12/12: 0 short arrivals, but steps stay under `MIN_STEP`:
+          - At 10/7, one 28px step in OIDC "all collapsed" (minimum 30). It still
+            draws with full corners.
+          - At 12/12 (minimum 36), that step plus eight 18px steps on shared trunks
+            in two IdP scopes. These do draw as S-curves.
+          - Cause: the snap step only moves a step's ends locally. Here the ends are
+            held by the frame padding and by straight neighbours, and the horizontal
+            spacings (`GAP` 28, `DUMMY_GAP` 16) are not derived from the radius. An
+            across-the-step fallback in `widen` did not resolve it and was not kept.
+        - Two strokes tests are pinned to today's geometry. At radius 10 and 12 the
+          "two-way line turns twice" fixture is snapped straight. At 12/12 there are
+          33 junction crossings against the cap of 32.
+      - `measure`, `build` (tsc + static Storybook), `capture` and `format:check`
+        pass. All 11 browser readouts show 0 artifacts, including `shortArrivals`.
+        Disclosure displacement is ≤0.5px; 37 screens; axe 0 violations on 8
+        combinations; no page errors. Every screenshot was re-captured because the
+        geometry changed.
+      - Root Prettier passes on `PLAN.md` and the changed spike files. Root
+        `pnpm test` was not run: no library or root file changed.
   - **Own engine (metro) vs ELK, merged edges, on identical input
-    (`evidence/metrics.json`):**
+    (`evidence/metrics.json`, refreshed after the arrival fix):**
 
     | | Own engine | ELK, merged edges |
     | --- | --- | --- |
-    | Ink, fully open | 43,630 | 56,880 |
-    | Ink, MFA scopes | 2–11% more | — |
-    | Distinct runs, opened scopes | 6–24% more | — |
+    | Ink, fully open | 46,083 | 56,880 |
+    | Ink, MFA scopes | 8–17% more | — |
+    | Distinct runs, opened scopes | 6–25% more | — |
     | Crossings | 3–7 | 5–82 |
-    | Kinks | 0 | 0–3 |
-    | Layout time | 0.5–14 ms | 7–71 ms |
+    | Kinks (under `MIN_STEP`) | 0 | 0–3 |
+    | Arrowheads on a corner (`shortArrivals`) | 0 | 10–45 |
+    | Layout time | 0.5–16 ms | 6–71 ms |
 
     elkjs adds a 1.6 MB dependency, and ELK placed entries below the card rather
     than on the border.

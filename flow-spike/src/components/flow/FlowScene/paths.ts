@@ -1,6 +1,6 @@
 import type { Point } from "@/layout/geometry";
-import { CORNER_RADIUS, parallel } from "@/layout/geometry";
-import { ARROW_LENGTH, ARROW_WIDTH, HALF_ARROW_WIDTH } from "@/layout/strokes";
+import { ARROW_LENGTH, CORNER_RADIUS, parallel } from "@/layout/geometry";
+import { ARROW_WIDTH, HALF_ARROW_WIDTH } from "@/layout/strokes";
 import type { Side } from "@/layout/strokes";
 
 /** Direction along one axis; sub-half-pixel deltas count as none. */

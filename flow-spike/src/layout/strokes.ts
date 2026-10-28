@@ -1,5 +1,5 @@
 import type { Point } from "@/layout/geometry";
-import { CORNER_RADIUS, parallel } from "@/layout/geometry";
+import { ARROW_LENGTH, CORNER_RADIUS, parallel } from "@/layout/geometry";
 import type { Connector } from "@/layout/compose";
 import type { ActiveRoute, End } from "@/model/presentation";
 
@@ -37,8 +37,7 @@ export interface ActiveInk {
 export const ROUTE_WIDTH = 2.4;
 /** A half's centre line lies a quarter of the full width off the corridor's, so two halves fill it. */
 export const HALF_OFFSET = ROUTE_WIDTH / 4;
-export const ARROW_LENGTH = 7;
-/** Half the base of a full arrowhead. */
+/** Half the base of a full arrowhead; its length is a layout input (`ARROW_LENGTH`). */
 export const ARROW_WIDTH = 3.6;
 /** The base of half an arrowhead, a little wider so it reads beside the other half's line. */
 export const HALF_ARROW_WIDTH = 4.4;

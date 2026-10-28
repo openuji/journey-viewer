@@ -1,3 +1,4 @@
+import { ARRIVAL, MIN_STEP } from "@/layout/geometry";
 import type { Point, Rect } from "@/layout/geometry";
 import type { Connector, FlowLayout } from "@/layout/compose";
 
@@ -8,8 +9,10 @@ import type { Connector, FlowLayout } from "@/layout/compose";
 export interface ArtifactReport {
   /** Segments that are neither horizontal nor vertical. */
   readonly diagonals: number;
-  /** Interior segments shorter than 16px: with 6px rounded corners they render as kinks. */
+  /** Interior segments shorter than `MIN_STEP`: their rounded corners render as a kink. */
   readonly jogs: number;
+  /** Arrowhead ends whose leg after a corner is shorter than `ARRIVAL`: the head sits on the corner. */
+  readonly shortArrivals: number;
   /** Segments through a state, card or contract label that is not the connector's own end. */
   readonly throughBoxes: number;
   /** Frame borders crossed, or run along, anywhere other than at a port. */
@@ -30,7 +33,6 @@ export interface ArtifactReport {
 }
 
 const EPS = 0.5;
-export const JOG = 16;
 
 type Segment = readonly [Point, Point];
 
@@ -108,6 +110,7 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
   );
   let diagonals = 0;
   let jogs = 0;
+  let shortArrivals = 0;
   let throughBoxes = 0;
   let borderCrossings = 0;
   let overlaps = 0;
@@ -132,7 +135,7 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
           .get(other)!
           .some(
             (t) =>
-              length(t) >= JOG - 0.01 &&
+              length(t) >= MIN_STEP - 0.01 &&
               ((horizontal(segment) &&
                 horizontal(t) &&
                 Math.abs(t[0].y - segment[0].y) <= EPS &&
@@ -160,11 +163,18 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
       const interior = i > 0 && i < list.length - 1;
       if (
         interior &&
-        length(segment) < JOG - 0.01 &&
+        length(segment) < MIN_STEP - 0.01 &&
         !onBus(connector, segment)
       ) {
         jogs += 1;
         note(`jog ${length(segment).toFixed(1)}px in ${connector.key}`);
+      }
+      const arrives =
+        (i === 0 && connector.arrowStart) ||
+        (i === list.length - 1 && connector.arrowEnd);
+      if (arrives && list.length > 1 && length(segment) < ARRIVAL - 0.01) {
+        shortArrivals += 1;
+        note(`arrival ${length(segment).toFixed(1)}px in ${connector.key}`);
       }
       for (const box of boxes) {
         if (box.key === connector.from || box.key === connector.to) continue;
@@ -299,6 +309,7 @@ export function measureArtifacts(layout: FlowLayout): ArtifactReport {
     runs: horizontalInk.count + verticalInk.count,
     diagonals,
     jogs,
+    shortArrivals,
     throughBoxes,
     borderCrossings,
     overlaps,

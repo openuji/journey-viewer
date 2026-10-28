@@ -1,4 +1,11 @@
-import { FRAME_PAD, simplify, straighten } from "@/layout/geometry";
+import {
+  ARRIVAL,
+  FRAME_PAD,
+  GLYPH_RADIUS,
+  MIN_STEP,
+  simplify,
+  straighten,
+} from "@/layout/geometry";
 import type {
   LevelEdge,
   LevelInput,
@@ -16,12 +23,13 @@ import type {
 const GAP = 28;
 const DUMMY_GAP = 16;
 const FRAME_CLEARANCE = 44;
-/** Tracks keep this distance from a frame's top or bottom border, so no line runs along it. */
-const FRAME_TRACK_CLEARANCE = 22;
-const TRACK = 8;
-const MIN_CHANNEL = 28;
-/** Shorter steps render as S-curves once corners are rounded (6px), so they read as kinks. */
-const MIN_JOG = 16;
+/** Least distance of a track from a frame's top or bottom border, so no line runs along it. */
+const FRAME_BORDER_GAP = 22;
+/** A track beside a frame: clear of its border, with a full arrival at a contract glyph on it. */
+const FRAME_TRACK_CLEARANCE = Math.max(
+  FRAME_BORDER_GAP,
+  GLYPH_RADIUS + ARRIVAL,
+);
 const SWEEPS = 16;
 const PLACEMENT_ROUNDS = 8;
 
@@ -740,17 +748,17 @@ export function layeredLevel(input: LevelInput): LevelLayout {
       if (!opposite(p)) return true;
       const gap = gapOf(p);
       if (p === target)
-        return goal === "straight" ? gap <= 0.5 : gap >= MIN_JOG - 0.01;
+        return goal === "straight" ? gap <= 0.5 : gap >= MIN_STEP - 0.01;
       if (before.get(p)! <= 0.5) return gap <= 0.5;
-      return gap <= 0.5 || gap >= MIN_JOG - 0.01;
+      return gap <= 0.5 || gap >= MIN_STEP - 0.01;
     });
     if (ok) return true;
     for (const id of moves) move(id, -dx);
     return false;
   };
-  /** When a step cannot be aligned, make it a deliberate step of at least MIN_JOG. */
+  /** When a step cannot be aligned, make it a deliberate step of at least MIN_STEP. */
   const widen = (piece: Piece, dx: number) => {
-    const more = Math.sign(dx) * (MIN_JOG - Math.abs(dx));
+    const more = Math.sign(dx) * (MIN_STEP - Math.abs(dx));
     return (
       attempt(piece, column(piece.b.attach.vertex), -more, "wide") ||
       attempt(piece, column(piece.a.attach.vertex), more, "wide") ||
@@ -767,7 +775,7 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     let changed = false;
     for (const piece of allPieces) {
       if (!opposite(piece)) continue;
-      if (gapOf(piece) <= 0.5 || gapOf(piece) >= MIN_JOG - 0.01) continue;
+      if (gapOf(piece) <= 0.5 || gapOf(piece) >= MIN_STEP - 0.01) continue;
       // Move by the unrounded distance; the result is judged on whole pixels.
       const dx = rawX(piece.a.attach) - rawX(piece.b.attach);
       const fixed =
@@ -783,25 +791,24 @@ export function layeredLevel(input: LevelInput): LevelLayout {
   for (let round = 0; round < 8 && snap(); round++);
 
   // 11. One bus per channel: every connector that changes x in a channel shares a single
-  // horizontal track, so parallel horizontal runs collapse into one line.
+  // horizontal track, so parallel horizontal runs collapse into one line. The track keeps a full
+  // arrival from the layer on either side; beside a frame it keeps the frame's clearance, and
+  // below the last layer the enclosing frame's own border.
   const channelCount = layerCount - 1 + (trailingChannel ? 1 : 0);
   const trackY = new Map<Piece, number>();
   const channelHeight: number[] = [];
   const straight = (p: Piece) =>
     p.a.boundary !== p.b.boundary &&
     Math.abs(attachX(p.a.attach) - attachX(p.b.attach)) <= 0.5;
+  const clearance = (layer: readonly string[] | undefined) =>
+    layer === undefined || layer.some((id) => vertex(id).kind === "frame")
+      ? FRAME_TRACK_CLEARANCE
+      : ARRIVAL;
   for (let channel = 0; channel < channelCount; channel++) {
-    const frameAbove =
-      layers[channel]?.some((id) => vertex(id).kind === "frame") ?? false;
-    const frameBelow =
-      layers[channel + 1]?.some((id) => vertex(id).kind === "frame") ?? false;
-    const padTop = frameAbove ? FRAME_TRACK_CLEARANCE : TRACK;
-    const padBottom = frameBelow ? FRAME_TRACK_CLEARANCE : TRACK;
-    const height = Math.max(MIN_CHANNEL, padTop + padBottom);
-    channelHeight.push(height);
-    const bus = padTop + (height - padTop - padBottom) / 2;
+    const above = clearance(layers[channel]);
+    channelHeight.push(above + clearance(layers[channel + 1]));
     for (const p of allPieces)
-      if (p.channel === channel && !straight(p)) trackY.set(p, bus);
+      if (p.channel === channel && !straight(p)) trackY.set(p, above);
   }
 
   // 12. Vertical placement: nodes top-aligned in their layer; exits bottom-aligned on the border.
@@ -860,14 +867,15 @@ export function layeredLevel(input: LevelInput): LevelLayout {
     const route = straighten(simplify(points));
     routes.set(path.edge.id, path.sourceIsUpper ? route : [...route].reverse());
   }
+  // A self-loop leaves and returns on the right; either end may carry an arrowhead.
   for (const edge of loops) {
     const v = vertex(edge.source);
     const left = x.get(v.id)! + v.width;
     const top = y(v.id);
     routes.set(edge.id, [
       { x: left, y: top + v.height * 0.3 },
-      { x: left + 12, y: top + v.height * 0.3 },
-      { x: left + 12, y: top + v.height * 0.7 },
+      { x: left + ARRIVAL, y: top + v.height * 0.3 },
+      { x: left + ARRIVAL, y: top + v.height * 0.7 },
       { x: left, y: top + v.height * 0.7 },
     ]);
   }
@@ -882,7 +890,7 @@ export function layeredLevel(input: LevelInput): LevelLayout {
         (id) =>
           x.get(id)! +
           vertex(id).width +
-          (loops.some((e) => e.source === id) ? 12 : 0),
+          (loops.some((e) => e.source === id) ? ARRIVAL : 0),
       ),
   );
   const exits = [...vertices.values()].some((v) => v.kind === "exit");
