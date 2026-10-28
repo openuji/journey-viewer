@@ -1,12 +1,8 @@
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ElkNode, ElkPort } from "elkjs/lib/elk.bundled.js";
+import type { LevelInput, LevelNode, Point } from "@journey-viewer/flow-layout";
+import type { EngineLayout } from "@/layout/compose";
 import { FRAME_PAD } from "@/layout/geometry";
-import type {
-  LevelInput,
-  LevelLayout,
-  LevelNode,
-  Point,
-} from "@/layout/geometry";
 
 /**
  * Measure-only baseline: ELK's layered algorithm on exactly the level input the own engine gets
@@ -50,7 +46,7 @@ export const elkLevelUnmerged = (input: LevelInput) => elkLayout(input, false);
 async function elkLayout(
   input: LevelInput,
   mergeEdges: boolean,
-): Promise<LevelLayout> {
+): Promise<EngineLayout> {
   const nodes = new Map(input.nodes.map((node) => [node.id, node]));
   const end = (id: string, port: string | undefined) => {
     const node = nodes.get(id)!;
@@ -80,7 +76,7 @@ async function elkLayout(
       height: node.height,
       ports: portsOf(node),
       layoutOptions: {
-        ...(node.kind === "card" || node.kind === "entry"
+        ...(node.kind === "header" || node.kind === "entry"
           ? {
               "elk.layered.layering.layerConstraint": "FIRST",
               "elk.alignment": "TOP",
@@ -111,7 +107,7 @@ async function elkLayout(
       { x: child.x ?? 0, y: child.y ?? 0 },
     ]),
   );
-  const routes = new Map<string, readonly Point[]>();
+  const routes = new Map<string, Point[]>();
   for (const edge of result.edges ?? []) {
     const points: Point[] = [];
     for (const section of (
@@ -129,6 +125,28 @@ async function elkLayout(
         section.endPoint,
       );
     routes.set(edge.id, points);
+  }
+  // Like the own engine, a line at a port with an inset stops that far outside the frame.
+  for (const edge of input.edges) {
+    const points = routes.get(edge.id);
+    if (!points || points.length < 2) continue;
+    const inset = (id: string, port: string | undefined) =>
+      nodes.get(id)?.ports?.find((p) => p.id === port)?.inset ?? 0;
+    const pull = (i: number, toward: number, by: number) => {
+      const a = points[i]!;
+      const b = points[toward]!;
+      const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      points[i] = {
+        x: a.x + ((b.x - a.x) / length) * by,
+        y: a.y + ((b.y - a.y) / length) * by,
+      };
+    };
+    pull(0, 1, inset(edge.source, edge.sourcePort));
+    pull(
+      points.length - 1,
+      points.length - 2,
+      inset(edge.target, edge.targetPort),
+    );
   }
   return {
     width: result.width ?? 0,

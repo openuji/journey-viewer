@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { Button } from "@journey-viewer/design-system";
+import { layoutLevel } from "@journey-viewer/flow-layout";
 import { lint } from "@journey-viewer/lint";
 import {
   documentShape,
@@ -31,6 +32,16 @@ assert.match(
   renderToString(createElement(Button, null, "Continue")),
   /<button[^>]*>Continue<\/button>/,
 );
+const level = layoutLevel({
+  nodes: [
+    { id: "title", kind: "header", width: 120, height: 40 },
+    { id: "a", width: 100, height: 30 },
+    { id: "b", width: 100, height: 30 },
+  ],
+  edges: [{ id: "ab", source: "a", target: "b" }],
+});
+assert.deepEqual(level.layers, [["title"], ["a"], ["b"]]);
+assert.equal(level.routes.get("ab").length, 2);
 for (const specifier of [
   "@journey-viewer/design-system/styles.css",
   "@journey-viewer/design-system/tokens.css",
@@ -44,5 +55,5 @@ for (const specifier of [
   );
 }
 console.log(
-  `Rendered JourneyViewer and resolved 5 CSS exports (${findings.length} findings).`,
+  `Rendered JourneyViewer, laid out a level and resolved 5 CSS exports (${findings.length} findings).`,
 );

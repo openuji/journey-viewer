@@ -11,6 +11,9 @@ importers:
       '@journey-viewer/design-system':
         specifier: link:../packages/design-system
         version: link:../packages/design-system
+      '@journey-viewer/flow-layout':
+        specifier: link:../packages/flow-layout
+        version: link:../packages/flow-layout
       '@journey-viewer/ujg-jsonld':
         specifier: link:../packages/ujg-jsonld
         version: link:../packages/ujg-jsonld

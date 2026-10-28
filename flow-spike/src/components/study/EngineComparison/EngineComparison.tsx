@@ -12,7 +12,7 @@ import { composeFlow, composeFlowAsync } from "@/layout/compose";
 import type { FlowLayout } from "@/layout/compose";
 import { elkLevel } from "@/layout/elk-level";
 import { ARRIVAL, MIN_STEP } from "@/layout/geometry";
-import { layeredLevel } from "@/layout/layered";
+import { ownLevel } from "@/layout/own-level";
 import { buildFlowScene } from "@/model/flow-scene";
 import { flowHighlight, specDetail } from "@/model/presentation";
 import { canvasMeasure } from "@/browser/measure";
@@ -52,7 +52,7 @@ export function EngineComparison({
     [document, interaction],
   );
   const own = useMemo(
-    () => composeFlow(scene, layeredLevel, canvasMeasure),
+    () => composeFlow(scene, ownLevel(), canvasMeasure),
     [scene],
   );
   const [elk, setElk] = useState<FlowLayout | null>(null);

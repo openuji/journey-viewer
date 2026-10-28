@@ -14,8 +14,8 @@ import {
 } from "@/data/node-documents";
 import { buildFlowScene } from "@/model/flow-scene";
 import { composeFlow } from "@/layout/compose";
-import { layeredLevel } from "@/layout/layered";
-import type { Placement } from "@/layout/layered";
+import type { Placement } from "@journey-viewer/flow-layout";
+import { ownLevel } from "@/layout/own-level";
 import { measureArtifacts } from "@/layout/artifacts";
 import { estimate } from "@/layout/text";
 import { scopes } from "~/tests/scopes";
@@ -33,7 +33,7 @@ const layout = (
 ) =>
   composeFlow(
     buildFlowScene(document, interaction),
-    (input) => layeredLevel(input, placement),
+    ownLevel(placement),
     estimate,
   );
 

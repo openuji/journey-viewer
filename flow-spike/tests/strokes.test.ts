@@ -11,7 +11,7 @@ import type { Connector, FlowLayout } from "@/layout/compose";
 import { composeFlow } from "@/layout/compose";
 import type { Point } from "@/layout/geometry";
 import { ARROW_LENGTH, CORNER_RADIUS, parallel } from "@/layout/geometry";
-import { layeredLevel } from "@/layout/layered";
+import { ownLevel } from "@/layout/own-level";
 import { HALF_OFFSET, activeStrokes } from "@/layout/strokes";
 import type { RouteStroke } from "@/layout/strokes";
 import { estimate } from "@/layout/text";
@@ -28,11 +28,7 @@ const idpOpen = toggleChildJourneys(
   id("idp-auth-flow"),
 );
 const layout = (interaction: typeof closed) =>
-  composeFlow(
-    buildFlowScene(oidcDocument, interaction),
-    layeredLevel,
-    estimate,
-  );
+  composeFlow(buildFlowScene(oidcDocument, interaction), ownLevel(), estimate);
 
 test("an arrival and a return on one line split it, each with half an arrowhead", () => {
   const result = layout(closed);

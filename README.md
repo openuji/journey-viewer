@@ -32,7 +32,7 @@ pnpm dev
 pnpm storybook:web
 ```
 
-`pnpm build` builds the four parent library packages; `pnpm test` checks the
+`pnpm build` builds the five parent library packages; `pnpm test` checks the
 formatting and source layout and verifies the packages and the captured baseline.
 `pnpm format` applies Prettier. `pnpm test:consumer` installs the packed libraries
 in a temporary project (see Distribution). None of them includes `apps/web`. The web convenience
@@ -44,7 +44,7 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 
 - `apps/web`: independent nested Git/pnpm repository; Astro landing and application,
   local brand tokens/primitives and native Astro Storybook on port 6008. The app
-  links the four built public library packages and mounts the React viewer.
+  links four of the built public library packages (not flow-layout) and mounts the React viewer.
 - `packages/ujg-jsonld`: readonly source document types and pure data queries.
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
@@ -52,6 +52,10 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 - `packages/viewer`: static/controlled hierarchy rendering directly over UJG
   queries, immutable interaction/navigation, derived inspection/highlights,
   explicit occurrence paths and an instance-local React boundary with document-replacement reset.
+- `packages/flow-layout`: dependency-free layered layout of one flow-chart level
+  (positions and orthogonal metro-style routes for sized nodes and fixed-port
+  frames), with drawn sizes and spacing as options. It knows nothing of UJG;
+  `flow-spike/` composes it into nested journey frames.
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export, the source layout check and the
   external-consumer smoke check with its fixture.
@@ -134,14 +138,14 @@ Its browser acceptance suite is `pnpm --dir apps/web test:app:browser` after bui
   tokens), `~/*` → the package root. The viewer adds `~/examples/*` for the shared
   example. A package's own `dist` is imported by its package name.
 - TypeScript modules are imported without `.js`/`.ts` (`@/components/Button/Button`);
-  real file names keep theirs (`.module.css`, `.json`, `.mjs`). All four packages
+  real file names keep theirs (`.module.css`, `.json`, `.mjs`). All five packages
   use TypeScript's `Bundler` resolution.
 - Tools read the same aliases: `tsc-alias --resolve-full-paths` turns them into
   full `./module.js` paths in each package's tsc output, so published JavaScript
   and declarations work in Node and under `nodenext`; Vite configs mirror them in
   `resolve.alias` (which also serves Tailwind's CSS `@import`/`@reference`); the
-  design system runs its Node checks and tests with `tsx`, which reads tsconfig
-  paths.
+  design system and flow layout run their Node checks and tests with `tsx`, which
+  reads tsconfig paths.
 - Prettier formats the repository with default options; Markdown, the lockfile
   and `examples/` are excluded. `tests/source-layout.test.mjs` rejects relative
   imports, `.js`/`.ts` module extensions, and aliases or extensionless paths left
@@ -155,7 +159,8 @@ its manifest, README and `dist`.
 
 - ESM only, with declarations and compiled CSS. Consumers resolve the packages'
   `exports` with TypeScript's `bundler`, `node16` or `nodenext` resolution.
-- Peers: `react` ^19.2 for the design system and viewer; `@types/react` is an
+- Dependencies: `@journey-viewer/flow-layout`, `ujg-jsonld` and `lint` have none.
+  Peers: `react` ^19.2 for the design system and viewer; `@types/react` is an
   optional peer for TypeScript consumers. The viewer depends on
   `@journey-viewer/ujg-jsonld` and `@journey-viewer/design-system`; their packed
   version is `0.0.0`, so install the tarballs together (with overrides if your
@@ -166,17 +171,17 @@ its manifest, README and `dist`.
   `tokens.css` and `tailwind.css` serve consumers that build their own styles on
   the tokens. Typing CSS side-effect imports is the consumer bundler's job (for
   example `vite/client`).
-- `pnpm test:consumer` packs all four libraries, installs the tarballs in a
+- `pnpm test:consumer` packs all five libraries, installs the tarballs in a
   temporary project outside the workspace, type-checks them without Vite types
-  under `bundler` and `nodenext` resolution, server-renders `JourneyViewer` and
-  resolves every CSS export. It needs registry access or a warm pnpm store.
+  under `bundler` and `nodenext` resolution, server-renders `JourneyViewer`, lays
+  out a flow level and resolves every CSS export. It needs registry access or a warm pnpm store.
 
 ## Nested repository ownership
 
 `apps/web` is ignored by this parent and excluded from its pnpm workspace. It has
 its own Git metadata, lockfile and dependency versions. Since Stage 11A it reaches
 this repository only through its git-ignored `.journey-viewer` alias:
-`link:.journey-viewer/packages/...` dependencies on the four built public libraries
+`link:.journey-viewer/packages/...` dependencies on four built public libraries (all but flow-layout)
 and `.journey-viewer/examples/`. Locally the alias is a symlink to this checkout;
 Cloudflare's build clones this repository there (see the app README). It does not
 rejoin the parent workspace or alias library source. Run the parent install/build

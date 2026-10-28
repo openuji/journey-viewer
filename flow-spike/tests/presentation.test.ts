@@ -7,7 +7,7 @@ import {
 } from "@journey-viewer/viewer";
 import { oidcDocument } from "@/data/node-documents";
 import { composeFlow } from "@/layout/compose";
-import { layeredLevel } from "@/layout/layered";
+import { ownLevel } from "@/layout/own-level";
 import { estimate } from "@/layout/text";
 import { buildFlowScene } from "@/model/flow-scene";
 import { flowHighlight } from "@/model/presentation";
@@ -21,11 +21,7 @@ const idpOpen = toggleChildJourneys(
   id("idp-auth-flow"),
 );
 const layout = (interaction: typeof closed) =>
-  composeFlow(
-    buildFlowScene(oidcDocument, interaction),
-    layeredLevel,
-    estimate,
-  );
+  composeFlow(buildFlowScene(oidcDocument, interaction), ownLevel(), estimate);
 
 test("an active exit lights the parent connector that takes it", () => {
   const result = layout(idpOpen);

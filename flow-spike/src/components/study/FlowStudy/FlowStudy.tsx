@@ -5,6 +5,7 @@ import {
   SegmentedControl,
   Text,
 } from "@journey-viewer/design-system";
+import type { Placement } from "@journey-viewer/flow-layout";
 import { getJourneyTouchpoints, getNode } from "@journey-viewer/ujg-jsonld";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import {
@@ -24,8 +25,7 @@ import type {
 } from "@journey-viewer/viewer";
 import { composeFlow } from "@/layout/compose";
 import { measureArtifacts } from "@/layout/artifacts";
-import { layeredLevel } from "@/layout/layered";
-import type { Placement } from "@/layout/layered";
+import { ownLevel } from "@/layout/own-level";
 import { buildFlowScene, cardTarget, frameShows } from "@/model/flow-scene";
 import type { FlowCard, FlowFrame } from "@/model/flow-scene";
 import { disclose } from "@/model/disclosure";
@@ -120,12 +120,7 @@ export function FlowStudy({
     [document, expanded],
   );
   const layout = useMemo(
-    () =>
-      composeFlow(
-        scene,
-        (input) => layeredLevel(input, session.placement),
-        canvasMeasure,
-      ),
+    () => composeFlow(scene, ownLevel(session.placement), canvasMeasure),
     [scene, session.placement],
   );
   // Evaluation readout of the layout actually rendered (browser text metrics), for the capture script.

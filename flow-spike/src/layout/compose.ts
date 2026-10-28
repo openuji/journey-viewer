@@ -1,14 +1,12 @@
-import { FRAME_PAD, GLYPH_RADIUS, simplify } from "@/layout/geometry";
 import type {
   LevelEdge,
-  LevelEngine,
   LevelInput,
   LevelLayout,
   LevelNode,
   LevelPort,
-  Point,
-  Rect,
-} from "@/layout/geometry";
+} from "@journey-viewer/flow-layout";
+import { FRAME_PAD, GLYPH_RADIUS } from "@/layout/geometry";
+import type { Point, Rect } from "@/layout/geometry";
 import { fonts, widest, wrap } from "@/layout/text";
 import type { Measure } from "@/layout/text";
 import type {
@@ -22,6 +20,15 @@ import type {
   FlowStateVertex,
   FlowTerminal,
 } from "@/model/flow-scene";
+
+/** A level's layout from either engine; ELK reports no layer order. */
+export type EngineLayout = Omit<LevelLayout, "layers"> &
+  Partial<Pick<LevelLayout, "layers">>;
+
+/** Lays out one journey level: the own engine or the asynchronous ELK baseline. */
+export type LevelEngine = (
+  input: LevelInput,
+) => EngineLayout | Promise<EngineLayout>;
 
 /** Absolute geometry for one scene. Pure data: rendering and metrics both read it. */
 export interface FlowLayout {
@@ -247,10 +254,10 @@ const stretch = (local: Local, frameKey: string, height: number): Local => {
 function* composeSteps(
   scene: FlowScene,
   measure: Measure,
-): Generator<LevelInput, FlowLayout, LevelLayout> {
+): Generator<LevelInput, FlowLayout, EngineLayout> {
   function* frameLayout(
     frame: FlowFrame,
-  ): Generator<LevelInput, Local, LevelLayout> {
+  ): Generator<LevelInput, Local, EngineLayout> {
     const card = cardText(frame.card, measure);
     if (frame.content.kind === "row") {
       const children: Local[] = [];
@@ -302,7 +309,7 @@ function* composeSteps(
     frame: FlowFrame,
     journey: FlowJourney,
     card: ReturnType<typeof cardText>,
-  ): Generator<LevelInput, Local, LevelLayout> {
+  ): Generator<LevelInput, Local, EngineLayout> {
     const nested = new Map<string, Local>();
     for (const vertex of journey.vertices)
       if (vertex.kind === "frame")
@@ -327,7 +334,7 @@ function* composeSteps(
     const nodes: LevelNode[] = [
       {
         id: frame.card.key,
-        kind: "card",
+        kind: "header",
         width: card.width,
         height: card.height,
       },
@@ -345,14 +352,14 @@ function* composeSteps(
         if (v.kind === "state")
           return {
             id: v.key,
-            kind: "state",
+            kind: "block",
             width: states.get(v.key)!.width,
             height: states.get(v.key)!.height,
           };
         if (v.kind === "composite")
           return {
             id: v.key,
-            kind: "composite",
+            kind: "block",
             width: closed.get(v.key)!.width,
             height: closed.get(v.key)!.height,
           };
@@ -469,50 +476,30 @@ function* composeSteps(
     const glyphOf = new Map(
       local.contracts.filter((c) => own.has(c.key)).map((c) => [c.key, c]),
     );
-    const portPoint = (
-      terminal: FlowTerminal,
-      end: "start" | "end",
-      route: readonly Point[],
-    ): Point[] => {
+    // A line at one of this level's own contracts runs on to the rim of its glyph. At a nested
+    // frame's contract port the engine already stopped it there (the port's inset).
+    const rim = (terminal: FlowTerminal): Point | undefined => {
       const contract = glyphOf.get(terminal.vertex);
-      const edgePoint = end === "start" ? route[0]! : route[route.length - 1]!;
-      if (contract)
-        return [
-          {
-            x: contract.glyph.x,
-            y:
-              contract.glyph.y +
-              (contract.contract.kind === "entry"
-                ? GLYPH_RADIUS
-                : -GLYPH_RADIUS),
-          },
-        ];
-      if (terminal.port?.startsWith("entry:"))
-        return [{ x: edgePoint.x, y: edgePoint.y - GLYPH_RADIUS }];
-      if (terminal.port?.startsWith("exit:"))
-        return [{ x: edgePoint.x, y: edgePoint.y + GLYPH_RADIUS }];
-      return [];
+      if (!contract) return undefined;
+      const { glyph } = contract;
+      return {
+        x: glyph.x,
+        y:
+          glyph.y +
+          (contract.contract.kind === "entry" ? GLYPH_RADIUS : -GLYPH_RADIUS),
+      };
     };
     const finish = (
       route: readonly Point[],
       a: FlowTerminal,
       b: FlowTerminal,
     ): Point[] => {
-      const start = portPoint(a, "start", route);
-      const end = portPoint(b, "end", route);
-      const inner = [...route];
-      // A contract-port end replaces the border point with the point just outside its glyph.
-      if (
-        start.length &&
-        (a.port?.startsWith("entry:") || a.port?.startsWith("exit:"))
-      )
-        inner.shift();
-      if (
-        end.length &&
-        (b.port?.startsWith("entry:") || b.port?.startsWith("exit:"))
-      )
-        inner.pop();
-      return [...simplify([...start, ...inner, ...end])];
+      const points = [...route];
+      const start = rim(a);
+      const end = rim(b);
+      if (start) points[0] = start;
+      if (end) points[points.length - 1] = end;
+      return points;
     };
     for (const association of journey.associations) {
       const route = level.routes.get(association.key);
@@ -563,6 +550,7 @@ function* composeSteps(
         id: `${c.contract.kind}:${c.contract.node["@id"]}`,
         side: c.contract.kind === "entry" ? "top" : "bottom",
         x: c.glyph.x,
+        inset: GLYPH_RADIUS,
       })),
       { id: "card", side: "top", x: at(frame.card.key).x + card.width / 2 },
       { id: "out", side: "bottom", x: at(frame.card.key).x + card.width / 2 },
@@ -601,7 +589,7 @@ function emptyLocal(): Local {
 
 export function composeFlow(
   scene: FlowScene,
-  engine: (input: LevelInput) => LevelLayout,
+  engine: (input: LevelInput) => EngineLayout,
   measure: Measure,
 ): FlowLayout {
   const steps = composeSteps(scene, measure);

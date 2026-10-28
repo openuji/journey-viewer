@@ -31,14 +31,14 @@
       "height": 465
     },
     "flow-idp-open-1440.png": {
-      "ink": 9870,
+      "ink": 9876,
       "runs": 76,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 92,
+      "overlaps": 91,
       "crossings": 3,
       "bends": 240,
       "connectors": 59,
@@ -46,14 +46,14 @@
       "height": 1027
     },
     "flow-idp-open-1440-dark.png": {
-      "ink": 9870,
+      "ink": 9876,
       "runs": 76,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 92,
+      "overlaps": 91,
       "crossings": 3,
       "bends": 240,
       "connectors": 59,
@@ -61,14 +61,14 @@
       "height": 1027
     },
     "flow-idp-open-1099.png": {
-      "ink": 9870,
+      "ink": 9876,
       "runs": 76,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 92,
+      "overlaps": 91,
       "crossings": 3,
       "bends": 240,
       "connectors": 59,
@@ -76,14 +76,14 @@
       "height": 1027
     },
     "flow-idp-open-375.png": {
-      "ink": 9870,
+      "ink": 9876,
       "runs": 76,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
       "throughBoxes": 0,
       "borderCrossings": 0,
-      "overlaps": 92,
+      "overlaps": 91,
       "crossings": 3,
       "bends": 240,
       "connectors": 59,
@@ -106,7 +106,7 @@
       "height": 2321
     },
     "scope-recursion-reuse-1440.png": {
-      "ink": 564,
+      "ink": 562,
       "runs": 5,
       "diagonals": 0,
       "jogs": 0,
@@ -118,7 +118,7 @@
       "bends": 0,
       "connectors": 5,
       "width": 2897,
-      "height": 343
+      "height": 341
     },
     "scope-sibling-children-1440.png": {
       "ink": 0,
@@ -133,7 +133,7 @@
       "bends": 0,
       "connectors": 0,
       "width": 1142,
-      "height": 256
+      "height": 254
     },
     "scope-childless-1440.png": {
       "ink": 0,
@@ -163,7 +163,7 @@
       "bends": 2,
       "connectors": 12,
       "width": 2163,
-      "height": 506
+      "height": 504
     }
   },
   "fitScale": "0.335",
@@ -362,14 +362,14 @@
       "leftEdgeSpread": 220.9,
       "centreSpread": 167.4,
       "artifacts": {
-        "ink": 9870,
+        "ink": 9876,
         "runs": 76,
         "diagonals": 0,
         "jogs": 0,
         "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
-        "overlaps": 92,
+        "overlaps": 91,
         "crossings": 3,
         "bends": 240,
         "connectors": 59,

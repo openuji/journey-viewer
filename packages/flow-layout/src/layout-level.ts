@@ -1,39 +1,25 @@
-import {
-  ARRIVAL,
-  FRAME_PAD,
-  GLYPH_RADIUS,
-  MIN_STEP,
-  simplify,
-  straighten,
-} from "@/layout/geometry";
+import { resolveOptions } from "@/options";
+import type { LayoutOptions } from "@/options";
+import { simplify, straighten } from "@/polyline";
 import type {
   LevelEdge,
   LevelInput,
   LevelLayout,
   LevelNode,
+  LevelNodeKind,
   Point,
-} from "@/layout/geometry";
+} from "@/types";
 
 /**
- * The spike's own level engine: a small layered (Sugiyama-style) layout, top to bottom, with
- * orthogonal channel routing. It never sees nested content: open composites arrive as fixed-size
- * boxes with fixed ports, so every route stays inside one level by construction.
+ * A small layered (Sugiyama-style) layout of one level, top to bottom, with orthogonal channel
+ * routing. It never sees nested content: frames arrive as fixed-size boxes with fixed ports, so
+ * every route stays inside one level by construction.
  */
 
-const GAP = 28;
-const DUMMY_GAP = 16;
-const FRAME_CLEARANCE = 44;
-/** Least distance of a track from a frame's top or bottom border, so no line runs along it. */
-const FRAME_BORDER_GAP = 22;
-/** A track beside a frame: clear of its border, with a full arrival at a contract glyph on it. */
-const FRAME_TRACK_CLEARANCE = Math.max(
-  FRAME_BORDER_GAP,
-  GLYPH_RADIUS + ARRIVAL,
-);
 const SWEEPS = 16;
 const PLACEMENT_ROUNDS = 8;
 
-type Kind = LevelNode["kind"] | "dummy" | "lane";
+type Kind = LevelNodeKind | "dummy" | "lane";
 type Side = "top" | "bottom";
 
 interface Vertex {
@@ -79,28 +65,21 @@ interface Piece {
   readonly b: Terminal;
 }
 
-/**
- * How a level places its blocks across. `median` puts each one under the median of its
- * connections, for the fewest bends. The aligned placements stack each block in a column under
- * one neighbour and pack the columns to the left: `aligned-center` lines up a column's centres,
- * `aligned-left` its left edges.
- */
-export type Placement = "median" | "aligned-center" | "aligned-left";
-
 const pairKey = (a: string, b: string) => (a < b ? `${a}\n${b}` : `${b}\n${a}`);
 const isReal = (vertex: Vertex) =>
   vertex.kind !== "dummy" && vertex.kind !== "lane";
 
-export function layeredLevel(
+export function layoutLevel(
   input: LevelInput,
-  placement: Placement = "median",
+  options: LayoutOptions = {},
 ): LevelLayout {
+  const o = resolveOptions(options);
   const vertices = new Map<string, Vertex>(
     input.nodes.map((node, index) => [
       node.id,
       {
         id: node.id,
-        kind: node.kind,
+        kind: node.kind ?? "block",
         width: node.width,
         height: node.height,
         index,
@@ -119,8 +98,8 @@ export function layeredLevel(
   // 1. Cycle breaking: depth-first in model order, entries first; back edges only flip for layering.
   const directed: [string, string][] = [];
   for (const edge of links) {
-    if (edge.forward) directed.push([edge.source, edge.target]);
-    if (edge.backward) directed.push([edge.target, edge.source]);
+    if (edge.forward ?? true) directed.push([edge.source, edge.target]);
+    if (edge.backward ?? false) directed.push([edge.target, edge.source]);
   }
   const successors = new Map<string, string[]>();
   for (const [from, to] of directed) {
@@ -154,7 +133,7 @@ export function layeredLevel(
   const ordered = [...vertices.values()];
   ordered.filter((v) => v.kind === "entry").forEach((v) => visit(v.id));
   ordered
-    .filter((v) => v.kind !== "exit" && v.kind !== "card")
+    .filter((v) => v.kind !== "exit" && v.kind !== "header")
     .forEach((v) => visit(v.id));
   ordered.filter((v) => v.kind === "exit").forEach((v) => visit(v.id));
 
@@ -182,7 +161,7 @@ export function layeredLevel(
   ): number => {
     const v = vertex(id);
     if (v.layer >= 0) return v.layer;
-    if (v.kind === "card" || v.kind === "entry") return (v.layer = 0);
+    if (v.kind === "header" || v.kind === "entry") return (v.layer = 0);
     if (seen.has(id)) return 1;
     const inner = new Set(seen).add(id);
     const preds = (predecessors.get(id) ?? []).filter(
@@ -205,7 +184,7 @@ export function layeredLevel(
   for (let round = 0; round < 4; round++) {
     let moved = false;
     for (const v of [...ordered].reverse()) {
-      if (v.kind === "exit" || v.kind === "card" || v.kind === "entry")
+      if (v.kind === "exit" || v.kind === "header" || v.kind === "entry")
         continue;
       const preds = (predecessors.get(v.id) ?? []).map(vertex);
       const succs = (successorsOf.get(v.id) ?? [])
@@ -267,7 +246,7 @@ export function layeredLevel(
     .forEach((v) => layers[v.layer]!.push(v.id));
   const pinCard = () => {
     const first = layers[0]!;
-    const card = first.findIndex((id) => vertex(id).kind === "card");
+    const card = first.findIndex((id) => vertex(id).kind === "header");
     if (card > 0) first.unshift(...first.splice(card, 1));
   };
   pinCard();
@@ -354,7 +333,7 @@ export function layeredLevel(
     let improved = false;
     for (const layer of layers)
       for (let i = 0; i < layer.length - 1; i++) {
-        if (vertex(layer[i]!).kind === "card") continue;
+        if (vertex(layer[i]!).kind === "header") continue;
         [layer[i], layer[i + 1]] = [layer[i + 1]!, layer[i]!];
         const count = crossings(layers);
         if (count < bestCrossings) {
@@ -512,23 +491,26 @@ export function layeredLevel(
       alignment.push([sequence[i - 1]!, sequence[i]!]);
   }
   const x = new Map<string, number>();
+  /** A self-loop is drawn beside its block's right edge, one arrival wide. */
+  const loopWidth = (id: string) =>
+    loops.some((edge) => edge.source === id) ? o.arrival : 0;
   const separation = (left: string, right: string) => {
     const l = vertex(left);
     const r = vertex(right);
     // Lines passing a frame keep a clear distance, so they never read as a second border.
     const gap =
       isReal(l) && isReal(r)
-        ? GAP
+        ? o.blockSpacing
         : l.kind === "frame" || r.kind === "frame"
-          ? FRAME_CLEARANCE
-          : DUMMY_GAP;
-    return l.width + gap;
+          ? o.frameLineSpacing
+          : o.lineSpacing;
+    return l.width + loopWidth(left) + gap;
   };
   /** Frame padding applies to what is drawn at the edge: a contract's glyph, not its label box. */
   const lowerBound = (id: string) => {
     const v = vertex(id);
     if (v.layer === 0) return 0;
-    return v.kind === "exit" ? FRAME_PAD - (v.node?.anchor ?? 0) : FRAME_PAD;
+    return v.kind === "exit" ? o.padding - (v.node?.anchor ?? 0) : o.padding;
   };
   const pack = (layer: number) => {
     const ids = layers[layer]!;
@@ -554,7 +536,7 @@ export function layeredLevel(
     const targets: number[] = [];
     const weights: number[] = [];
     ids.forEach((id, i) => {
-      if (vertex(id).kind === "card") {
+      if (vertex(id).kind === "header") {
         targets.push(0 - offsets[i]!);
         weights.push(1e6);
         return;
@@ -660,8 +642,7 @@ export function layeredLevel(
     // A left-aligned column's states and composites share one contact line: the narrowest one's
     // centre, which lies inside every member.
     if (left) {
-      const block = (id: string) =>
-        vertex(id).kind === "state" || vertex(id).kind === "composite";
+      const block = (id: string) => vertex(id).kind === "block";
       const narrowest = new Map<string, number>();
       for (const [id, r] of root)
         if (block(id))
@@ -720,13 +701,13 @@ export function layeredLevel(
     if (placed < columns.length) throw new Error("Aligned columns cross");
     for (const [id, r] of root) x.set(id, at.get(r)! + rel.get(id)!);
   };
-  if (placement === "median") {
+  if (o.placement === "median") {
     for (let round = 0; round < PLACEMENT_ROUNDS; round++) {
       for (let layer = 1; layer < layerCount; layer++) place(layer, true);
       for (let layer = layerCount - 2; layer >= 0; layer--) place(layer, false);
     }
     for (let layer = 1; layer < layerCount; layer++) place(layer, true);
-  } else alignColumns(placement === "aligned-left");
+  } else alignColumns(o.placement === "aligned-left");
 
   // Whole pixels: equal attachments are exactly equal, so straight lines stay straight when drawn.
   const attachX = (a: Attach) => Math.round(x.get(a.vertex)! + offset(a));
@@ -822,7 +803,7 @@ export function layeredLevel(
     const set = new Set(ids);
     return ids.every((id) => {
       const v = vertex(id);
-      if (v.kind === "card") return false;
+      if (v.kind === "header") return false;
       const layer = layers[v.layer]!;
       const i = layer.indexOf(id);
       const next = x.get(id)! + dx;
@@ -879,17 +860,17 @@ export function layeredLevel(
       if (!opposite(p)) return true;
       const gap = gapOf(p);
       if (p === target)
-        return goal === "straight" ? gap <= 0.5 : gap >= MIN_STEP - 0.01;
+        return goal === "straight" ? gap <= 0.5 : gap >= o.step - 0.01;
       if (before.get(p)! <= 0.5) return gap <= 0.5;
-      return gap <= 0.5 || gap >= MIN_STEP - 0.01;
+      return gap <= 0.5 || gap >= o.step - 0.01;
     });
     if (ok) return true;
     for (const id of moves) move(id, -dx);
     return false;
   };
-  /** When a step cannot be aligned, make it a deliberate step of at least MIN_STEP. */
+  /** When a step cannot be aligned, make it a deliberate step of at least `step`. */
   const widen = (piece: Piece, dx: number) => {
-    const more = Math.sign(dx) * (MIN_STEP - Math.abs(dx));
+    const more = Math.sign(dx) * (o.step - Math.abs(dx));
     return (
       attempt(piece, column(piece.b.attach.vertex), -more, "wide") ||
       attempt(piece, column(piece.a.attach.vertex), more, "wide") ||
@@ -902,11 +883,61 @@ export function layeredLevel(
       attempt(piece, pushed(column(piece.a.attach.vertex), more), more, "wide")
     );
   };
+  /**
+   * When no local move fixes a step, opens room for it: shifts one of its ends, and everything that
+   * must follow, to the right by whole pixels. What follows a moved vertex is its right neighbour in
+   * the layer and whatever attaches at or to the right of one of its attachments. So separations
+   * only grow, straight lines stay straight, every other step only widens and the level only gets
+   * wider. Straightening (moving the left end) is tried before widening (moving the right end).
+   */
+  const shiftRight = (start: string, target: Piece, dx: number) => {
+    const ends = [target.a.attach.vertex, target.b.attach.vertex];
+    const moves = new Set<string>();
+    const queue = [start];
+    while (queue.length > 0) {
+      const id = queue.pop()!;
+      if (moves.has(id)) continue;
+      moves.add(id);
+      const layer = layers[vertex(id).layer]!;
+      const right = layer[layer.indexOf(id) + 1];
+      if (right !== undefined) queue.push(right);
+      for (const p of touching(id)) {
+        if (p === target) continue;
+        const [mine, other] =
+          p.a.attach.vertex === id ? [p.a, p.b] : [p.b, p.a];
+        if (attachX(other.attach) >= attachX(mine.attach) - 0.5)
+          queue.push(other.attach.vertex);
+      }
+    }
+    if (
+      ends.every((id) => moves.has(id)) ||
+      [...moves].some((id) => vertex(id).kind === "header")
+    )
+      return false;
+    for (const id of moves) move(id, dx);
+    return true;
+  };
+  const open = (piece: Piece) => {
+    const [left, right] =
+      attachX(piece.a.attach) <= attachX(piece.b.attach)
+        ? [piece.a.attach.vertex, piece.b.attach.vertex]
+        : [piece.b.attach.vertex, piece.a.attach.vertex];
+    const gap = gapOf(piece);
+    return (
+      (opposite(piece) && shiftRight(left, piece, gap)) ||
+      shiftRight(right, piece, Math.ceil(o.step - gap - 0.01))
+    );
+  };
   const snap = () => {
     let changed = false;
     for (const piece of allPieces) {
-      if (!opposite(piece)) continue;
-      if (gapOf(piece) <= 0.5 || gapOf(piece) >= MIN_STEP - 0.01) continue;
+      if (gapOf(piece) >= o.step - 0.01) continue;
+      // A U-turn's horizontal leg lies between two bends: it can only widen.
+      if (!opposite(piece)) {
+        if (open(piece)) changed = true;
+        continue;
+      }
+      if (gapOf(piece) <= 0.5) continue;
       // Move by the unrounded distance; the result is judged on whole pixels.
       const dx = rawX(piece.a.attach) - rawX(piece.b.attach);
       const fixed =
@@ -914,7 +945,8 @@ export function layeredLevel(
         attempt(piece, column(piece.a.attach.vertex), -dx) ||
         attempt(piece, pushed(column(piece.b.attach.vertex), dx), dx) ||
         attempt(piece, pushed(column(piece.a.attach.vertex), -dx), -dx) ||
-        widen(piece, dx);
+        widen(piece, dx) ||
+        open(piece);
       if (fixed) changed = true;
     }
     return changed;
@@ -923,21 +955,32 @@ export function layeredLevel(
 
   // 11. One bus per channel: every connector that changes x in a channel shares a single
   // horizontal track, so parallel horizontal runs collapse into one line. The track keeps a full
-  // arrival from the layer on either side; beside a frame it keeps the frame's clearance, and
-  // below the last layer the enclosing frame's own border.
+  // arrival from the layer on either side. Beside a frame it also clears the frame's border, and
+  // the arrival starts after the inset of the ports facing it. Below the last layer it clears the
+  // enclosing frame's own border.
   const channelCount = layerCount - 1 + (trailingChannel ? 1 : 0);
   const trackY = new Map<Piece, number>();
   const channelHeight: number[] = [];
   const straight = (p: Piece) =>
     p.a.boundary !== p.b.boundary &&
     Math.abs(attachX(p.a.attach) - attachX(p.b.attach)) <= 0.5;
-  const clearance = (layer: readonly string[] | undefined) =>
-    layer === undefined || layer.some((id) => vertex(id).kind === "frame")
-      ? FRAME_TRACK_CLEARANCE
-      : ARRIVAL;
+  const clearance = (layer: readonly string[] | undefined, facing: Side) => {
+    if (layer === undefined) return o.frameTrackSpacing;
+    const frames = layer.map(vertex).filter((v) => v.kind === "frame");
+    if (frames.length === 0) return o.arrival;
+    const inset = Math.max(
+      0,
+      ...frames.flatMap((v) =>
+        (v.node?.ports ?? [])
+          .filter((port) => port.side === facing)
+          .map((port) => port.inset ?? 0),
+      ),
+    );
+    return Math.max(o.frameTrackSpacing, inset + o.arrival);
+  };
   for (let channel = 0; channel < channelCount; channel++) {
-    const above = clearance(layers[channel]);
-    channelHeight.push(above + clearance(layers[channel + 1]));
+    const above = clearance(layers[channel], "bottom");
+    channelHeight.push(above + clearance(layers[channel + 1], "top"));
     for (const p of allPieces)
       if (p.channel === channel && !straight(p)) trackY.set(p, above);
   }
@@ -971,6 +1014,12 @@ export function layeredLevel(
     return t.attach.side === "bottom" ? y(v.id) + v.height : y(v.id);
   };
 
+  const insetOf = (a: Attach) => {
+    const v = vertex(a.vertex);
+    return v.kind === "frame"
+      ? (v.node?.ports?.find((port) => port.id === a.port)?.inset ?? 0)
+      : 0;
+  };
   const routes = new Map<string, readonly Point[]>();
   for (const path of paths) {
     const points: Point[] = [];
@@ -995,19 +1044,27 @@ export function layeredLevel(
         );
       }
     }
-    const route = straighten(simplify(points));
+    // A line at a port with an inset stops that far outside the frame's border.
+    const route = inset(
+      straighten(simplify(points)),
+      insetOf(path.upperAttach),
+      insetOf(path.lowerAttach),
+    );
     routes.set(path.edge.id, path.sourceIsUpper ? route : [...route].reverse());
   }
-  // A self-loop leaves and returns on the right; either end may carry an arrowhead.
+  // A self-loop leaves and returns on the right; either end may carry an arrowhead, so both
+  // horizontal legs are a full arrival. Its vertical leg is a full step on a block at least that
+  // tall; on a shorter block it spans the whole right edge.
   for (const edge of loops) {
     const v = vertex(edge.source);
     const left = x.get(v.id)! + v.width;
-    const top = y(v.id);
+    const middle = y(v.id) + v.height / 2;
+    const half = Math.min(v.height, Math.max(o.step, v.height * 0.4)) / 2;
     routes.set(edge.id, [
-      { x: left, y: top + v.height * 0.3 },
-      { x: left + ARRIVAL, y: top + v.height * 0.3 },
-      { x: left + ARRIVAL, y: top + v.height * 0.7 },
-      { x: left, y: top + v.height * 0.7 },
+      { x: left, y: middle - half },
+      { x: left + o.arrival, y: middle - half },
+      { x: left + o.arrival, y: middle + half },
+      { x: left, y: middle + half },
     ]);
   }
 
@@ -1015,27 +1072,42 @@ export function layeredLevel(
   for (const v of vertices.values())
     if (isReal(v)) positions.set(v.id, { x: x.get(v.id)!, y: y(v.id) });
   const right = Math.max(
-    ...layers
-      .flat()
-      .map(
-        (id) =>
-          x.get(id)! +
-          vertex(id).width +
-          (loops.some((e) => e.source === id) ? ARRIVAL : 0),
-      ),
+    ...layers.flat().map((id) => x.get(id)! + vertex(id).width + loopWidth(id)),
   );
   const exits = [...vertices.values()].some((v) => v.kind === "exit");
   const bottom = layerTop[layerCount - 1]! + layerHeight[layerCount - 1]!;
   return {
-    width: right + FRAME_PAD,
+    width: right + o.padding,
     height: exits
       ? bottom
       : bottom +
-        (trailingChannel ? channelHeight[channelCount - 1]! : FRAME_PAD),
+        (trailingChannel ? channelHeight[channelCount - 1]! : o.padding),
     positions,
     routes,
     layers: realLayers,
   };
+}
+
+/** Moves each end of a polyline along its leg by the given lengths. */
+function inset(
+  points: readonly Point[],
+  start: number,
+  end: number,
+): readonly Point[] {
+  const out = [...points];
+  const pull = (i: number, toward: number, by: number) => {
+    if (by <= 0 || out.length < 2) return;
+    const a = out[i]!;
+    const b = out[toward]!;
+    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    out[i] = {
+      x: a.x + ((b.x - a.x) / length) * by,
+      y: a.y + ((b.y - a.y) / length) * by,
+    };
+  };
+  pull(0, 1, start);
+  pull(out.length - 1, out.length - 2, end);
+  return out;
 }
 
 /**

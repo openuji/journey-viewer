@@ -2,13 +2,19 @@
 
 ## Current checkpoint
 
-- Current stage: **12 — isolated flow-chart spike (complete, uncommitted)**.
-  The independent root `flow-spike/` folder owns the experiment, Storybook,
+- Current stage: **13 — flow layout library (complete, uncommitted)**. The
+  spike's own level engine is now `@journey-viewer/flow-layout` in
+  `packages/flow-layout`: dependency-free, with generic node kinds, drawn sizes
+  and spacing as options, and clean routes for corner radii 2–20. The spike
+  consumes it through `link:`. Decisions and verification are recorded in
+  "Stage-13 decisions and verification evidence".
+- Previous checkpoint: **12 — isolated flow-chart spike** (user checkpoints up to
+  `da45850`). The independent root `flow-spike/` folder owns the experiment, Storybook,
   dependencies, tests, report and evidence. Recommendation: keep Flow as an
   optional third view built on the spike's composition model and own layout
-  engine with metro-style corridors, not elkjs; no application mode or public API is added. Decisions and
+  engine with metro-style corridors, not elkjs; no application mode is added. Decisions and
   verification are recorded in "Stage-12 verification evidence".
-- Previous checkpoint: **11C — library cleanup and library source conventions**.
+- Earlier checkpoint: **11C — library cleanup and library source conventions**.
   Stage 11 is split into 11A (deployment, user checkpoints `81c4e40`
   and `e7eb0a9`), 11B (site source layout, `@/` imports, Prettier; user checkpoint
   `d65c7f1`) and 11C. 11C changes only this library repository; `apps/web` is
@@ -91,10 +97,13 @@
 6. Extensions use explicit functions/components and readonly configuration. No
    plugin runtime, event bus, service container, discovery, or mutable registry.
 7. Planned packages: `@journey-viewer/ujg-jsonld`, `@journey-viewer/lint`,
-   `@journey-viewer/design-system`, and `@journey-viewer/viewer`. Add each package
-   when its stage starts. Generic helpers stay with their owners.
+   `@journey-viewer/design-system`, `@journey-viewer/viewer`, and (approved for
+   Stage 13) `@journey-viewer/flow-layout`. Add each package when its stage
+   starts. Generic helpers stay with their owners.
 8. The viewer uses UJG queries and design-system components. Parsing and rendering
    never depend on lint. The design system has no UJG or viewer dependency.
+   The flow layout has no dependencies and knows no UJG, React or DOM; journey
+   projection, nesting and rendering stay with its consumer.
    Packages never import application code.
 9. DTCG tokens own shared design values. Tailwind utilities and component styles
    consume their generated output. Shared controls, typography, and surfaces have
@@ -149,6 +158,7 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 11B. Site source layout | One `apps/web` component tree in semantic groups, one folder per component owning its styles, stories, studies and private modules; global CSS only in `src/styles`, CSS modules for React; `@/` tsconfig imports instead of relative paths; Prettier formatting; enforced by a layout test and `pnpm check`. | No behavior, URL, API or story-ID change: pages and stories pixel-identical to the pre-change build except the corrected cascade; all app suites and parity pass. |
 | 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook; library source conventions: `@/`/`~/` tsconfig aliases instead of relative imports and extensionless module imports (resolved to `./module.js` in tsc output by `tsc-alias --resolve-full-paths`; `tsx` for Node runs), Prettier. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files; layout test and `format:check` pass in `pnpm test`; story IDs unchanged; all package, browser, parity and app suites pass. |
 | 12. Isolated flow-chart spike | Independent root `flow-spike/` Storybook: a Flow view beside public Tree/Columns over one viewer snapshot, using unchanged Solid-OIDC plus existing test fixtures; own layered engine with ELK as a measure-only baseline; stakeholder/spec detail; Impeccable context, critique, polish and audit. | One connector per pair of blocks; the open composite's card stays its frame's corner and its screen position; contracts on borders; artifact metrics on all scopes and in the browser; UJG ED boundary semantics; shared state; report with own-vs-ELK evidence and a same-data reference capture; existing source/config/lockfiles unchanged. |
+| 13. Flow layout library | `packages/flow-layout` (`@journey-viewer/flow-layout`): the spike's own level engine as a dependency-free library with generic node kinds, port insets, drawn sizes and spacing as options, and the lengths it guarantees; steps fixed for large corner radii; the spike consumes it; recorded level fixtures. | Every recorded level × 3 placements × radii 2–20: no diagonals, kinks, short arrivals, lines through nodes or along frames; Solid-OIDC layouts reproduced before the step fix; packed tarball installs and lays out a level outside the workspace; spike tests, measure, build, capture and root suites pass. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -2257,3 +2267,129 @@ the library source conventions into 11C.
   - Moving primitives into the design system and the projection/composer into the
     viewer.
   - A stakeholder review.
+
+## Stage-13 decisions and verification evidence — 2026-10-28
+
+- **Approved scope (user, 2026-10-28):** take on the large-radius rework the arrival fix
+  left open, and isolate the layout engine so it can be published as its own package,
+  as elkjs is. User decisions, asked before implementation:
+  - The package holds the level engine only: what plugs in where ELK plugs in. Nesting
+    (frames, rows, the composer), text sizing and active-route strokes stay in the
+    spike. Generic compound graphs would be a later stage.
+  - It lives at `packages/flow-layout` as `@journey-viewer/flow-layout`, private and
+    `0.0.0` like the other four, with the 11C tooling (tsc + `tsc-alias`, aliases,
+    Prettier, layout test, packed-tarball consumer check).
+- **Responsibilities and interfaces (changed, approved):**
+  - A fifth library with no runtime dependencies and no UJG, React or DOM. Public API:
+    `layoutLevel(input, options)`, `minimumLengths(options)` and the types
+    `LevelInput`, `LevelNode`, `LevelNodeKind`, `LevelPort`, `LevelEdge`,
+    `LevelLayout`, `LayoutOptions`, `MinimumLengths`, `Placement`, `Point`.
+  - Generic node kinds `header | entry | exit | block | frame` replace the spike's
+    `card | entry | exit | state | composite | frame` (states and composites were
+    already treated alike). `kind` defaults to `block`; edge `forward`/`backward`
+    default to `true`/`false`; `layers` is always returned.
+  - Options, with the former constants as defaults: `placement` (median),
+    `cornerRadius` (6), `arrowLength` (7), `padding` (16), `blockSpacing` (28),
+    `lineSpacing` (16), `frameLineSpacing` (44), `frameTrackSpacing` (22).
+    `minimumLengths` derives `step = 3·radius` and `arrival = 2·radius + arrow`, the
+    lengths every layout keeps.
+  - Port `inset`: the engine stops a line that far outside a frame's border and keeps
+    the full arrival after it. Before, the engine reserved `GLYPH_RADIUS` beside every
+    frame and the composer trimmed the line. A channel now reserves the largest inset
+    of the frame ports facing it, so one facing only card/out ports (inset 0) is 22px
+    instead of 24. This changes three test fixtures by 2px, and no Solid-OIDC scope.
+- **Spike (the consumer):** `link:` dependency, built by `prepare:libraries`.
+  - `src/layout/layered.ts` is removed. `own-level.ts` (`ownLevel(placement)`) mirrors
+    `elk-level.ts`. `geometry.ts` keeps the flow's drawn sizes (`drawnSizes`) and
+    derives `ARRIVAL`/`MIN_STEP` with `minimumLengths`.
+  - The composer maps kinds, gives contract ports `inset: GLYPH_RADIUS`, and only
+    extends its own contracts' ends to the glyph rim. The ELK adapter applies the same
+    inset contract, so the comparison stays like for like. `EngineLayout` covers
+    ELK's missing layer order.
+  - New `pnpm level-fixtures` records every distinct level input (59, from the 11
+    Solid-OIDC scopes and the 4 fixtures) as `packages/flow-layout/tests/fixtures/levels.json`.
+    Ids lose their URN prefixes (452 KB). `measure` now counts the package source
+    (2,354 lines with the spike's composer, sizes and metrics).
+  - A Prettier violation at HEAD in `FlowStudy.stories.tsx` (a missing trailing comma)
+    is fixed. No component, story or public-library change.
+- **Large radii (design):**
+  - **Cause, on the recorded levels:** the snap step only moved a step's own column or
+    a pushed row, and rejected any move that bent a straight line or made another
+    short step.
+    - At 10/7, Callback processing sat at the padding with a corridor 16px to its
+      right, pinned by Access denied's straight lines.
+    - At 12/12, Account selection's corridor stepped 543 → 525 → 481 → 392, each leg
+      held by the next.
+  - **Fix:** a fallback after the local moves (`open` in `layout-level.ts`). It shifts
+    one end of the step, and everything that must follow it, to the right by whole
+    pixels. A moved vertex moves its right neighbour in the layer and anything
+    attached at or to the right of one of its attachments. So separations only grow,
+    straight lines stay straight, every other step only widens and the level only gets
+    wider. It is refused when both ends or the header would move. Straightening (the
+    left end) is tried before widening (the right end, to `step`). U-turn legs beside
+    frame lanes, which the snap skipped, widen the same way.
+  - **Spacing was not derived from the radius.** Horizontal spacing never holds a
+    corner: corners turn in the channels, whose height already follows `arrival`.
+    The fallback opens room only where a step needs it. The spacings became options.
+  - **Self-loops** (no fixture has one): a loop's width now counts in the separation
+    from its right neighbour (it overlapped it once `arrival` exceeded the block
+    spacing). Its vertical leg is a full step on a block at least that tall; it was
+    40% of the height, short of `step` even at radius 6.
+- **Behaviour change at today's sizes (6/7):** the fallback also straightens short
+  steps on shared buses. The old snap left these, and the spike's junction rule
+  forgave them, but they drew as S-curves on an active route.
+  - Solid-OIDC median scopes with IdP or MFA open: width +0–14px (at most 0.7%), ink
+    +0.1–0.4%, one run and two bends fewer. Crossings and all artifact counts are
+    unchanged.
+  - Aligned placements and ELK: identical. Browser, real text: IdP open keeps its
+    width (1084); ink goes from 9,870 to 9,876.
+  - The three fixtures with inset-free facing ports: 2px lower (above).
+- **Evidence:**
+  - **Port check:** before the step fix, the package reproduced every composed
+    Solid-OIDC layout exactly in all three placements (45 scope/fixture/placement
+    dumps compared, scratchpad script). Only the three fixtures above differed.
+  - **`pnpm --filter @journey-viewer/flow-layout test`: 9/9**, plus the type-only
+    readonly contract (`tsc -p tsconfig.test.json`).
+    - The 59 recorded levels × 3 placements × 8 sizes (radius/arrow 2/3, 3/4, 6/7,
+      6/14, 10/7, 12/12, 16/10, 20/8) show 0 diagonals, kinks, short arrivals, lines
+      through nodes and lines along frames.
+    - Kinks are counted without the junction exemption: every leg between two bends is
+      at least `step`, even where routes share it.
+    - Before the fallback, the same gate counted (median only) 1 kink at 10/7, 9 at
+      12/12, 6 at 16/10 and 16 at 20/8.
+    - Also tested: the header at the corner; entries and exits on the borders; one
+      contact per block side (centred, or inside when aligned left); every frame end at
+      its port and inset (more than 1,000 ends); a frame swapped for a block keeps
+      every layer's order; a straight chain with default directions; self-loop legs
+      and clearance at all 8 sizes; determinism on frozen input.
+    - Total median width over the 59 levels: 60,516 at 6/7, 60,702 at 10/7, 60,844 at
+      12/12, 62,331 at 20/8. Heights grow with the arrival: 39,552 at 6/7, 46,739 at
+      12/12.
+  - **Spike:** `pnpm --dir flow-spike test` 27/27. The strokes test still counts 32
+    junction crossings over 570 activations, at its cap. `measure`, `build` (tsc +
+    static Storybook), `capture` and `format:check` pass.
+    - Browser: 11 readouts with 0 artifacts; disclosure displacement ≤0.5px; 37
+      screens; axe 0 violations on 8 combinations; no page errors.
+    - 18 PNGs were re-captured with geometry changes (IdP/MFA median views, three
+      fixture scopes). `flow-context-returned-1440.png` differed by 17 antialiased
+      pixels and was restored from HEAD.
+  - **Root:**
+    - Prettier passes on every tracked or trackable file.
+    - `pnpm -r test` passes: lint 17, ujg-jsonld 13, design-system 56, flow-layout 9,
+      viewer 54. `tests/*.test.mjs` passes 5/5.
+    - `pnpm test:consumer` passes 4/4 with the fifth tarball: manifest, README and
+      `dist` only; declarations under bundler and nodenext; a level laid out at radius
+      12.
+    - `pnpm test` as one command stops at the git-excluded Impeccable hook caches
+      (`.impeccable/hook.cache.json`, `flow-spike/.impeccable/hook.cache.json`), which
+      the hook rewrites during edits and root Prettier reads. They were left in
+      place, and the three parts were run separately.
+  - No commit or staging.
+- **Open:**
+  - Publishing needs a scope/name decision (the package is generic, the scope is
+    Journey Viewer's), a licence (the repository has none), a version, and removal of
+    `private`.
+  - Generic compound graphs (nesting as input, like ELK's hierarchy) are not scoped.
+  - The spike's two strokes tests stay pinned to its own sizes (the two-way line that
+    turns twice; the cap of 32 junction crossings). Active-route strokes are not in
+    the package.

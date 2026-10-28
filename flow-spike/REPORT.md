@@ -143,6 +143,11 @@ What the numbers show:
 - **Cost.** The own engine is synchronous and deterministic, at 0.5–14 ms per layout against
   7–71 ms. Its layout source is about 2.0k formatted lines; ELK adds 1.6 MB (`elk.bundled.js`).
 
+Since Stage 13 the own engine is a separate library, `@journey-viewer/flow-layout`
+(`packages/flow-layout`). Its drawn sizes and spacing are options, and it is tested clean for corner
+radii 2–20. Current numbers are in `evidence/metrics.json` and the Stage-13 evidence in `PLAN.md`;
+the table above is from iteration 4.
+
 "Kink" means an interior step under 16px that is not part of a longer line another connector also
 draws. Shorter steps become S-curves once corners are rounded (6px), which is what read as kinks
 in the reference.

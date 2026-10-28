@@ -1,4 +1,4 @@
-// Packs the four libraries, installs the tarballs in a temporary project outside the
+// Packs the five libraries, installs the tarballs in a temporary project outside the
 // workspace and uses them there the way an external consumer would. Run after `pnpm build`.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const repository = fileURLToPath(new URL("../", import.meta.url));
-const names = ["ujg-jsonld", "lint", "design-system", "viewer"];
+const names = ["ujg-jsonld", "lint", "design-system", "viewer", "flow-layout"];
 const run = (command, args, cwd) =>
   execFileSync(command, args, {
     cwd,
@@ -118,7 +118,7 @@ try {
     );
   });
 
-  await test("the packages import, server-render and resolve their CSS exports", () => {
+  await test("the packages import, server-render, lay out a level and resolve their CSS exports", () => {
     process.stdout.write(run("node", ["render.mjs"], consumer));
   });
 } finally {

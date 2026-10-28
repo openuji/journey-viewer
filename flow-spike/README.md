@@ -10,7 +10,7 @@ From the repository root, with the root workspace installed:
 
 ```sh
 pnpm --dir flow-spike install
-pnpm --dir flow-spike prepare:libraries   # builds ujg-jsonld, design-system and viewer dist
+pnpm --dir flow-spike prepare:libraries   # builds ujg-jsonld, design-system, viewer and flow-layout dist
 pnpm --dir flow-spike dev                 # Storybook on http://127.0.0.1:6016
 ```
 
@@ -19,6 +19,7 @@ pnpm --dir flow-spike dev                 # Storybook on http://127.0.0.1:6016
 ```sh
 pnpm --dir flow-spike test           # projection and layout invariants (Node, text estimator)
 pnpm --dir flow-spike measure        # own engine vs ELK per disclosure scope → evidence/metrics.json
+pnpm --dir flow-spike level-fixtures # every distinct level input → packages/flow-layout/tests/fixtures
 pnpm --dir flow-spike build          # tsc + static Storybook
 pnpm --dir flow-spike capture        # browser evidence from the static build → evidence/*.png, browser.json
 pnpm --dir flow-spike format:check
@@ -32,8 +33,9 @@ or `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 - `src/model/` — the projection of canonical UJG plus the shared `ViewerInteraction` into a flow
   scene, the disclosure reducer (what is open and the node the user is at), and presentation
   helpers (detail presets, highlights). Pure.
-- `src/layout/` — the composer (frames bottom-up, ports), the spike's own layered engine and
-  channel router, the measure-only ELK adapter and the artifact metrics. Pure.
+- `src/layout/` — the composer (frames bottom-up, ports), the flow's drawn sizes, the adapters
+  for the own engine (`@journey-viewer/flow-layout`, at `packages/flow-layout`) and the
+  measure-only ELK baseline, active-route strokes and the artifact metrics. Pure.
 - `src/components/` — `primitives/` (state node, composite card, contract glyph, connector),
   `flow/` (scene, journey path) and `study/` (the study, stakeholder details, engine
   comparison), one folder per component with its CSS module and stories.

@@ -4,7 +4,7 @@ import { oidcDocument } from "@/data/node-documents";
 import { measureArtifacts } from "@/layout/artifacts";
 import { composeFlow, composeFlowAsync } from "@/layout/compose";
 import { elkLevel, elkLevelUnmerged } from "@/layout/elk-level";
-import { layeredLevel } from "@/layout/layered";
+import { ownLevel } from "@/layout/own-level";
 import { estimate } from "@/layout/text";
 import { buildFlowScene } from "@/model/flow-scene";
 import { scopes } from "~/tests/scopes";
@@ -37,12 +37,12 @@ for (const [name, interaction] of scopes(oidcDocument)) {
   const scene = buildFlowScene(oidcDocument, interaction);
   const ownTimes: number[] = [];
   const elkTimes: number[] = [];
-  let own = composeFlow(scene, layeredLevel, estimate);
+  let own = composeFlow(scene, ownLevel(), estimate);
   let elk = await composeFlowAsync(scene, elkLevel, estimate);
   const unmerged = await composeFlowAsync(scene, elkLevelUnmerged, estimate);
   for (let run = 0; run < RUNS; run++) {
     let started = performance.now();
-    own = composeFlow(scene, layeredLevel, estimate);
+    own = composeFlow(scene, ownLevel(), estimate);
     ownTimes.push(performance.now() - started);
     started = performance.now();
     elk = await composeFlowAsync(scene, elkLevel, estimate);
@@ -61,31 +61,26 @@ for (const [name, interaction] of scopes(oidcDocument)) {
     elkUnmerged: pick(measureArtifacts(unmerged)),
     ownAlignedCenter: pick(
       measureArtifacts(
-        composeFlow(
-          scene,
-          (input) => layeredLevel(input, "aligned-center"),
-          estimate,
-        ),
+        composeFlow(scene, ownLevel("aligned-center"), estimate),
       ),
     ),
     ownAlignedLeft: pick(
-      measureArtifacts(
-        composeFlow(
-          scene,
-          (input) => layeredLevel(input, "aligned-left"),
-          estimate,
-        ),
-      ),
+      measureArtifacts(composeFlow(scene, ownLevel("aligned-left"), estimate)),
     ),
   });
 }
 
 const lines = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8").split("\n").length;
-const ownLines = ["geometry", "layered", "compose", "artifacts"].reduce(
-  (sum, f) => sum + lines(`../src/layout/${f}.ts`),
-  0,
-);
+// The engine (@journey-viewer/flow-layout) plus the spike's composer, sizes and metrics.
+const ownLines = [
+  ...["index", "layout-level", "options", "polyline", "types"].map(
+    (f) => `../../packages/flow-layout/src/${f}.ts`,
+  ),
+  ...["geometry", "own-level", "compose", "artifacts"].map(
+    (f) => `../src/layout/${f}.ts`,
+  ),
+].reduce((sum, path) => sum + lines(path), 0);
 const elkBytes = statSync(
   new URL("../node_modules/elkjs/lib/elk.bundled.js", import.meta.url),
 ).size;
