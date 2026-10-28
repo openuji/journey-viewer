@@ -9,7 +9,8 @@ fixtures for UJG cases the sample lacks. Reference: ebremer/lws-ujg `web/flow.js
 **Keep the flow chart as an optional third view beside Tree and Columns, built on this spike's
 composition model, and lay it out with the spike's own engine rather than elkjs:**
 
-- Frames grow from their cards, and contracts sit on borders.
+- An open composite's card becomes its frame's heading, so each open journey has one border, and
+  contracts sit on borders. A journey path names where you are.
 - Connectors share metro-style corridors at rest; activating a step draws its own routes.
 - One interaction state is shared with Tree and Columns.
 
@@ -20,7 +21,7 @@ kinks. It also keeps contracts on borders and the card at the frame's corner, ho
 when a composite opens, and stays synchronous and 3–5× faster with composites open, without a
 1.6 MB dependency. ELK still draws fewer distinct line runs.
 
-Four iterations shaped this:
+Five iterations shaped this:
 
 1. **Strict routing:** every connector kept its own line, with no shared segments.
 2. **Metro corridors, at your direction:** parallel vertical runs merge into one trunk, each
@@ -57,6 +58,25 @@ Four iterations shaped this:
    - The rest network is unchanged. The active ink is a pure pass over the composed connectors
      (`src/layout/strokes.ts`) drawn by one overlay (`RouteOverlay`); `Connector` is the resting line
      only.
+5. **One border and a journey path, from your review of iteration 4:**
+   - An open composite's card (and a root journey's) is its frame's heading: title, caption and
+     toggle in the same place, without a box. The frame's single neutral hairline is the
+     composite's border; frame borders no longer carry a touchpoint tint. On a heading, selection
+     and relations show as the state node's 3px stripe.
+   - The active journey's frame and every frame inside it are paper; the frames around it sit on the
+     ground. The ground is the darkest step allowed, because connectors measure 3.02:1 on it in
+     light (`flow-context-path-1440.png`, `-dark`).
+   - The context strip became the journey path, always above the canvas. It starts with the root
+     journey; opening a composite extends it, and closing one hands the active journey to its
+     parent. Choosing an earlier step closes what is open inside that journey and brings it to the
+     top-left corner (24px, `flow-context-returned-1440.png`); the active journey's own step only
+     scrolls. Keyboard focus follows to the heading, which is announced as the current journey.
+   - The path is derived each render from the frame keys last opened or returned to
+     (`src/model/context.ts`, unit tested on the sample and the reuse, recursion and sibling
+     fixtures). Only those keys are study state; the viewer snapshot is unchanged. Closing inside a
+     journey is a pure transition over `expandedJourneys`. Expansion follows journey identity, so
+     other occurrences of those journeys close too, as with their own toggles. Geometry is
+     unchanged: `metrics.json` differs only in timings.
 
 ## Before and after, on the same data
 
@@ -68,7 +88,7 @@ This spike always draws every transition.
 | Your point | Reference on Solid-OIDC | Spike |
 | --- | --- | --- |
 | 1. Several lines between one pair of blocks | Five lines Sign-in required → IdP card; six Login → MFA | One connector per pair of terminals, and parallel connectors share corridors. Pointing at a step (or focusing or selecting it) draws its own routes in the relation colours; `×N` shows on those routes at Spec detail. Every transition is in exactly one bundle (unit tested, all 11 scopes). |
-| 2. Disclosure loses overview and identity | Opening re-fits the view; the open frame has a small `▾` header unlike the card | The same card is the open frame's top-left corner, with the toggle in place. The card stays on screen within 0.5px on collapse, expand and nested expand. A context strip names the enclosing open frames, each with its collapse action. |
+| 2. Disclosure loses overview and identity | Opening re-fits the view; the open frame has a small `▾` header unlike the card | The card's content heads the open frame in the same place, toggle included, with the frame's hairline as its one border. The card stays on screen within 0.5px on collapse, expand and nested expand. The journey path above the canvas names the open journeys down to the active one, which is paper while its context recedes; an earlier step returns there and closes what is open inside it. |
 | 3. Line artifacts | Diagonal joins across hierarchy levels, lines through group headers | No diagonals, kinks, lines through blocks or off-port frame crossings in any scope, in Node and in the browser. |
 | 4. Entries/exits look like states | Green ▶ and violet ⇥ pills, sized like states | Statechart glyphs on frame borders: an entry circle (filled = default) on the top border, an exit ring with a centre on the bottom border, plain captions. |
 
@@ -76,7 +96,8 @@ Captures:
 
 - Flow view: `flow-collapsed-1440.png`, `flow-idp-open-1440.png` (also `-dark`, `1099`, `375`),
   `flow-idp-open-hover-1440.png` (activation), `flow-mfa-open-anchored-1440.png`,
-  `flow-context-strip-1440.png`, `flow-everything-open-spec-1440.png`,
+  `flow-context-path-1440.png` (also `-dark`), `flow-context-returned-1440.png`,
+  `flow-everything-open-spec-1440.png`,
   `flow-everything-open-fit-1440.png`.
 - Activation of the review cases: `flow-hover-access-denied-collapsed-1440.png`,
   `flow-hover-access-denied-open-1440.png`, `flow-hover-account-recovery-1440.png`,
@@ -209,6 +230,31 @@ Open items:
 - P3: a legibility floor or structural mode for Fit.
 - P3: contract buttons are 22px tall, so they pass WCAG 2.5.8 by spacing, not size.
 
+**Iteration 5** (two isolated assessments again, on the changed surface): 20/40, "Acceptable".
+The detector found nothing; the overlay again flagged Inter only. Your decisions on its findings:
+
+- P1, returning collapsed even from the active journey's own step (10 frames to 1 in the
+  everything-open story): that step now only scrolls; earlier steps close what is open inside, as
+  asked.
+- P1, the active tone measures only 1.07:1 in light and 1.12:1 in dark: kept as tone only; the
+  journey path names the active journey.
+- P2, keyboard and screen reader: focus now follows a returned-to journey's heading, and the active
+  journey's heading is described as the current journey.
+- P2, opening a composite keeps its card in place, so a large frame can run off screen: kept (the
+  0.5px gate).
+- P2, the journey path at 375px wraps line by line with 22px targets: deferred.
+
+Audit after polish: 18/20, "Excellent". Detector clean, no colour literals, axe clean on the same
+eight combinations. Light-mode connector contrast on the ground is 3.02:1, just above the floor.
+
+| Dimension | Score | Key finding |
+| --- | --- | --- |
+| Accessibility | 3 | The active journey is named by the path and announced on its heading; path targets are 22px |
+| Performance | 4 | The path is a walk over the scene per render; layout still re-runs only on expansion |
+| Theming | 4 | Tokens only; no new spike-local value (outside frames use the ground token) |
+| Responsive | 3 | The path wraps on phones, below the 44px mobile target |
+| Implementation integrity | 4 | One border per open journey, matching DESIGN.md |
+
 ## Limits
 
 - **Shared corridors are ambiguous at rest by design**, and the rest network carries no arrowheads.
@@ -221,7 +267,7 @@ Open items:
   continues, a 1.2px half may have to cross the other half. These crossings are minimised and
   occur in 30 of 570 activations (32 crossings), plus 10 places where a route switches halves.
 - **Fit.** The full disclosure fits only at 36% scale on a 1440px viewport; readable work happens at
-  100% with scrolling and the context strip. Mobile diagram use is not claimed; Tree and Columns
+  100% with scrolling and the journey path. Mobile diagram use is not claimed; Tree and Columns
   stay the mobile reading views.
 - **No user study.** Comprehension and speed benefits are not measured.
 - **Size.** `src` is about 6.4k lines including stories and styles (plan estimate: 2.6k).

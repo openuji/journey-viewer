@@ -126,6 +126,16 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.card-title}"
     rounded: "{rounded.md}"
+  flow-frame-current:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.md}"
+  flow-frame-outside:
+    backgroundColor: "{colors.ground}"
+    rounded: "{rounded.md}"
+  flow-journey-path:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.muted-ink}"
+    typography: "{typography.label}"
 ---
 
 # Design System: Journey Viewer
@@ -145,8 +155,10 @@ shadows. Emphasis comes from soft tonal fills and 3px stripes. Floating layers (
 are the only things that cast a shadow, because they are the only things that float.
 
 The Flow view extends the same map into two dimensions. States are small white cards and transitions
-are thin orthogonal lines. Nested journeys are frames that grow out of the very card that represents
-them. Entries and exits are glyphs on a frame's border, never boxes. When something is selected, its
+are thin orthogonal lines. Nested journeys are frames headed by the very card that represents them:
+open, the card gives up its box and the frame's one hairline becomes the composite's border. The
+journey you are working in is paper; the journeys around it recede onto the ground. Entries and
+exits are glyphs on a frame's border, never boxes. When something is selected, its
 own lines carry the relation colours at full weight and every other line rests at a lighter weight in
 the same colour.
 
@@ -180,7 +192,7 @@ touchpoints.
 ### Tertiary
 
 - **Touchpoint categories** (orange, blue, violet, green, teal, gold, rose): assigned by the caller
-  per touchpoint (`touchpoints.json`). They appear only as dots, stripes and faint frame tints.
+  per touchpoint (`touchpoints.json`). They appear only as dots and stripes.
 
 ### Neutral
 
@@ -245,7 +257,7 @@ fills for state. Shadows exist only for layers that genuinely float above the pa
 
 - **Subtle** (`0px 1px 2px rgb(16 24 40 / 0.08)`): optional hairline lift for small controls.
 - **Raised** (`0px 2px 6px rgb(16 24 40 / 0.12)`): raised surfaces such as the explorer bar.
-- **Popover** (`0px 12px 32px rgb(16 24 40 / 0.12)`): search results, hover previews, context strip.
+- **Popover** (`0px 12px 32px rgb(16 24 40 / 0.12)`): search results, hover previews.
 - **Lightbox** (`0px 24px 60px rgb(0 0 0 / 0.35)`): the screen lightbox over its scrim.
 
 ### Named Rules
@@ -298,10 +310,20 @@ gradient for both. A phone glyph opens the state's screen. Counts read as `→5`
   lives on the card and frame of its journey, not on every node. It takes the same relation fills
   and stripes as the state row.
 - **Composite card:** a 600-weight title, a caption naming the child journey after a touchpoint dot,
-  and the tree's chevron as its toggle (30px target, turned down when open). When open, the same card
-  becomes the top-left corner of its frame; nothing else changes about it.
-- **Frame:** a paper region with a 1px border tinted by the touchpoint colour. It has no shadow and
-  no separate header.
+  and the tree's chevron as its toggle (30px target, turned down when open). When open, the same
+  content becomes the frame's heading in the same place, without a box: no border and no fill.
+  Selection and relations then show as the state node's 3px leading stripe; hover underlines the
+  title. The heading of the active journey is announced as the current journey.
+- **Frame:** one neutral 1px hairline, the open composite's only border, with no touchpoint tint, no
+  shadow and no separate header. The active journey's frame and every frame inside it are paper;
+  frames around it sit on the ground. Never darker than the ground: connectors measure 3.02:1 there
+  in light.
+- **Journey path:** a slim paper row above the canvas, never floating. It names the open journeys from
+  the root journey down to the active one, with touchpoint dots and chevron separators; the active
+  journey comes last, in Ink at 600 (`aria-current="location"`), the others in Muted Ink. Opening a
+  composite extends the path, and closing one hands it to the parent. Choosing an earlier step closes
+  what is open inside that journey and glides it to the canvas's top-left corner (24px); the active
+  journey's own step only scrolls there. Keyboard focus follows to the journey's heading.
 - **Contract glyphs:** entry (Way In Teal circle, filled when default) on the frame's top border, and
   exit (Way Out Violet ring with a centre) on its bottom border. Captions are plain text with no box.
 - **Connector:** one orthogonal line per pair of blocks. Each state and composite has exactly one
@@ -342,6 +364,8 @@ gradient for both. A phone glyph opens the state's screen. Counts read as `→5`
   ways they swap sides at the corners and cross. Sides follow the direction of travel.
 - **Don't** put entries or exits in boxes or pills. They are glyphs on a border.
 - **Don't** suggest depth with offset outlines (stacked-card edges); state lives in the toggle.
+- **Don't** box an open composite's heading or tint a frame's border. The frame's one hairline is the
+  composite's border; tone, not colour, tells the active journey from its context.
 - **Don't** add shadows to flow nodes, frames or cards at rest.
 - **Don't** use a touchpoint colour as a large fill. Dots, stripes and faint tints only.
 - **Don't** hard-code hex values in component styles.

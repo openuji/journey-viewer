@@ -1,29 +1,30 @@
 import type { CSSProperties } from "react";
-import { Icon, IconButton, TouchpointDot } from "@journey-viewer/design-system";
+import { TouchpointDot } from "@journey-viewer/design-system";
 import styles from "@/components/flow/ContextStrip/ContextStrip.module.css";
 
 export interface ContextStripItem {
   readonly key: string;
   readonly title: string;
   readonly touchpoint?: Readonly<{ label: string; color?: string }>;
-  readonly onReveal: () => void;
-  readonly onCollapse: () => void;
+  /** Returns to this journey: shows it, closing what is open inside unless it is the active one. */
+  readonly onSelect: () => void;
 }
 
 export interface ContextStripProps {
+  /** The active journey path, outermost first; the last item is the active journey. */
   readonly items: readonly ContextStripItem[];
 }
 
 /**
- * Names the open containers the reader is scrolled inside of, outermost first, each with the same
- * collapse action its card carries. Empty when every enclosing card is in view.
+ * The path of open journeys down to the active one, from the root journey. Opening a composite
+ * extends it; choosing an earlier step returns to that journey and closes what is open inside it.
  */
 export function ContextStrip({ items }: ContextStripProps) {
   if (items.length === 0) return null;
   return (
-    <nav className={styles.strip} aria-label="Open containers in view">
+    <nav className={styles.strip} aria-label="Journey path">
       <ol className={styles.list}>
-        {items.map((item) => (
+        {items.map((item, i) => (
           <li
             key={item.key}
             className={styles.item}
@@ -37,8 +38,9 @@ export function ContextStrip({ items }: ContextStripProps) {
           >
             <button
               type="button"
-              className={styles.reveal}
-              onClick={item.onReveal}
+              className={styles.step}
+              aria-current={i === items.length - 1 ? "location" : undefined}
+              onClick={item.onSelect}
             >
               {item.touchpoint && (
                 <span className={styles.dot}>
@@ -53,12 +55,6 @@ export function ContextStrip({ items }: ContextStripProps) {
               )}
               {item.title}
             </button>
-            <IconButton
-              size="xs"
-              label={`Collapse ${item.title}`}
-              icon={<Icon name="collapse-all" />}
-              onClick={item.onCollapse}
-            />
           </li>
         ))}
       </ol>

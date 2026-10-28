@@ -155,7 +155,7 @@
       "height": 447
     }
   },
-  "fitScale": "0.399",
+  "fitScale": "0.385",
   "disclosureDisplacement": {
     "collapseIdp": { "dx": -0.5, "dy": 0 },
     "expandIdp": { "dx": -0.5, "dy": 0 },
@@ -199,9 +199,53 @@
       "halfArrowheads": 1
     }
   },
-  "contextStrip": {
-    "visible": true,
-    "items": ["Authenticate with identity provider", "MFA challenge"]
+  "contextPath": {
+    "light": {
+      "atRoot": ["App auth journey"],
+      "idpOpened": {
+        "steps": ["App auth journey", "Authenticate with identity provider"],
+        "app-auth-journey": "outside",
+        "idp-auth-flow": "current"
+      },
+      "mfaOpened": {
+        "steps": [
+          "App auth journey",
+          "Authenticate with identity provider",
+          "MFA challenge"
+        ],
+        "app-auth-journey": "outside",
+        "idp-auth-flow": "outside",
+        "idp-mfa-challenge": "current"
+      },
+      "returnedToRoot": {
+        "steps": ["App auth journey"],
+        "openToggles": 0,
+        "headingOffset": { "x": 24, "y": 24 }
+      }
+    },
+    "dark": {
+      "atRoot": ["App auth journey"],
+      "idpOpened": {
+        "steps": ["App auth journey", "Authenticate with identity provider"],
+        "app-auth-journey": "outside",
+        "idp-auth-flow": "current"
+      },
+      "mfaOpened": {
+        "steps": [
+          "App auth journey",
+          "Authenticate with identity provider",
+          "MFA challenge"
+        ],
+        "app-auth-journey": "outside",
+        "idp-auth-flow": "outside",
+        "idp-mfa-challenge": "current"
+      },
+      "returnedToRoot": {
+        "steps": ["App auth journey"],
+        "openToggles": 0,
+        "headingOffset": { "x": 24, "y": 24 }
+      }
+    }
   },
   "sharedState": {
     "flowSelectedAfterTreeClick": ["Login"],
@@ -221,7 +265,7 @@
     "study-flowstudy--app-with-idp-open (dark)": [],
     "study-flowstudy--everything-open-spec (light)": [],
     "primitives-contractglyph--entries-on-the-top-border (light)": [],
-    "flow-contextstrip--inside-two-open-frames (light)": [],
+    "flow-contextstrip--two-journeys-opened (light)": [],
     "flow-flowkey--spec (light)": [],
     "flow-flowkey--spec (dark)": [],
     "flow-routeoverlay--gallery (light)": []

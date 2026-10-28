@@ -28,6 +28,10 @@ export interface FlowSceneProps {
   readonly layout: FlowLayout;
   readonly detail: FlowDetail;
   readonly highlight: FlowHighlight;
+  /** The active journey's frame and every frame inside it; the frames around it recede. */
+  readonly current: ReadonlySet<string>;
+  /** The active journey's frame, whose heading is announced as the current location. */
+  readonly location: string | null;
   /** Caller-supplied touchpoint presentation for a journey; colours stay outside UJG. */
   readonly touchpointOf: (
     journeyRef: string,
@@ -65,6 +69,8 @@ export function FlowScene({
   layout,
   detail,
   highlight,
+  current,
+  location,
   touchpointOf,
   screenOf,
   onSelect,
@@ -106,6 +112,8 @@ export function FlowScene({
             caption={card.caption}
             {...(tp ? { touchpoint: tp } : {})}
             toggle={card.card.toggle}
+            heading={card.heads}
+            location={card.heads && card.key === location}
             selected={highlight.selected.has(card.key)}
             {...(tone ? { tone } : {})}
             onSelect={() => onSelect({ kind: "card", card: card.card })}
@@ -185,27 +193,15 @@ export function FlowScene({
       className={styles.scene}
       style={{ width: layout.width, height: layout.height }}
     >
-      {layout.frames.map((frame) => {
-        const tp = touchpointOf(
-          (frame.frame.content.kind === "journey"
-            ? frame.frame.content.journey
-            : frame.frame.card.journey)["@id"],
-        );
-        return (
-          <div
-            key={frame.key}
-            className={styles.frame}
-            data-flow-key={`frame:${frame.key}`}
-            data-depth={frame.depth}
-            style={
-              {
-                ...box(frame.rect),
-                ...(tp?.color ? { "--jv-touchpoint-color": tp.color } : {}),
-              } as CSSProperties
-            }
-          />
-        );
-      })}
+      {layout.frames.map((frame) => (
+        <div
+          key={frame.key}
+          className={styles.frame}
+          data-flow-key={`frame:${frame.key}`}
+          data-context={current.has(frame.key) ? "current" : "outside"}
+          style={box(frame.rect)}
+        />
+      ))}
       <svg
         className={styles.lines}
         width={layout.width}

@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { FlowLayout } from "@/layout/compose";
-import { blockRects, enclosingFrames } from "@/layout/viewport";
-import type { EnclosingFrame } from "@/layout/viewport";
+import { blockRects } from "@/layout/viewport";
 import styles from "@/browser/FlowViewport/FlowViewport.module.css";
 
 const MARGIN = 24;
@@ -19,11 +18,12 @@ export interface FlowViewportProps {
   readonly zoom: "actual" | "fit";
   /** A block key (`card:…`, `state:…`) whose screen position the next layout must keep. */
   readonly anchor: string | null;
+  /**
+   * A request to bring a block to the top-left corner, after `anchor` has kept it in place through
+   * the layout it arrives with; keyboard focus follows it. Each new object is served once.
+   */
+  readonly reveal?: Readonly<{ block: string }> | null;
   readonly label: string;
-  readonly strip: (
-    frames: readonly EnclosingFrame[],
-    reveal: (cardKey: string) => void,
-  ) => ReactNode;
   readonly children: ReactNode;
 }
 
@@ -39,21 +39,20 @@ const reducedMotion = () =>
 
 /**
  * Browser boundary for the flow canvas: native scrolling, fit zoom, keeping a toggled card where it
- * was, the one disclosure transition, and the viewport the context strip reports on.
+ * was, the one disclosure transition, and revealing a block on request.
  */
 export function FlowViewport({
   layout,
   zoom,
   anchor,
+  reveal = null,
   label,
-  strip,
   children,
 }: FlowViewportProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const previous = useRef<Seen | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [view, setView] = useState({ left: 0, top: 0 });
 
   useLayoutEffect(() => {
     const element = scroller.current;
@@ -139,10 +138,10 @@ export function FlowViewport({
     commit();
   }, [layout, scale, anchor]);
 
+  // Anchoring measures from the last scroll position the reader chose.
   useEffect(() => {
     const element = scroller.current;
     if (!element) return;
-    let frame = 0;
     const update = () => {
       if (previous.current)
         previous.current = {
@@ -150,34 +149,29 @@ export function FlowViewport({
           left: element.scrollLeft,
           top: element.scrollTop,
         };
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() =>
-        setView({ left: element.scrollLeft, top: element.scrollTop }),
-      );
     };
     element.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => {
-      element.removeEventListener("scroll", update);
-      cancelAnimationFrame(frame);
-    };
+    return () => element.removeEventListener("scroll", update);
   }, []);
 
-  const content = {
-    x: (view.left - SLACK) / scale,
-    y: (view.top - SLACK) / scale,
-    width: size.width / scale,
-    height: size.height / scale,
-  };
-  const reveal = (cardKey: string) => {
-    const card = layout.cards.find((c) => c.key === cardKey);
-    if (card && scroller.current)
-      scroller.current.scrollTo({
-        left: SLACK + card.rect.x * scale - MARGIN,
-        top: SLACK + card.rect.y * scale - MARGIN,
-        behavior: reducedMotion() ? "auto" : "smooth",
-      });
-  };
+  // The request arrives in the same render as the layout it refers to, after anchoring has run. A
+  // keyboard user continues from the revealed block rather than from the control that asked.
+  useEffect(() => {
+    const rect = reveal ? blockRects(layout).get(reveal.block) : undefined;
+    if (!reveal || !rect || !scroller.current) return;
+    scroller.current.scrollTo({
+      left: SLACK + rect.x * scale - MARGIN,
+      top: SLACK + rect.y * scale - MARGIN,
+      behavior: reducedMotion() ? "auto" : "smooth",
+    });
+    if (document.activeElement?.matches(":focus-visible"))
+      scene.current
+        ?.querySelector<HTMLElement>(
+          `[data-flow-key="${CSS.escape(reveal.block)}"] button`,
+        )
+        ?.focus({ preventScroll: true });
+  }, [reveal]);
+
   return (
     <div
       ref={scroller}
@@ -187,9 +181,6 @@ export function FlowViewport({
       tabIndex={0}
       data-zoom={zoom}
     >
-      <div className={styles.strip}>
-        {strip(enclosingFrames(layout, content), reveal)}
-      </div>
       <div
         className={styles.sizer}
         style={{

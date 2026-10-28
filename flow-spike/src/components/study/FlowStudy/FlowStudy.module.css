@@ -36,6 +36,11 @@
 .stage > * {
   min-block-size: 0;
 }
+.canvas {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 0;
+}
 .explorer {
   overflow: auto;
   padding: var(--jv-space-lg);

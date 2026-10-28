@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { CSSProperties } from "react";
 import { Icon, IconButton, TouchpointDot } from "@journey-viewer/design-system";
 import type { Tone } from "@/model/presentation";
@@ -9,6 +10,10 @@ export interface CompositeCardProps {
   readonly touchpoint?: Readonly<{ label: string; color?: string }>;
   /** `expand` on a closed composite, `collapse` on one whose frame grows from this card. */
   readonly toggle: "expand" | "collapse" | null;
+  /** Heads an open frame: printed on the frame, whose border is the composite's own. */
+  readonly heading?: boolean;
+  /** Heads the active journey: assistive technology hears it, as the path strip shows it. */
+  readonly location?: boolean;
   readonly selected?: boolean;
   readonly tone?: Tone;
   readonly onSelect: () => void;
@@ -18,14 +23,17 @@ export interface CompositeCardProps {
 }
 
 /**
- * The card a composite (or a root journey) is known by. Open, the very same card becomes the
- * top-left corner of the frame, with its toggle in the same place: the tree's chevron, turned down.
+ * The card a composite (or a root journey) is known by. Open, the same content becomes the heading
+ * in the frame's top-left corner, without a box of its own, its toggle in the same place: the
+ * tree's chevron, turned down.
  */
 export function CompositeCard({
   title,
   caption,
   touchpoint,
   toggle,
+  heading = false,
+  location = false,
   selected = false,
   tone,
   onSelect,
@@ -34,6 +42,7 @@ export function CompositeCard({
   style,
 }: CompositeCardProps) {
   const name = title.join(" ");
+  const described = useId();
   return (
     <div
       className={[styles.card, className].filter(Boolean).join(" ")}
@@ -46,6 +55,7 @@ export function CompositeCard({
           : style
       }
       data-open={toggle === "collapse" || undefined}
+      data-heading={heading || undefined}
       data-selected={selected || undefined}
       data-tone={selected ? undefined : tone}
     >
@@ -53,6 +63,7 @@ export function CompositeCard({
         type="button"
         className={styles.select}
         aria-current={selected || undefined}
+        aria-describedby={location ? described : undefined}
         onClick={onSelect}
       >
         {title.map((line, i) => (
@@ -76,6 +87,11 @@ export function CompositeCard({
             ))}
           </span>
         </span>
+        {location && (
+          <span id={described} className={styles.hidden}>
+            Current journey
+          </span>
+        )}
       </button>
       {toggle && onToggle && (
         <IconButton

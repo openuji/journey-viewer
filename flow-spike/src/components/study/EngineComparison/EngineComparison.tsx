@@ -90,12 +90,13 @@ export function EngineComparison({
           zoom="fit"
           anchor={null}
           label={`${name} layout`}
-          strip={() => null}
         >
           <FlowScene
             layout={layout}
             detail={specDetail}
             highlight={flowHighlight(layout, null)}
+            current={new Set(layout.frames.map((f) => f.key))}
+            location={null}
             touchpointOf={touchpointOf}
             onSelect={() => {}}
             onToggle={() => {}}

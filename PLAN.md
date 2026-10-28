@@ -1926,7 +1926,8 @@ the library source conventions into 11C.
     terminal pair, in all 11 disclosure scopes (unit test).
   - **Disclosure:** the toggled card keeps its screen position within 0.5px on
     collapse, expand and nested expand (browser). Sibling order is unchanged when a
-    composite opens (unit test). The context strip lists the enclosing open frames.
+    composite opens (unit test). The journey path names the open journeys down to
+    the active one (iteration 5).
   - **Artifacts:** no diagonals, kinks, lines through blocks or off-port frame
     crossings in any scope or fixture (Node) or in the browser-rendered stories.
   - **Metro corridors (user decision, 2026-10-27):** parallel connectors share
@@ -1952,6 +1953,37 @@ the library source conventions into 11C.
     ink is a pure pass (`src/layout/strokes.ts`) drawn by a new `RouteOverlay`;
     `Connector` became the resting line only. Agreed responsibilities and public
     interfaces are unchanged.
+  - **One border and the journey path (iteration 5, from user review):**
+    - **One border:** an open composite's card, and a root journey's, is its frame's
+      heading (title, caption and toggle in place, with no box). The frame's single
+      neutral hairline is the composite's border, without a touchpoint tint. The active
+      journey's frame and every frame inside it are paper; frames around it sit on the
+      ground, the darkest allowed (connectors 3.02:1 there in light).
+    - **Journey path:** the context strip became the journey path, always above the
+      canvas. It starts at the root journey. Opening a composite extends it and closing
+      one hands it to the parent (user decision: the chevron, not a card click).
+      Choosing an earlier step closes what is open inside that journey and reveals it
+      top-left at 24px. The active journey's own step only scrolls (user decision after
+      critique), and keyboard focus follows to the heading, which is announced as the
+      current journey.
+    - **Where the path lives:** it is derived each render from frame keys in study
+      state (`src/model/context.ts`), never in `ViewerSnapshot`. Closing within a
+      journey is a spike-local pure transition over `expandedJourneys`.
+    - **Geometry:** unchanged, so `metrics.json` differs only in timings and in a stale
+      source-line count.
+    - **Evidence:**
+      - Unit tests: 4 new, on OIDC and the reuse/recursion/sibling fixtures.
+      - Browser, light and dark: steps 1 → 2 → 3; frames `current`/`outside`. After a
+        root return: 0 open toggles and the heading at 24/24px.
+      - Disclosure displacement ≤0.5px. Rendered artifacts 0 in 11 stories.
+    - **Interfaces:** spike-internal component contracts changed, as approved:
+      - `CompositeCard` gained `heading`/`location`.
+      - `FlowScene` gained `current`/`location`.
+      - `FlowViewport` traded `strip` for `reveal`.
+      - `ContextStrip` items take `onSelect`.
+      - `enclosingFrames` was removed.
+
+      No library, public type or root config change.
   - **Own engine (metro) vs ELK, merged edges, on identical input
     (`evidence/metrics.json`):**
 
@@ -1978,9 +2010,17 @@ the library source conventions into 11C.
     Detector clean, no colour literals, axe clean on eight page/theme combinations,
     text at least 4.5:1, connectors 3.25:1 light and 4.98:1 dark, via a spike-local
     mix proposed as token `color.connector`.
+    - **Iteration 5 critique:** 20/40 on the changed surface, with two isolated
+      assessments. User decisions:
+      - The active step scrolls only.
+      - Keep tone only for the active journey (1.07:1 light, 1.12:1 dark).
+      - Keep the card anchored on open.
+      - Fix keyboard and screen-reader issues; the path at 375px is deferred.
+    - **Iteration 5 audit:** 18/20 after polish. Detector clean, no colour literals,
+      axe clean on the same eight combinations.
 - **Verification:**
-  - Spike: `pnpm --dir flow-spike test` (18/18), `measure`, `build` (tsc + static
-    Storybook), `capture`, and `format:check` all pass after iteration 4. Disclosure
+  - Spike: `pnpm --dir flow-spike test` (22/22), `measure`, `build` (tsc + static
+    Storybook), `capture`, and `format:check` all pass after iteration 5. Disclosure
     displacement stays within 0.5px; rendered artifacts are 0 in all captured stories.
   - Root: `pnpm test` passes. `git status` shows only `PLAN.md`, the pre-existing
     untracked `.codex/` and `flow-spike/`.
@@ -1991,7 +2031,8 @@ the library source conventions into 11C.
   - No commit, staging, deployment or library change was made.
 - **Open (not scoped):**
   - Arrow-key traversal and screen-reader exposure of connections.
-  - A compact toolbar on phones.
+  - A compact toolbar on phones, and the journey path on phones (one row, 44px
+    targets, a separator distinct from the disclosure chevron).
   - A Fit legibility floor.
   - Moving primitives into the design system and the projection/composer into the
     viewer.

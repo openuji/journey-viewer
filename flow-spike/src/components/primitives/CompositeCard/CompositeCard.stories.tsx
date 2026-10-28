@@ -40,7 +40,23 @@ export const NoChildJourney: Story = {
   },
 };
 
-/** Point 2: the closed card and the open frame's corner are the same card, toggle in the same place. */
+/** The frame an open card heads: one hairline, the composite's own border. */
+const frame = (props: CompositeCardProps) => (
+  <div
+    style={{
+      position: "relative",
+      width: 420,
+      height: 200,
+      border: "1px solid var(--jv-color-border)",
+      borderRadius: "var(--jv-radius-md)",
+      background: "var(--jv-color-surface)",
+    }}
+  >
+    {card({ ...props, toggle: "collapse", heading: true })}
+  </div>
+);
+
+/** Point 2: open, the card's content heads the frame in the same place, without a box of its own. */
 export const SameCardBothStates: Story = {
   render: (props) => (
     <div className="flow-story-pad">
@@ -50,23 +66,16 @@ export const SameCardBothStates: Story = {
       </div>
       <div>
         <span className="flow-story-caption">
-          Open: the card is the frame's corner
+          Open: the heading of its frame, one border
         </span>
-        <div
-          style={{
-            position: "relative",
-            width: 420,
-            height: 200,
-            border:
-              "1px solid color-mix(in srgb, var(--jv-color-category-blue) 45%, var(--jv-color-border))",
-            borderRadius: "var(--jv-radius-md)",
-            background:
-              "color-mix(in srgb, var(--jv-color-category-blue) 4%, var(--jv-color-surface))",
-          }}
-        >
-          {card({ ...props, toggle: "collapse" })}
-        </div>
+        {frame(props)}
       </div>
     </div>
   ),
+};
+
+/** A selected or related heading takes the state node's leading stripe, never a fill. */
+export const HeadingSelected: Story = {
+  args: { selected: true },
+  render: (props) => <div className="flow-story-pad">{frame(props)}</div>,
 };

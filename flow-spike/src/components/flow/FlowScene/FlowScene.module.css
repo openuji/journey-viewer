@@ -8,24 +8,20 @@
   );
   isolation: isolate;
 }
+/*
+ * One hairline per open journey; tone, not colour, tells the active journey from its context.
+ * Journeys around the active one recede onto the ground, never darker: connectors keep 3:1.
+ */
 .frame {
   position: absolute;
   box-sizing: border-box;
-  border: var(--jv-border-thin) solid
-    color-mix(
-      in srgb,
-      var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 45%,
-      var(--jv-color-border)
-    );
+  border: var(--jv-border-thin) solid var(--jv-color-border);
   border-radius: var(--jv-radius-md);
-  background: var(--jv-color-surface);
+  background: var(--jv-color-background);
+  transition: background-color var(--jv-duration-fast) ease-out;
 }
-.frame:not([data-depth="0"]) {
-  background: color-mix(
-    in srgb,
-    var(--jv-touchpoint-color, var(--jv-color-touchpoint)) 4%,
-    var(--jv-color-surface)
-  );
+.frame[data-context="current"] {
+  background: var(--jv-color-surface);
 }
 .lines {
   position: absolute;

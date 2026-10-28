@@ -14,15 +14,6 @@
 .viewport ::selection {
   background: var(--jv-color-accent-soft);
 }
-.strip {
-  position: sticky;
-  inset-block-start: var(--jv-space-sm);
-  inset-inline-start: var(--jv-space-sm);
-  z-index: 2;
-  block-size: 0;
-  overflow: visible;
-  padding-inline-start: var(--jv-space-sm);
-}
 .sizer {
   position: relative;
 }

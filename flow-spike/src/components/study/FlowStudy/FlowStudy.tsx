@@ -33,7 +33,13 @@ import { measureArtifacts } from "@/layout/artifacts";
 import type { LevelInput, LevelLayout } from "@/layout/geometry";
 import { layeredLevel } from "@/layout/layered";
 import { buildFlowScene } from "@/model/flow-scene";
-import type { FlowCard } from "@/model/flow-scene";
+import type { FlowCard, FlowFrame } from "@/model/flow-scene";
+import {
+  collapseWithin,
+  contextPath,
+  framesWithin,
+  lineageOf,
+} from "@/model/context";
 import {
   flowHighlight,
   specDetail,
@@ -74,6 +80,13 @@ interface Session {
   readonly zoom: "actual" | "fit";
   /** The block a disclosure must keep in place on screen. */
   readonly anchor: string | null;
+  /** The block to bring to the canvas's top-left corner once the next layout is in place. */
+  readonly reveal: Readonly<{ block: string }> | null;
+  /**
+   * Frame keys from a root down to the journey last opened or returned to. The active path is
+   * derived from it and stops where a frame is no longer open.
+   */
+  readonly context: readonly string[];
   /** The block under the pointer or keyboard focus; presentation only, never in the snapshot. */
   readonly active: FlowSelectable | null;
 }
@@ -104,19 +117,20 @@ export function FlowStudy({
     detail,
     zoom: "actual",
     anchor: null,
+    reveal: null,
+    context: [],
     active: null,
   });
   const [session, setSession] = useState<Session>(start);
   // Layout depends on the document and the expansion only: selection and detail never re-run it.
   const expanded = session.snapshot.interaction.expandedJourneys;
+  const scene = useMemo(
+    () => buildFlowScene(document, { expandedJourneys: expanded }),
+    [document, expanded],
+  );
   const layout = useMemo(
-    () =>
-      composeFlow(
-        buildFlowScene(document, { expandedJourneys: expanded }),
-        engine,
-        canvasMeasure,
-      ),
-    [document, expanded, engine],
+    () => composeFlow(scene, engine, canvasMeasure),
+    [scene, engine],
   );
   // Evaluation readout of the layout actually rendered (browser text metrics), for the capture script.
   const artifacts = useMemo(
@@ -138,6 +152,7 @@ export function FlowStudy({
       ...current,
       snapshot: next(current.snapshot),
       anchor,
+      reveal: null,
     }));
   const navigate = (target: ViewerTarget, anchor: string | null = null) =>
     update((current) => navigateViewer(document, current, target), anchor);
@@ -221,19 +236,46 @@ export function FlowStudy({
         selected: chosen.selected,
       }
     : chosen;
-  const toggle = (card: FlowCard) =>
-    update(
-      (current) => ({
-        ...current,
+  // Opening a composite makes it the active journey; closing one hands that back to its parent.
+  const toggle = (card: FlowCard) => {
+    const lineage = lineageOf(scene, card.key);
+    change((current) => ({
+      ...current,
+      snapshot: {
+        ...current.snapshot,
         interaction: toggleChildJourneys(
           document,
-          current.interaction,
+          current.snapshot.interaction,
           card.journey["@id"],
           card.node["@id"],
         ),
-      }),
-      `card:${card.key}`,
-    );
+      },
+      anchor: `card:${card.key}`,
+      reveal: null,
+      context: card.toggle === "expand" ? lineage : lineage.slice(0, -1),
+    }));
+  };
+  const path = contextPath(scene, session.context);
+  const activeFrame = path.at(-1);
+  const inContext = new Set(
+    activeFrame ? framesWithin(activeFrame).map((f) => f.key) : [],
+  );
+  // Returning to an earlier journey on the path closes what is open inside it; the active journey's
+  // own step only brings it into view.
+  const returnTo = (frame: FlowFrame, depth: number) =>
+    change((current) => ({
+      ...current,
+      snapshot:
+        depth === path.length - 1
+          ? current.snapshot
+          : {
+              ...current.snapshot,
+              interaction: collapseWithin(frame, current.snapshot.interaction),
+            },
+      anchor: `card:${frame.card.key}`,
+      reveal: { block: `card:${frame.card.key}` },
+      context: path.slice(0, depth + 1).map((f) => f.key),
+    }));
 
   const views = [
     { value: "tree", label: "Tree" },
@@ -318,9 +360,17 @@ export function FlowStudy({
             label="Collapse all"
             icon={<Icon name="collapse-all" />}
             onClick={() =>
-              update((current) => ({
+              change((current) => ({
                 ...current,
-                interaction: collapseAllJourneys(current.interaction),
+                snapshot: {
+                  ...current.snapshot,
+                  interaction: collapseAllJourneys(
+                    current.snapshot.interaction,
+                  ),
+                },
+                anchor: null,
+                reveal: null,
+                context: [],
               }))
             }
           />
@@ -329,66 +379,65 @@ export function FlowStudy({
       <div className={styles.body}>
         <main className={styles.stage}>
           {session.view === "flow" ? (
-            <FlowViewport
-              layout={layout}
-              zoom={session.zoom}
-              anchor={session.anchor}
-              label="Journey flow"
-              strip={(frames, reveal) => (
-                <ContextStrip
-                  items={frames.map(({ card }) => ({
-                    key: card.key,
-                    title: card.title.join(" "),
-                    ...(touchpointOf(
-                      (card.card.children[0] ?? card.card.journey)["@id"],
-                    )
-                      ? {
-                          touchpoint: touchpointOf(
-                            (card.card.children[0] ?? card.card.journey)["@id"],
-                          )!,
-                        }
-                      : {}),
-                    onReveal: () => reveal(card.key),
-                    onCollapse: () => toggle(card.card),
-                  }))}
-                />
-              )}
-            >
-              <FlowScene
-                layout={layout}
-                detail={session.detail}
-                highlight={highlight}
-                touchpointOf={touchpointOf}
-                screenOf={(vertex) => {
-                  const screen = getNodeScreens(
-                    document,
-                    screenshots,
-                    vertex.node["@id"],
-                  ).find((s) => s.source);
-                  if (!screen) return undefined;
-                  const target: ViewerTarget = {
-                    selection: {
-                      kind: "state",
-                      journeyRef: vertex.journey["@id"],
-                      nodeRef: vertex.node["@id"],
-                    },
-                    occurrence: vertex.occurrence,
-                  };
+            <div className={styles.canvas}>
+              <ContextStrip
+                items={path.map((frame, depth) => {
+                  const tp = touchpointOf(
+                    (frame.card.children[0] ?? frame.card.journey)["@id"],
+                  );
                   return {
-                    label: `Screen: ${nameOf(vertex.node, vertex.node["@id"])}`,
-                    onOpen: () => openScreen(target, screen.surface["@id"]),
+                    key: frame.key,
+                    title: nameOf(frame.card.node, frame.card.node["@id"]),
+                    ...(tp ? { touchpoint: tp } : {}),
+                    onSelect: () => returnTo(frame, depth),
                   };
-                }}
-                onActivate={(item) =>
-                  change((current) => ({ ...current, active: item }))
-                }
-                onSelect={(item) => {
-                  const { target, block } = targetOf(item);
-                  navigate(target, block);
-                }}
-                onToggle={toggle}
+                })}
               />
-            </FlowViewport>
+              <FlowViewport
+                layout={layout}
+                zoom={session.zoom}
+                anchor={session.anchor}
+                reveal={session.reveal}
+                label="Journey flow"
+              >
+                <FlowScene
+                  layout={layout}
+                  detail={session.detail}
+                  highlight={highlight}
+                  current={inContext}
+                  location={activeFrame?.key ?? null}
+                  touchpointOf={touchpointOf}
+                  screenOf={(vertex) => {
+                    const screen = getNodeScreens(
+                      document,
+                      screenshots,
+                      vertex.node["@id"],
+                    ).find((s) => s.source);
+                    if (!screen) return undefined;
+                    const target: ViewerTarget = {
+                      selection: {
+                        kind: "state",
+                        journeyRef: vertex.journey["@id"],
+                        nodeRef: vertex.node["@id"],
+                      },
+                      occurrence: vertex.occurrence,
+                    };
+                    return {
+                      label: `Screen: ${nameOf(vertex.node, vertex.node["@id"])}`,
+                      onOpen: () => openScreen(target, screen.surface["@id"]),
+                    };
+                  }}
+                  onActivate={(item) =>
+                    change((current) => ({ ...current, active: item }))
+                  }
+                  onSelect={(item) => {
+                    const { target, block } = targetOf(item);
+                    navigate(target, block);
+                  }}
+                  onToggle={toggle}
+                />
+              </FlowViewport>
+            </div>
           ) : (
             <div className={styles.explorer}>
               <JourneyExplorer

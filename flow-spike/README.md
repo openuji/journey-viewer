@@ -30,14 +30,14 @@ or `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 ## Layout of the folder
 
 - `src/model/` — the projection of canonical UJG plus the shared `ViewerInteraction` into a flow
-  scene, and presentation helpers (detail presets, highlights). Pure.
+  scene, the active journey path, and presentation helpers (detail presets, highlights). Pure.
 - `src/layout/` — the composer (frames bottom-up, ports), the spike's own layered engine and
   channel router, the measure-only ELK adapter and the artifact metrics. Pure.
 - `src/components/` — `primitives/` (state node, composite card, contract glyph, connector),
-  `flow/` (scene, context strip) and `study/` (the study, stakeholder details, engine
+  `flow/` (scene, journey path) and `study/` (the study, stakeholder details, engine
   comparison), one folder per component with its CSS module and stories.
 - `src/browser/` — DOM boundaries: canvas text measurement and the viewport (scrolling, fit,
-  keeping a toggled card in place, the disclosure transition).
+  keeping a toggled card in place, the disclosure transition, revealing a returned-to journey).
 - `PRODUCT.md`, `DESIGN.md`, `.impeccable/` — Impeccable context for styling conformance.
 
 The empty `pnpm-workspace.yaml` keeps this folder out of the parent workspace. ELK is a

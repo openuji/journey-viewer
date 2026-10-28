@@ -8,7 +8,7 @@ import { format } from "prettier";
 
 /**
  * Browser evidence against the built Storybook (`pnpm build` first): screenshots, the artifact
- * readout of the layout actually rendered, disclosure displacement, the context strip, shared
+ * readout of the layout actually rendered, disclosure displacement, the journey path, shared
  * Tree/Flow state, detail switching, every mapped screen and axe results. Writes `evidence/`.
  */
 const root = new URL("../storybook-static/", import.meta.url).pathname;
@@ -95,6 +95,7 @@ const shoot = async (
 };
 const card = (key: string) =>
   `[data-flow-key="card:${key.replaceAll('"', '\\"')}"]`;
+const ROOT = "urn:ujg:solid-oidc:app-auth-journey";
 const IDP =
   "urn:ujg:solid-oidc:app-auth-journey|1:urn:ujg:solid-oidc:idp-auth-flow";
 const MFA =
@@ -308,27 +309,76 @@ results.renderedArtifacts = rendered;
   results.reviewHovers = routes;
 }
 
-// 4. Context strip: scrolled inside open frames whose cards are out of view.
+// 4. Context strip: the active journey path. Opening a composite extends it; returning to a step
+// closes what is open inside that journey and brings it to the top-left corner.
 {
-  const page = await open("study-flowstudy--everything-open-spec", 1440, 900);
-  await page
-    .locator('[role="region"][aria-label="Journey flow"]')
-    .evaluate((element) => {
-      element.scrollTop += 900;
-      element.scrollLeft += 400;
+  const paths: Record<string, unknown> = {};
+  for (const theme of ["light", "dark"]) {
+    const page = await open("study-flowstudy--collapsed", 1440, 900, theme);
+    const strip = page.getByRole("navigation", { name: "Journey path" });
+    const steps = () => strip.locator("li").allInnerTexts();
+    const context = async (...keys: string[]) =>
+      Object.fromEntries(
+        await Promise.all(
+          keys.map(async (key) => [
+            key.split(":").pop(),
+            await page
+              .locator(`[data-flow-key="frame:${key}"]`)
+              .getAttribute("data-context"),
+          ]),
+        ),
+      );
+    const opened = async (key: string) => {
+      await page.locator(`${card(key)} button[aria-expanded]`).click();
+      await page.waitForTimeout(450);
+    };
+    const atRoot = await steps();
+    await opened(IDP);
+    const idpOpened = { steps: await steps(), ...(await context(ROOT, IDP)) };
+    await opened(MFA);
+    const mfaOpened = {
+      steps: await steps(),
+      ...(await context(ROOT, IDP, MFA)),
+    };
+    await page.mouse.move(5, 890);
+    await page.screenshot({
+      path: join(
+        evidence,
+        `flow-context-path-1440${theme === "dark" ? "-dark" : ""}.png`,
+      ),
     });
-  await page.waitForTimeout(400);
-  const strip = page.getByRole("navigation", {
-    name: "Open containers in view",
-  });
-  results.contextStrip = {
-    visible: await strip.isVisible(),
-    items: await strip.locator("li").allInnerTexts(),
-  };
-  await page.screenshot({
-    path: join(evidence, "flow-context-strip-1440.png"),
-  });
-  await page.close();
+    const region = page.locator('[role="region"][aria-label="Journey flow"]');
+    await region.evaluate((element) => {
+      element.scrollTop += 600;
+      element.scrollLeft += 300;
+    });
+    await page.waitForTimeout(200);
+    await strip
+      .getByRole("button", { name: "App auth journey", exact: true })
+      .click();
+    await page.waitForTimeout(1200);
+    const viewport = (await region.boundingBox())!;
+    const heading = (await page.locator(card(ROOT)).boundingBox())!;
+    paths[theme] = {
+      atRoot,
+      idpOpened,
+      mfaOpened,
+      returnedToRoot: {
+        steps: await steps(),
+        openToggles: await page.locator('button[aria-expanded="true"]').count(),
+        headingOffset: {
+          x: Math.round((heading.x - viewport.x) * 10) / 10,
+          y: Math.round((heading.y - viewport.y) * 10) / 10,
+        },
+      },
+    };
+    if (theme === "light")
+      await page.screenshot({
+        path: join(evidence, "flow-context-returned-1440.png"),
+      });
+    await page.close();
+  }
+  results.contextPath = paths;
 }
 
 // 5. One snapshot behind Tree and Flow; detail changes presentation only.
@@ -430,7 +480,7 @@ if (axePath) {
     ["study-flowstudy--app-with-idp-open", "dark"],
     ["study-flowstudy--everything-open-spec", "light"],
     ["primitives-contractglyph--entries-on-the-top-border", "light"],
-    ["flow-contextstrip--inside-two-open-frames", "light"],
+    ["flow-contextstrip--two-journeys-opened", "light"],
     ["flow-flowkey--spec", "light"],
     ["flow-flowkey--spec", "dark"],
     ["flow-routeoverlay--gallery", "light"],
