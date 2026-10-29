@@ -2309,7 +2309,7 @@ the library source conventions into 11C.
   - New `pnpm level-fixtures` records every distinct level input (59, from the 11
     Solid-OIDC scopes and the 4 fixtures) as `packages/flow-layout/tests/fixtures/levels.json`.
     Ids lose their URN prefixes (452 KB). `measure` now counts the package source
-    (2,354 lines with the spike's composer, sizes and metrics).
+    (2,226 lines with the spike's composer, sizes and metrics).
   - A Prettier violation at HEAD in `FlowStudy.stories.tsx` (a missing trailing comma)
     is fixed. No component, story or public-library change.
 - **Large radii (design):**
@@ -2320,32 +2320,66 @@ the library source conventions into 11C.
       right, pinned by Access denied's straight lines.
     - At 12/12, Account selection's corridor stepped 543 → 525 → 481 → 392, each leg
       held by the next.
-  - **Fix:** a fallback after the local moves (`open` in `layout-level.ts`). It shifts
-    one end of the step, and everything that must follow it, to the right by whole
-    pixels. A moved vertex moves its right neighbour in the layer and anything
-    attached at or to the right of one of its attachments. So separations only grow,
-    straight lines stay straight, every other step only widens and the level only gets
-    wider. It is refused when both ends or the header would move. Straightening (the
-    left end) is tried before widening (the right end, to `step`). U-turn legs beside
-    frame lanes, which the snap skipped, widen the same way.
+  - **Rejected iteration (user, 2026-10-28):** a fallback after the local moves that
+    shifted one end of a step, and everything that had to follow, to the right. It
+    passed the gate, but the user rejected it as a hack and asked for "a clean generic
+    solution everybody can follow". It and the whole snap step (column moves, pushed
+    rows, widening, `straighten`) are removed.
+  - **Design: straight or a full step, then one constraint solve**
+    (`src/constraints.ts` and step 10 of `src/layout-level.ts`):
+    - Every piece between two layers is straight or steps aside by at least `step`.
+      The placement decides which:
+      - a piece it draws straight stays straight;
+      - a piece it steps a full step or more keeps its side;
+      - a near miss (a shorter step) becomes straight, unless another step in the same
+        channel runs across it. Drawn straight it would cut that bus, so it joins the
+        bus as a full step instead.
+    - Pieces are settled closest first, each with the first option the rules still
+      allow (else a full step to the other side; U-turns always step). "Allow" means
+      the rules keep a solution and no piece still to settle is locked in one column at
+      a short step.
+    - Positions solve one system of difference constraints, the formulation behind
+      Brandes–Köpf compaction. The constraints are layer spacing, padding and the
+      pinned header; tied pieces share a column, and steps keep at least `step`.
+      Longest paths (Bellman–Ford) over whole-pixel columns give the least solution.
+      Each column then starts at its preferred position, within the wider of the least
+      layout and the preferred one. Where that breaks a rule, the result is the
+      midpoint of the least solution above the start and the greatest one below it,
+      so both sides give way equally (the solutions form a convex set).
+    - The aligned placements' own longest-path compaction is replaced by the same
+      solver: Brandes–Köpf ties, no preference.
+  - **Iterations measured on the way (median, today's sizes, against HEAD):**
+    - Near misses always straight first: IdP open went from 3 to 5 crossings, because
+      the straightened line under "IdP auth denied" cut the bus below the frame.
+    - Near misses always a step first: never more crossings, but 2–34 more bends per
+      scope.
+    - Any line under a bus joins it, including lines the placement drew straight:
+      0 crossings in every scope, but the aligned placements lost their columns (spike
+      test failed). The bus rule is therefore limited to near misses.
+    - A solve that only pushed right drifted IdP's main column about 11px from its
+      preference; the midpoint solve replaced it.
   - **Spacing was not derived from the radius.** Horizontal spacing never holds a
-    corner: corners turn in the channels, whose height already follows `arrival`.
-    The fallback opens room only where a step needs it. The spacings became options.
+    corner: corners turn in the channels, whose height already follows `arrival`, and
+    steps get their room from the rules above. The spacings became options.
   - **Self-loops** (no fixture has one): a loop's width now counts in the separation
     from its right neighbour (it overlapped it once `arrival` exceeded the block
     spacing). Its vertical leg is a full step on a block at least that tall; it was
     40% of the height, short of `step` even at radius 6.
-- **Behaviour change at today's sizes (6/7):** the fallback also straightens short
-  steps on shared buses. The old snap left these, and the spike's junction rule
-  forgave them, but they drew as S-curves on an active route.
-  - Solid-OIDC median scopes with IdP or MFA open: width +0–14px (at most 0.7%), ink
-    +0.1–0.4%, one run and two bends fewer. Crossings and all artifact counts are
-    unchanged.
-  - Aligned placements and ELK: identical. Browser, real text: IdP open keeps its
-    width (1084); ink goes from 9,870 to 9,876.
-  - The three fixtures with inset-free facing ports: 2px lower (above).
+  - **Limit:** if no option for a piece were allowed, it would be left to the solution
+    and could step short. No tested level gets there (counted over all 1,416 sweep
+    layouts: 0).
+- **Behaviour change at today's sizes (6/7), against HEAD (`evidence/metrics.json`):**
+  - Median: crossings never increase; MFA email 7 → 5, MFA security key 6 → 3. IdP
+    open keeps 3 crossings, with one run and two bends fewer. Resource consent open is
+    17px wider (1.4%) with 4 runs and 10 bends fewer. Fully open is 11px narrower with
+    3 runs and 6 bends fewer. Ink changes by −0.4% to +0.8%.
+  - Aligned placements keep their columns. Widths change by 0–3px and ink by at most
+    0.1%, because columns now sit at whole pixels.
+  - Browser, real text: IdP open keeps its width (1084) and its 3 crossings; ink goes
+    from 9,870 to 9,898 and bends from 240 to 238. The collapsed view is 1px wider.
+  - The three fixtures with inset-free facing ports are 2px lower (above).
 - **Evidence:**
-  - **Port check:** before the step fix, the package reproduced every composed
+  - **Port check:** before the step rework, the package reproduced every composed
     Solid-OIDC layout exactly in all three placements (45 scope/fixture/placement
     dumps compared, scratchpad script). Only the three fixtures above differed.
   - **`pnpm --filter @journey-viewer/flow-layout test`: 9/9**, plus the type-only
@@ -2355,24 +2389,25 @@ the library source conventions into 11C.
       through nodes and lines along frames.
     - Kinks are counted without the junction exemption: every leg between two bends is
       at least `step`, even where routes share it.
-    - Before the fallback, the same gate counted (median only) 1 kink at 10/7, 9 at
+    - With the old snap step, the same gate counted (median only) 1 kink at 10/7, 9 at
       12/12, 6 at 16/10 and 16 at 20/8.
     - Also tested: the header at the corner; entries and exits on the borders; one
       contact per block side (centred, or inside when aligned left); every frame end at
       its port and inset (more than 1,000 ends); a frame swapped for a block keeps
       every layer's order; a straight chain with default directions; self-loop legs
       and clearance at all 8 sizes; determinism on frozen input.
-    - Total median width over the 59 levels: 60,516 at 6/7, 60,702 at 10/7, 60,844 at
-      12/12, 62,331 at 20/8. Heights grow with the arrival: 39,552 at 6/7, 46,739 at
-      12/12.
-  - **Spike:** `pnpm --dir flow-spike test` 27/27. The strokes test still counts 32
-    junction crossings over 570 activations, at its cap. `measure`, `build` (tsc +
-    static Storybook), `capture` and `format:check` pass.
+    - Total median width over the 59 levels: 60,429 at 6/7 (HEAD's engine: 60,435),
+      60,669 at 12/12 and 61,485 at 20/8. Heights grow with the arrival: 39,552 at 6/7,
+      46,739 at 12/12. The whole sweep takes about 3s.
+  - **Spike:** `pnpm --dir flow-spike test` 27/27, including the aligned main-path
+    column test. The strokes test still counts 32 junction crossings over 570
+    activations, at its cap. `measure`, `build` (tsc + static Storybook), `capture`
+    and `format:check` pass.
     - Browser: 11 readouts with 0 artifacts; disclosure displacement ≤0.5px; 37
       screens; axe 0 violations on 8 combinations; no page errors.
-    - 18 PNGs were re-captured with geometry changes (IdP/MFA median views, three
-      fixture scopes). `flow-context-returned-1440.png` differed by 17 antialiased
-      pixels and was restored from HEAD.
+    - 24 PNGs were re-captured. Each has strong pixel differences from whole-pixel
+      columns or the median changes, so none was restored. The recursion and sibling
+      fixture captures are byte-identical to HEAD.
   - **Root:**
     - Prettier passes on every tracked or trackable file.
     - `pnpm -r test` passes: lint 17, ujg-jsonld 13, design-system 56, flow-layout 9,

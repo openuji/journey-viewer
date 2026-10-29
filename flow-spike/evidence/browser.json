@@ -1,7 +1,7 @@
 {
   "renderedArtifacts": {
     "flow-collapsed-1440.png": {
-      "ink": 1350,
+      "ink": 1351,
       "runs": 21,
       "diagonals": 0,
       "jogs": 0,
@@ -12,11 +12,11 @@
       "crossings": 0,
       "bends": 22,
       "connectors": 12,
-      "width": 661,
+      "width": 662,
       "height": 465
     },
     "flow-collapsed-375.png": {
-      "ink": 1350,
+      "ink": 1351,
       "runs": 21,
       "diagonals": 0,
       "jogs": 0,
@@ -27,12 +27,12 @@
       "crossings": 0,
       "bends": 22,
       "connectors": 12,
-      "width": 661,
+      "width": 662,
       "height": 465
     },
     "flow-idp-open-1440.png": {
-      "ink": 9876,
-      "runs": 76,
+      "ink": 9898,
+      "runs": 75,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
@@ -40,14 +40,14 @@
       "borderCrossings": 0,
       "overlaps": 91,
       "crossings": 3,
-      "bends": 240,
+      "bends": 238,
       "connectors": 59,
       "width": 1084,
       "height": 1027
     },
     "flow-idp-open-1440-dark.png": {
-      "ink": 9876,
-      "runs": 76,
+      "ink": 9898,
+      "runs": 75,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
@@ -55,14 +55,14 @@
       "borderCrossings": 0,
       "overlaps": 91,
       "crossings": 3,
-      "bends": 240,
+      "bends": 238,
       "connectors": 59,
       "width": 1084,
       "height": 1027
     },
     "flow-idp-open-1099.png": {
-      "ink": 9876,
-      "runs": 76,
+      "ink": 9898,
+      "runs": 75,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
@@ -70,14 +70,14 @@
       "borderCrossings": 0,
       "overlaps": 91,
       "crossings": 3,
-      "bends": 240,
+      "bends": 238,
       "connectors": 59,
       "width": 1084,
       "height": 1027
     },
     "flow-idp-open-375.png": {
-      "ink": 9876,
-      "runs": 76,
+      "ink": 9898,
+      "runs": 75,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
@@ -85,14 +85,14 @@
       "borderCrossings": 0,
       "overlaps": 91,
       "crossings": 3,
-      "bends": 240,
+      "bends": 238,
       "connectors": 59,
       "width": 1084,
       "height": 1027
     },
     "flow-everything-open-spec-1440.png": {
-      "ink": 45604,
-      "runs": 195,
+      "ink": 45533,
+      "runs": 194,
       "diagonals": 0,
       "jogs": 0,
       "shortArrivals": 0,
@@ -100,9 +100,9 @@
       "borderCrossings": 0,
       "overlaps": 198,
       "crossings": 5,
-      "bends": 406,
+      "bends": 404,
       "connectors": 134,
-      "width": 2513,
+      "width": 2502,
       "height": 2321
     },
     "scope-recursion-reuse-1440.png": {
@@ -162,15 +162,15 @@
       "crossings": 0,
       "bends": 2,
       "connectors": 12,
-      "width": 2163,
+      "width": 2164,
       "height": 504
     }
   },
   "fitScale": "0.335",
   "disclosureDisplacement": {
-    "collapseIdp": { "dx": -0.5, "dy": 0 },
-    "expandIdp": { "dx": -0.5, "dy": 0 },
-    "expandMfaInsideIdp": { "dx": -0.2, "dy": 0 }
+    "collapseIdp": { "dx": 0, "dy": 0 },
+    "expandIdp": { "dx": 0, "dy": 0 },
+    "expandMfaInsideIdp": { "dx": -0.5, "dy": 0 }
   },
   "activation": { "routeMarks": 18, "restingConnectors": 52 },
   "reviewHovers": {
@@ -324,7 +324,7 @@
       "leftEdgeSpread": 53.5,
       "centreSpread": 0,
       "artifacts": {
-        "ink": 11198,
+        "ink": 11201,
         "runs": 62,
         "diagonals": 0,
         "jogs": 0,
@@ -343,7 +343,7 @@
       "leftEdgeSpread": 0,
       "centreSpread": 53.5,
       "artifacts": {
-        "ink": 11098,
+        "ink": 11100,
         "runs": 61,
         "diagonals": 0,
         "jogs": 0,
@@ -359,11 +359,11 @@
       }
     },
     "Median": {
-      "leftEdgeSpread": 220.9,
-      "centreSpread": 167.4,
+      "leftEdgeSpread": 222,
+      "centreSpread": 168.5,
       "artifacts": {
-        "ink": 9876,
-        "runs": 76,
+        "ink": 9898,
+        "runs": 75,
         "diagonals": 0,
         "jogs": 0,
         "shortArrivals": 0,
@@ -371,7 +371,7 @@
         "borderCrossings": 0,
         "overlaps": 91,
         "crossings": 3,
-        "bends": 240,
+        "bends": 238,
         "connectors": 59,
         "width": 1084,
         "height": 1027

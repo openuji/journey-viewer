@@ -1,6 +1,8 @@
+import { columnsOf, solve, whole } from "@/constraints";
+import type { Anchor, Rules, Spacing } from "@/constraints";
 import { resolveOptions } from "@/options";
 import type { LayoutOptions } from "@/options";
-import { simplify, straighten } from "@/polyline";
+import { simplify } from "@/polyline";
 import type {
   LevelEdge,
   LevelInput,
@@ -586,6 +588,26 @@ export function layoutLevel(
       ),
     );
   };
+  /** The rules every placement keeps: spacing within a layer, the frame padding, the header at the corner. */
+  const all = layers.flat();
+  const anchor = (a: Attach): Anchor => ({
+    vertex: a.vertex,
+    offset: offset(a),
+  });
+  const base = (): Rules => ({
+    ties: [],
+    spacings: layers.flatMap((ids) =>
+      ids.slice(1).map((id, i) => ({
+        from: { vertex: ids[i]!, offset: 0 },
+        to: { vertex: id, offset: 0 },
+        gap: separation(ids[i]!, id),
+      })),
+    ),
+    bounds: new Map(all.map((id) => [id, lowerBound(id)])),
+    pins: new Map(
+      all.filter((id) => vertex(id).kind === "header").map((id) => [id, 0]),
+    ),
+  });
   /**
    * Brandes–Köpf vertical alignment, upward and to the left: each vertex joins the column of its
    * median upper neighbour, a block preferring the blocks directly above it, unless that crosses a
@@ -653,53 +675,13 @@ export function layoutLevel(
       for (const [id, r] of root)
         if (block(id)) contact.set(id, narrowest.get(r)!);
     }
-    const rel = new Map<string, number>();
-    for (const ids of layers)
-      for (const id of ids) {
-        const pair = link.get(id);
-        rel.set(
-          id,
-          pair
-            ? rel.get(pair[0].vertex)! + offset(pair[0]) - offset(pair[1])
-            : 0,
-        );
-      }
-
-    // Longest path over the columns, left to right: each keeps its separation from the column to
-    // its left in every layer they share, and the frame padding.
-    const least = new Map<string, number>();
-    const right = new Map<string, [string, number][]>();
-    for (const ids of layers)
-      ids.forEach((id, i) => {
-        const r = root.get(id)!;
-        least.set(
-          r,
-          Math.max(least.get(r) ?? -Infinity, lowerBound(id) - rel.get(id)!),
-        );
-        if (i === 0) return;
-        const w = ids[i - 1]!;
-        const list = right.get(root.get(w)!) ?? [];
-        list.push([r, rel.get(w)! + separation(w, id) - rel.get(id)!]);
-        right.set(root.get(w)!, list);
-      });
-    const columns = [...new Set(root.values())];
-    const pending = new Map(columns.map((c) => [c, 0]));
-    for (const list of right.values())
-      for (const [c] of list) pending.set(c, pending.get(c)! + 1);
-    const ready = columns.filter((c) => pending.get(c) === 0);
-    const at = new Map(columns.map((c) => [c, least.get(c)!]));
-    let placed = 0;
-    while (ready.length > 0) {
-      const c = ready.pop()!;
-      placed += 1;
-      for (const [next, gap] of right.get(c) ?? []) {
-        at.set(next, Math.max(at.get(next)!, at.get(c)! + gap));
-        pending.set(next, pending.get(next)! - 1);
-        if (pending.get(next) === 0) ready.push(next);
-      }
-    }
-    if (placed < columns.length) throw new Error("Aligned columns cross");
-    for (const [id, r] of root) x.set(id, at.get(r)! + rel.get(id)!);
+    // Each member is tied to the neighbour it aligned with, and the columns are packed left.
+    const packed = solve(all, {
+      ...base(),
+      ties: [...link.values()].map(([u, l]) => [anchor(u), anchor(l)] as const),
+    });
+    if (!packed) throw new Error("Aligned columns cross");
+    for (const [id, value] of packed) x.set(id, value);
   };
   if (o.placement === "median") {
     for (let round = 0; round < PLACEMENT_ROUNDS; round++) {
@@ -710,8 +692,7 @@ export function layoutLevel(
   } else alignColumns(o.placement === "aligned-left");
 
   // Whole pixels: equal attachments are exactly equal, so straight lines stay straight when drawn.
-  const attachX = (a: Attach) => Math.round(x.get(a.vertex)! + offset(a));
-  const rawX = (a: Attach) => x.get(a.vertex)! + offset(a);
+  const attachX = (a: Attach) => whole(x.get(a.vertex)! + offset(a));
 
   // 9. Channel pieces. A dummy or lane is one terminal per channel; real vertices attach at ports.
   const terminalKey = (a: Attach) =>
@@ -771,187 +752,103 @@ export function layoutLevel(
   }
   const allPieces = [...pieces.values()];
 
-  // 10. Remove near-misses that would draw tiny jogs.
-  const move = (id: string, dx: number) => x.set(id, x.get(id)! + dx);
-  const touching = (id: string) =>
-    allPieces.filter(
-      (p) => p.a.attach.vertex === id || p.b.attach.vertex === id,
-    );
+  // 10. Straight or a full step. Every piece is drawn straight or steps aside by at least `step`;
+  // a shorter step would draw its two corners as an S-curve. The placement decides, and the rules
+  // only finish its decisions:
+  // - a piece it draws straight stays straight;
+  // - a piece it steps by a full step or more keeps that side;
+  // - a near miss (a shorter step) becomes straight, unless a step in the same channel runs across
+  //   it: drawn straight it would cut that bus, so it joins the bus as a full step instead.
+  // Pieces are settled closest first. Each takes the first of its options the rules still allow
+  // (otherwise a full step to the other side; a U-turn, with both ends on one side of its channel,
+  // always steps). Positions then solve all the rules, each column near its placed position.
   const opposite = (p: Piece) => p.a.boundary !== p.b.boundary;
-  const gapOf = (p: Piece) =>
-    Math.abs(attachX(p.a.attach) - attachX(p.b.attach));
-  /** A straight run of dummies and lanes through `id`, which can move sideways as one column. */
-  const column = (id: string): string[] => {
-    if (isReal(vertex(id))) return [id];
-    const run = new Set([id]);
-    const grow = (from: string) => {
-      for (const p of touching(from)) {
-        if (!opposite(p) || gapOf(p) > 0.5) continue;
-        const other =
-          p.a.attach.vertex === from ? p.b.attach.vertex : p.a.attach.vertex;
-        if (!isReal(vertex(other)) && !run.has(other)) {
-          run.add(other);
-          grow(other);
-        }
-      }
-    };
-    grow(id);
-    return [...run];
+  const ends = (p: Piece) => [anchor(p.a.attach), anchor(p.b.attach)] as const;
+  const placed = (a: Anchor) => whole(x.get(a.vertex)! + a.offset);
+  const side = (p: Piece) => placed(ends(p)[1]) - placed(ends(p)[0]);
+  const span = (p: Piece) => {
+    const [a, b] = ends(p).map(placed) as [number, number];
+    return [Math.min(a, b), Math.max(a, b)] as const;
   };
-  /** Whether a set of vertices can move together; neighbours outside the set must keep their gap. */
-  const canMoveAll = (ids: readonly string[], dx: number) => {
-    const set = new Set(ids);
-    return ids.every((id) => {
-      const v = vertex(id);
-      if (v.kind === "header") return false;
-      const layer = layers[v.layer]!;
-      const i = layer.indexOf(id);
-      const next = x.get(id)! + dx;
-      const left = layer[i - 1];
-      const right = layer[i + 1];
+  const underBus = (p: Piece) =>
+    allPieces.some(
+      (q) =>
+        q !== p &&
+        q.channel === p.channel &&
+        Math.abs(side(q)) > 0.5 &&
+        span(q)[0] < span(p)[0] - 0.5 &&
+        span(q)[1] > span(p)[1] + 0.5,
+    );
+  interface Option {
+    readonly tie: Rules["ties"];
+    readonly spacing: readonly Spacing[];
+  }
+  const straightOption = (p: Piece): Option[] =>
+    opposite(p) ? [{ tie: [ends(p)], spacing: [] }] : [];
+  const stepOption = (p: Piece, right: boolean): Option => {
+    const [a, b] = ends(p);
+    const [from, to] = right ? [a, b] : [b, a];
+    return { tie: [], spacing: [{ from, to, gap: o.step, whole: true }] };
+  };
+  const choices = (p: Piece): Option[] => {
+    const right = side(p) >= 0;
+    const aside = stepOption(p, right);
+    const nearMiss = Math.abs(side(p)) > 0.5;
+    return [
+      ...(nearMiss && underBus(p)
+        ? [aside, ...straightOption(p)]
+        : [...straightOption(p), aside]),
+      stepOption(p, !right),
+    ];
+  };
+
+  const rules = base();
+  const ties: Rules["ties"][number][] = [];
+  const spacings = [...rules.spacings];
+  const unsettled: Piece[] = [];
+  for (const p of allPieces)
+    if (Math.abs(side(p)) >= o.step - 0.01)
+      spacings.push(...stepOption(p, side(p) > 0).spacing);
+    else unsettled.push(p);
+  unsettled.sort((p, q) => Math.abs(side(p)) - Math.abs(side(q)));
+  unsettled.forEach((p, i) => {
+    const later = unsettled.slice(i + 1);
+    /** The rules keep a solution, and no piece still to settle is locked at a short step. */
+    const allows = ({ tie, spacing }: Option) => {
+      const columns = columnsOf(all, [...ties, ...tie]);
+      if (!columns) return false;
+      const locked = later.some((q) => {
+        const [a, b] = ends(q);
+        const ca = columns.of(a.vertex);
+        const cb = columns.of(b.vertex);
+        if (ca.column !== cb.column) return false;
+        const gap = Math.abs(
+          whole(cb.rel + b.offset) - whole(ca.rel + a.offset),
+        );
+        return (gap > 0.5 || !opposite(q)) && gap < o.step - 0.01;
+      });
       return (
-        next >= lowerBound(id) - 0.01 &&
-        (left === undefined ||
-          set.has(left) ||
-          x.get(left)! + separation(left, id) <= next + 0.01) &&
-        (right === undefined ||
-          set.has(right) ||
-          next + separation(id, right) <= x.get(right)! + 0.01)
+        !locked &&
+        solve(all, {
+          ...rules,
+          ties: [...ties, ...tie],
+          spacings: [...spacings, ...spacing],
+        }) !== undefined
       );
-    });
-  };
-  /** Adds the neighbours a move would collide with, so a tight row shifts as one. */
-  const pushed = (ids: readonly string[], dx: number) => {
-    const set = new Set(ids);
-    for (const id of ids) {
-      const layer = layers[vertex(id).layer]!;
-      let i = layer.indexOf(id);
-      let edge = x.get(id)! + dx;
-      for (;;) {
-        const neighbour = layer[dx > 0 ? i + 1 : i - 1];
-        if (neighbour === undefined || set.has(neighbour)) break;
-        const fits =
-          dx > 0
-            ? edge + separation(layer[i]!, neighbour) <=
-              x.get(neighbour)! + 0.01
-            : x.get(neighbour)! + separation(neighbour, layer[i]!) <=
-              edge + 0.01;
-        if (fits) break;
-        set.add(neighbour);
-        edge = x.get(neighbour)! + dx;
-        i += dx > 0 ? 1 : -1;
-      }
-    }
-    return [...set];
-  };
-  /** Applies a candidate change, keeping it only if no line becomes a jog and no straight line bends. */
-  const attempt = (
-    target: Piece,
-    moves: readonly string[],
-    dx: number,
-    goal: "straight" | "wide" = "straight",
-  ): boolean => {
-    if (!canMoveAll(moves, dx)) return false;
-    const affected = new Set<Piece>();
-    for (const id of moves) touching(id).forEach((p) => affected.add(p));
-    const before = new Map([...affected].map((p) => [p, gapOf(p)]));
-    for (const id of moves) move(id, dx);
-    const ok = [...affected].every((p) => {
-      if (!opposite(p)) return true;
-      const gap = gapOf(p);
-      if (p === target)
-        return goal === "straight" ? gap <= 0.5 : gap >= o.step - 0.01;
-      if (before.get(p)! <= 0.5) return gap <= 0.5;
-      return gap <= 0.5 || gap >= o.step - 0.01;
-    });
-    if (ok) return true;
-    for (const id of moves) move(id, -dx);
-    return false;
-  };
-  /** When a step cannot be aligned, make it a deliberate step of at least `step`. */
-  const widen = (piece: Piece, dx: number) => {
-    const more = Math.sign(dx) * (o.step - Math.abs(dx));
-    return (
-      attempt(piece, column(piece.b.attach.vertex), -more, "wide") ||
-      attempt(piece, column(piece.a.attach.vertex), more, "wide") ||
-      attempt(
-        piece,
-        pushed(column(piece.b.attach.vertex), -more),
-        -more,
-        "wide",
-      ) ||
-      attempt(piece, pushed(column(piece.a.attach.vertex), more), more, "wide")
-    );
-  };
-  /**
-   * When no local move fixes a step, opens room for it: shifts one of its ends, and everything that
-   * must follow, to the right by whole pixels. What follows a moved vertex is its right neighbour in
-   * the layer and whatever attaches at or to the right of one of its attachments. So separations
-   * only grow, straight lines stay straight, every other step only widens and the level only gets
-   * wider. Straightening (moving the left end) is tried before widening (moving the right end).
-   */
-  const shiftRight = (start: string, target: Piece, dx: number) => {
-    const ends = [target.a.attach.vertex, target.b.attach.vertex];
-    const moves = new Set<string>();
-    const queue = [start];
-    while (queue.length > 0) {
-      const id = queue.pop()!;
-      if (moves.has(id)) continue;
-      moves.add(id);
-      const layer = layers[vertex(id).layer]!;
-      const right = layer[layer.indexOf(id) + 1];
-      if (right !== undefined) queue.push(right);
-      for (const p of touching(id)) {
-        if (p === target) continue;
-        const [mine, other] =
-          p.a.attach.vertex === id ? [p.a, p.b] : [p.b, p.a];
-        if (attachX(other.attach) >= attachX(mine.attach) - 0.5)
-          queue.push(other.attach.vertex);
-      }
-    }
-    if (
-      ends.every((id) => moves.has(id)) ||
-      [...moves].some((id) => vertex(id).kind === "header")
-    )
-      return false;
-    for (const id of moves) move(id, dx);
-    return true;
-  };
-  const open = (piece: Piece) => {
-    const [left, right] =
-      attachX(piece.a.attach) <= attachX(piece.b.attach)
-        ? [piece.a.attach.vertex, piece.b.attach.vertex]
-        : [piece.b.attach.vertex, piece.a.attach.vertex];
-    const gap = gapOf(piece);
-    return (
-      (opposite(piece) && shiftRight(left, piece, gap)) ||
-      shiftRight(right, piece, Math.ceil(o.step - gap - 0.01))
-    );
-  };
-  const snap = () => {
-    let changed = false;
-    for (const piece of allPieces) {
-      if (gapOf(piece) >= o.step - 0.01) continue;
-      // A U-turn's horizontal leg lies between two bends: it can only widen.
-      if (!opposite(piece)) {
-        if (open(piece)) changed = true;
-        continue;
-      }
-      if (gapOf(piece) <= 0.5) continue;
-      // Move by the unrounded distance; the result is judged on whole pixels.
-      const dx = rawX(piece.a.attach) - rawX(piece.b.attach);
-      const fixed =
-        attempt(piece, column(piece.b.attach.vertex), dx) ||
-        attempt(piece, column(piece.a.attach.vertex), -dx) ||
-        attempt(piece, pushed(column(piece.b.attach.vertex), dx), dx) ||
-        attempt(piece, pushed(column(piece.a.attach.vertex), -dx), -dx) ||
-        widen(piece, dx) ||
-        open(piece);
-      if (fixed) changed = true;
-    }
-    return changed;
-  };
-  for (let round = 0; round < 8 && snap(); round++);
+    };
+    // None allowed would leave the piece to the solution; no tested level gets there.
+    const choice = choices(p).find(allows);
+    if (!choice) return;
+    ties.push(...choice.tie);
+    spacings.push(...choice.spacing);
+  });
+  const solved = solve(
+    all,
+    { ...rules, ties, spacings },
+    { x, extent: (id) => vertex(id).width + loopWidth(id) },
+  );
+  if (!solved) throw new Error("Contradicting placement rules");
+  for (const [id, value] of solved) x.set(id, value);
 
   // 11. One bus per channel: every connector that changes x in a channel shares a single
   // horizontal track, so parallel horizontal runs collapse into one line. The track keeps a full
@@ -1046,7 +943,7 @@ export function layoutLevel(
     }
     // A line at a port with an inset stops that far outside the frame's border.
     const route = inset(
-      straighten(simplify(points)),
+      simplify(points),
       insetOf(path.upperAttach),
       insetOf(path.lowerAttach),
     );

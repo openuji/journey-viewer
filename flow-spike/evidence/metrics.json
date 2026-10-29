@@ -1,6 +1,6 @@
 {
   "method": "Solid-OIDC, 7 warm runs per scope after one discarded run, median milliseconds; Node v22.23.3; estimator text metrics.",
-  "sizes": { "ownLayoutSourceLines": 2354, "elkBundledBytes": 1609707 },
+  "sizes": { "ownLayoutSourceLines": 2226, "elkBundledBytes": 1609707 },
   "scopes": [
     {
       "scope": "all collapsed",
@@ -34,7 +34,7 @@
         "connectors": 12,
         "width": 716,
         "height": 441,
-        "milliseconds": 7
+        "milliseconds": 7.2
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -58,12 +58,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
-        "ink": 1551,
+        "ink": 1553,
         "runs": 17,
         "crossings": 0,
         "bends": 16,
         "connectors": 12,
-        "width": 815,
+        "width": 816,
         "height": 465
       },
       "ownAlignedLeft": {
@@ -73,7 +73,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 0,
-        "ink": 1439,
+        "ink": 1440,
         "runs": 17,
         "crossings": 0,
         "bends": 16,
@@ -91,14 +91,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 91,
-        "ink": 9997,
+        "ink": 9978,
         "runs": 77,
         "crossings": 3,
         "bends": 244,
         "connectors": 59,
         "width": 1090,
         "height": 1027,
-        "milliseconds": 9.5
+        "milliseconds": 10
       },
       "elk": {
         "diagonals": 0,
@@ -114,7 +114,7 @@
         "connectors": 59,
         "width": 1595,
         "height": 906,
-        "milliseconds": 29.6
+        "milliseconds": 29.7
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -138,7 +138,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 98,
-        "ink": 11326,
+        "ink": 11334,
         "runs": 62,
         "crossings": 8,
         "bends": 178,
@@ -153,7 +153,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 98,
-        "ink": 11209,
+        "ink": 11210,
         "runs": 62,
         "crossings": 8,
         "bends": 178,
@@ -171,14 +171,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 171,
-        "ink": 26466,
+        "ink": 26385,
         "runs": 130,
         "crossings": 5,
         "bends": 360,
         "connectors": 100,
-        "width": 1947,
+        "width": 1932,
         "height": 1496,
-        "milliseconds": 12.3
+        "milliseconds": 13.3
       },
       "elk": {
         "diagonals": 0,
@@ -194,7 +194,7 @@
         "connectors": 100,
         "width": 2532,
         "height": 1218,
-        "milliseconds": 44.1
+        "milliseconds": 43.4
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -218,12 +218,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 31528,
+        "ink": 31547,
         "runs": 109,
         "crossings": 19,
         "bends": 290,
         "connectors": 100,
-        "width": 2227,
+        "width": 2229,
         "height": 1496
       },
       "ownAlignedLeft": {
@@ -233,7 +233,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 31759,
+        "ink": 31760,
         "runs": 109,
         "crossings": 19,
         "bends": 290,
@@ -251,14 +251,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 96,
-        "ink": 12454,
+        "ink": 12434,
         "runs": 90,
         "crossings": 4,
         "bends": 258,
         "connectors": 64,
         "width": 1090,
         "height": 1255,
-        "milliseconds": 8.8
+        "milliseconds": 9.4
       },
       "elk": {
         "diagonals": 0,
@@ -274,7 +274,7 @@
         "connectors": 64,
         "width": 1949,
         "height": 1046,
-        "milliseconds": 31.4
+        "milliseconds": 30.6
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -298,12 +298,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 95,
-        "ink": 14550,
+        "ink": 14565,
         "runs": 74,
         "crossings": 9,
         "bends": 184,
         "connectors": 64,
-        "width": 1175,
+        "width": 1177,
         "height": 1255
       },
       "ownAlignedLeft": {
@@ -313,12 +313,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 93,
-        "ink": 14660,
+        "ink": 14665,
         "runs": 74,
         "crossings": 9,
         "bends": 184,
         "connectors": 64,
-        "width": 1212,
+        "width": 1213,
         "height": 1255
       }
     },
@@ -331,14 +331,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 103,
-        "ink": 15916,
-        "runs": 101,
+        "ink": 16001,
+        "runs": 98,
         "crossings": 3,
-        "bends": 270,
+        "bends": 262,
         "connectors": 73,
-        "width": 1230,
+        "width": 1241,
         "height": 1343,
-        "milliseconds": 8.9
+        "milliseconds": 10.7
       },
       "elk": {
         "diagonals": 0,
@@ -354,7 +354,7 @@
         "connectors": 73,
         "width": 2108,
         "height": 1140,
-        "milliseconds": 33.8
+        "milliseconds": 37.5
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -378,12 +378,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 92,
-        "ink": 21417,
+        "ink": 21434,
         "runs": 85,
         "crossings": 10,
         "bends": 202,
         "connectors": 73,
-        "width": 1687,
+        "width": 1689,
         "height": 1343
       },
       "ownAlignedLeft": {
@@ -393,12 +393,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 92,
-        "ink": 21529,
+        "ink": 21534,
         "runs": 86,
         "crossings": 10,
         "bends": 202,
         "connectors": 73,
-        "width": 1724,
+        "width": 1725,
         "height": 1343
       }
     },
@@ -411,14 +411,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 170,
-        "ink": 29108,
+        "ink": 29027,
         "runs": 129,
         "crossings": 6,
         "bends": 354,
         "connectors": 102,
-        "width": 1947,
+        "width": 1932,
         "height": 1637,
-        "milliseconds": 12.6
+        "milliseconds": 12.9
       },
       "elk": {
         "diagonals": 0,
@@ -434,7 +434,7 @@
         "connectors": 102,
         "width": 2740,
         "height": 1385,
-        "milliseconds": 49.6
+        "milliseconds": 39.7
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -458,12 +458,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 162,
-        "ink": 35465,
+        "ink": 35484,
         "runs": 114,
         "crossings": 19,
         "bends": 292,
         "connectors": 102,
-        "width": 2422,
+        "width": 2424,
         "height": 1637
       },
       "ownAlignedLeft": {
@@ -473,7 +473,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 162,
-        "ink": 35276,
+        "ink": 35277,
         "runs": 114,
         "crossings": 19,
         "bends": 292,
@@ -491,14 +491,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 175,
-        "ink": 30329,
+        "ink": 30238,
         "runs": 134,
         "crossings": 6,
         "bends": 350,
         "connectors": 103,
-        "width": 1963,
+        "width": 1948,
         "height": 1653,
-        "milliseconds": 12.2
+        "milliseconds": 12.6
       },
       "elk": {
         "diagonals": 0,
@@ -514,7 +514,7 @@
         "connectors": 103,
         "width": 2784,
         "height": 1433,
-        "milliseconds": 43.3
+        "milliseconds": 42.1
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -538,12 +538,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 36444,
+        "ink": 36463,
         "runs": 117,
         "crossings": 19,
         "bends": 294,
         "connectors": 103,
-        "width": 2449,
+        "width": 2451,
         "height": 1653
       },
       "ownAlignedLeft": {
@@ -553,7 +553,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 36675,
+        "ink": 36676,
         "runs": 117,
         "crossings": 19,
         "bends": 294,
@@ -570,15 +570,15 @@
         "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
-        "overlaps": 170,
-        "ink": 30507,
-        "runs": 134,
-        "crossings": 7,
-        "bends": 352,
+        "overlaps": 171,
+        "ink": 30311,
+        "runs": 135,
+        "crossings": 5,
+        "bends": 354,
         "connectors": 103,
-        "width": 2025,
+        "width": 2001,
         "height": 1653,
-        "milliseconds": 11.9
+        "milliseconds": 12.5
       },
       "elk": {
         "diagonals": 0,
@@ -594,7 +594,7 @@
         "connectors": 103,
         "width": 2793,
         "height": 1433,
-        "milliseconds": 42.6
+        "milliseconds": 41.2
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -618,12 +618,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 34518,
+        "ink": 34537,
         "runs": 117,
         "crossings": 19,
         "bends": 294,
         "connectors": 103,
-        "width": 2257,
+        "width": 2259,
         "height": 1653
       },
       "ownAlignedLeft": {
@@ -633,7 +633,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 166,
-        "ink": 35099,
+        "ink": 35100,
         "runs": 117,
         "crossings": 19,
         "bends": 294,
@@ -651,14 +651,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 172,
-        "ink": 30427,
+        "ink": 30339,
         "runs": 136,
         "crossings": 4,
         "bends": 358,
         "connectors": 103,
-        "width": 1987,
+        "width": 1972,
         "height": 1653,
-        "milliseconds": 11.9
+        "milliseconds": 12.4
       },
       "elk": {
         "diagonals": 0,
@@ -674,7 +674,7 @@
         "connectors": 103,
         "width": 2601,
         "height": 1401,
-        "milliseconds": 42.9
+        "milliseconds": 43.3
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -698,12 +698,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 167,
-        "ink": 35931,
+        "ink": 35950,
         "runs": 117,
         "crossings": 18,
         "bends": 296,
         "connectors": 103,
-        "width": 2404,
+        "width": 2406,
         "height": 1653
       },
       "ownAlignedLeft": {
@@ -713,7 +713,7 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 167,
-        "ink": 36162,
+        "ink": 36163,
         "runs": 117,
         "crossings": 18,
         "bends": 296,
@@ -730,15 +730,15 @@
         "shortArrivals": 0,
         "throughBoxes": 0,
         "borderCrossings": 0,
-        "overlaps": 182,
-        "ink": 30190,
-        "runs": 135,
-        "crossings": 6,
-        "bends": 350,
+        "overlaps": 186,
+        "ink": 30163,
+        "runs": 136,
+        "crossings": 3,
+        "bends": 352,
         "connectors": 104,
-        "width": 2029,
+        "width": 2024,
         "height": 1637,
-        "milliseconds": 12.8
+        "milliseconds": 13.5
       },
       "elk": {
         "diagonals": 0,
@@ -754,7 +754,7 @@
         "connectors": 104,
         "width": 2753,
         "height": 1393,
-        "milliseconds": 41.7
+        "milliseconds": 40.9
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -778,12 +778,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 158,
-        "ink": 38983,
+        "ink": 39013,
         "runs": 121,
         "crossings": 19,
         "bends": 296,
         "connectors": 104,
-        "width": 2681,
+        "width": 2684,
         "height": 1637
       },
       "ownAlignedLeft": {
@@ -793,12 +793,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 158,
-        "ink": 39218,
+        "ink": 39225,
         "runs": 121,
         "crossings": 19,
         "bends": 296,
         "connectors": 104,
-        "width": 2725,
+        "width": 2726,
         "height": 1637
       }
     },
@@ -811,14 +811,14 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 198,
-        "ink": 46107,
-        "runs": 197,
+        "ink": 46025,
+        "runs": 195,
         "crossings": 5,
-        "bends": 412,
+        "bends": 408,
         "connectors": 134,
-        "width": 2548,
+        "width": 2537,
         "height": 2338,
-        "milliseconds": 12.9
+        "milliseconds": 13.3
       },
       "elk": {
         "diagonals": 0,
@@ -834,7 +834,7 @@
         "connectors": 134,
         "width": 3116,
         "height": 2218,
-        "milliseconds": 69.8
+        "milliseconds": 66.6
       },
       "elkUnmerged": {
         "diagonals": 0,
@@ -858,12 +858,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 163,
-        "ink": 56039,
+        "ink": 56069,
         "runs": 185,
         "crossings": 21,
         "bends": 342,
         "connectors": 134,
-        "width": 3305,
+        "width": 3308,
         "height": 2338
       },
       "ownAlignedLeft": {
@@ -873,12 +873,12 @@
         "throughBoxes": 0,
         "borderCrossings": 0,
         "overlaps": 163,
-        "ink": 56206,
+        "ink": 56212,
         "runs": 184,
         "crossings": 21,
         "bends": 340,
         "connectors": 134,
-        "width": 3342,
+        "width": 3343,
         "height": 2338
       }
     }

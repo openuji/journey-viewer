@@ -94,9 +94,8 @@ keeps for those sizes:
 No segment is diagonal, and no route passes through a node other than its own ends,
 through a frame, or along a frame's border. These guarantees are tested over every
 level of the Solid-OIDC example's disclosure scopes, for radii from 2 to 20, in all
-three placements. Larger radii add room where it is needed: channels between layers
-grow with the arrival, and a step that cannot be straightened or widened in place
-widens the level by shifting what lies to its right.
+three placements. Larger radii add room only where it is needed: channels between
+layers grow with the arrival, and the horizontal rules below grow with the step.
 
 ## How it works
 
@@ -108,11 +107,33 @@ widens the level by shifting what lies to its right.
    keeps every layer's order.
 3. Corridors: neighbouring dummy chains and the lanes beside frames merge into one
    line.
-4. Horizontal placement (median isotonic regression, or aligned columns), then step
-   snapping: each step is straightened or widened to at least `step`, locally first,
-   otherwise by opening room to its right.
-5. One horizontal bus per channel. Each channel's height is the arrival room on each
+4. Preferred positions: median isotonic regression, or Brandes–Köpf columns packed
+   left (`aligned-center`, `aligned-left`).
+5. Straight or a full step. Every piece of a route between two layers is either
+   straight or steps aside by at least `step`. The preferred positions decide which:
+   - a piece they draw straight stays straight;
+   - a piece they step by a full step or more keeps its side;
+   - a near miss (a shorter step) becomes straight, unless another step in the same
+     channel runs across it. Drawn straight, it would cut that horizontal line, so it
+     joins the line as a full step instead.
+
+   Pieces are settled closest first, each with the first of its options the rules
+   still allow, falling back to a full step to the other side.
+6. Positions solve one system of difference constraints, as in Brandes–Köpf
+   compaction. Neighbours in a layer keep their spacing. The padding holds, and the
+   header stays at the corner. A straight piece's ends share one column, and a
+   step's far end lies at least `step` to its side. Longest paths over the columns
+   (Bellman–Ford) give the least solution. Each column then starts at its preferred
+   position, within the wider of the least layout and the preferred one. Where that
+   breaks a rule, the result is the midpoint of the least solution above the start
+   and the greatest one below it, so both sides of a broken rule give way equally.
+7. One horizontal bus per channel. Each channel's height is the arrival room on each
    side, plus the frame clearance and port insets beside frames.
+
+Columns sit at whole pixels, and points that must line up are compared at whole
+pixels, so a straight line is exactly straight when drawn. If no option for a piece
+were allowed, it would be left to the solution and could step short. That has not
+happened in any tested level.
 
 Build with `pnpm --filter @journey-viewer/flow-layout build`. The package is private
 in this repository and ships built ESM and declarations only.

@@ -19,28 +19,3 @@ export function simplify(points: readonly Point[]): readonly Point[] {
     return !vertical && !horizontal;
   });
 }
-
-/**
- * Absorbs sub-stroke horizontal steps (< 2px, narrower than a line is wide) left over after
- * placement, by moving the adjacent interior vertical; endpoints never move.
- */
-export function straighten(points: readonly Point[]): readonly Point[] {
-  const out = points.map((point) => ({ ...point }));
-  for (let i = 1; i < out.length - 2; i++) {
-    const a = out[i]!;
-    const b = out[i + 1]!;
-    const step = Math.abs(a.x - b.x);
-    if (Math.abs(a.y - b.y) > 0.01 || step < 0.01 || step >= 2) continue;
-    // Shift the vertical after the step when it is interior, else the one before it.
-    if (i + 2 < out.length - 1) {
-      const next = out[i + 2]!;
-      if (Math.abs(next.x - b.x) < 0.01) next.x = a.x;
-      b.x = a.x;
-    } else if (i - 1 > 0) {
-      const previous = out[i - 1]!;
-      if (Math.abs(previous.x - a.x) < 0.01) previous.x = b.x;
-      a.x = b.x;
-    }
-  }
-  return simplify(out);
-}
