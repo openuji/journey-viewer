@@ -34,12 +34,20 @@ function FlowStage({ pathEnd }: FlowViewOptions) {
     settings,
   }));
   if (stage.reveal !== state.reveal || stage.settings !== settings) {
-    // A reveal from the inspector or search brings its target into view; a reset or new settings
-    // start from a still view. Adjusted during render, like the viewer's reset on document change.
-    const target = stage.reveal !== state.reveal && state.reveal?.target;
+    // A reveal from the inspector or search brings its target into view, and a reset's ("top")
+    // returns the canvas to its first view; new settings start from a still view. Adjusted during
+    // render, like the viewer's reset on document change.
+    const revealed = stage.reveal !== state.reveal ? state.reveal : null;
     setStage({
       ...stage,
-      view: target ? { anchor: null, reveal: { target } } : still,
+      view: revealed
+        ? {
+            anchor: null,
+            reveal: revealed.target
+              ? { target: revealed.target }
+              : { start: true },
+          }
+        : still,
       reveal: state.reveal,
       settings,
     });

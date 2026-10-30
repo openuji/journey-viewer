@@ -4,7 +4,6 @@ import type { HeadingLevel } from "@journey-viewer/design-system";
 import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import { resolveSelection } from "@/interaction";
-import type { ViewerInteraction } from "@/interaction";
 import { getNodeScreens, getScreens } from "@/screens";
 import type { ScreenshotMap } from "@/screens";
 import { touchpointLabel } from "@/presentation";
@@ -13,6 +12,7 @@ import type { ViewerExtensions } from "@/extensions";
 import { createViewerState, reduceViewer } from "@/viewer-state";
 import type {
   ViewerCommand,
+  ViewerInitialCommand,
   ViewerInputs,
   ViewerState,
   ViewerView,
@@ -37,11 +37,11 @@ export interface ViewerProps {
   readonly extensions?: ViewerExtensions;
   /** The view it opens with and returns to on reset; the first by default. */
   readonly initialView?: string;
-  /** The expansion and selection it opens with and returns to on reset. */
-  readonly initialInteraction?: (
-    document: UjgDocument,
-    interaction: ViewerInteraction,
-  ) => ViewerInteraction;
+  /**
+   * Commands it opens with and returns to on reset, applied in order in the initial view: an
+   * expansion, or a `navigate` to a selection at its call site.
+   */
+  readonly initialCommands?: readonly ViewerInitialCommand[];
   /** The bar, the stage and any controls, in any arrangement. */
   readonly children?: ReactNode;
 }
@@ -85,7 +85,7 @@ export function Viewer({
   touchpoints = {},
   extensions,
   initialView,
-  initialInteraction,
+  initialCommands,
   children,
 }: ViewerProps) {
   const inputs: ViewerInputs = {
@@ -93,7 +93,7 @@ export function Viewer({
     screenshots,
     views,
     initialView,
-    initialInteraction,
+    initialCommands,
   };
   const [current, setCurrent] = useState<DocumentState>(() => ({
     document,

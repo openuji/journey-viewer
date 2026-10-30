@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  collapseAllJourneys,
   columnsView,
   createViewerSnapshot,
   createViewerState,
@@ -12,7 +11,6 @@ import {
   searchViewer,
   setSearchQuery,
   setViewMode,
-  toggleChildJourneys,
   treeView,
 } from "@journey-viewer/viewer";
 import { id, oidcDocument } from "~/tests/flow-scopes.mjs";
@@ -41,30 +39,66 @@ const login = freeze(
   ),
 );
 
-test("the initial state is the viewer snapshot in the first view, or the named view and interaction", () => {
+test("the initial state is the viewer snapshot in the first view, or the named view after its initial commands", () => {
   assert.deepEqual(start.disclosure.snapshot, createViewerSnapshot(document));
   assert.equal(start.view, "tree");
   assert.equal(start.disclosure.location, null);
   const prepared = createViewerState({
     ...inputs,
     initialView: "columns",
-    initialInteraction: (doc, interaction) =>
-      toggleChildJourneys(
-        doc,
-        collapseAllJourneys(interaction),
-        id("app-auth-journey"),
-        id("idp-auth-flow"),
-      ),
+    initialCommands: [
+      { type: "collapseAll" },
+      {
+        type: "toggle",
+        journeyId: id("app-auth-journey"),
+        stateId: id("idp-auth-flow"),
+      },
+    ],
   });
   assert.equal(prepared.view, "columns");
   assert.equal(prepared.disclosure.snapshot.navigation.mode, "columns");
   assert.deepEqual(prepared.disclosure.snapshot.interaction.expandedJourneys, [
     id("idp-auth-journey"),
   ]);
+  assert.equal(prepared.disclosure.location, null);
   assert.equal(
     createViewerState({ ...inputs, initialView: "unknown" }).view,
     "tree",
   );
+});
+
+test("an initial selection keeps its occurrence, lanes and location, and reset returns to it", () => {
+  const initial = freeze({
+    ...inputs,
+    initialView: "columns",
+    initialCommands: [{ type: "navigate", target: login }],
+  });
+  const opened = createViewerState(initial);
+  const { snapshot } = opened.disclosure;
+  assert.deepEqual(
+    snapshot,
+    navigateViewer(
+      document,
+      setViewMode(document, createViewerSnapshot(document), "columns"),
+      login,
+    ),
+  );
+  assert.deepEqual(snapshot.interaction.selection, login.selection);
+  assert.deepEqual(snapshot.navigation.occurrence, login.occurrence);
+  assert.equal(
+    snapshot.navigation.lanes.at(-1)?.steps.length,
+    login.occurrence.steps.length,
+    "the last column is Login's journey, not the app journey",
+  );
+  assert.equal(opened.disclosure.location, login);
+  assert.equal(opened.reveal, null, "a plain navigate opens without a reveal");
+  const elsewhere = reduceViewer(initial, opened, {
+    type: "navigate",
+    target: searchViewer(document, "Access denied", [])[0],
+  });
+  const reset = reduceViewer(initial, elsewhere, { type: "reset" });
+  assert.deepEqual(reset.disclosure, opened.disclosure);
+  assert.equal(reset.view, "columns");
 });
 
 test("navigation matches the snapshot transitions; only inspector navigation and picks reveal", () => {

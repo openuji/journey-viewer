@@ -2296,6 +2296,39 @@ try {
     assert.deepEqual(errors, []);
   });
 
+  await test("flow scenarios: Reset view returns the canvas to its first view with the selection in sight", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await flowStory("viewer-flow-scenarios--controls-in-the-bar");
+    const viewport = page.getByRole("region", { name: "Journey flow" });
+    const position = () =>
+      viewport.evaluate((element) => [element.scrollLeft, element.scrollTop]);
+    const first = await position();
+    // Pan into the blank margin, away from every block.
+    await viewport.evaluate((element) => element.scrollTo(0, 0));
+    assert.notDeepEqual(await position(), first);
+    await page.getByRole("button", { name: "Reset view", exact: true }).click();
+    await page.waitForFunction(
+      ([[left, top]]) => {
+        const element = document.querySelector('[aria-label="Journey flow"]');
+        return element.scrollLeft === left && element.scrollTop === top;
+      },
+      [first],
+    );
+    const [shown, area] = await Promise.all([
+      block("state", urn("app-sign-in-required")).boundingBox(),
+      viewport.boundingBox(),
+    ]);
+    assert.ok(
+      shown.x >= area.x &&
+        shown.y >= area.y &&
+        shown.x + shown.width <= area.x + area.width &&
+        shown.y + shown.height <= area.y + area.height,
+      "the reset selection is in sight",
+    );
+    await page.emulateMedia({ reducedMotion: null });
+    assert.deepEqual(errors, []);
+  });
+
   await test("flow scenarios: a control outside the library dispatches a command that every view follows", async () => {
     await flowStory("viewer-flow-scenarios--custom-command");
     const collapse = page.getByRole("button", {

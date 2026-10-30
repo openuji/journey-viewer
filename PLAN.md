@@ -2603,7 +2603,8 @@ the library source conventions into 11C.
     `TouchpointFilter`, `GraphSearch`, `ResetView`, `ViewerMain`, `treeView`,
     `columnsView`, `flowView`, `FlowSettings`, `useFlowSettings`, `FlowPlacement`,
     `FlowZoom`, the controlled `JourneyFlow`, and the types `ViewerCommand`, `ViewerState`,
-    `ViewerInputs`, `ViewerView`, `ViewerReveal`, `ScreenPreview`, `DisclosureAction`,
+    `ViewerInputs`, `ViewerInitialCommand`, `ViewerView`, `ViewerReveal`, `ScreenPreview`,
+    `DisclosureAction`,
     `ViewerDisclosure`, `WhenViewProps`, `FlowViewOptions`, `FlowSettingsProps`,
     `FlowSettingsValue`, `JourneyFlowProps`, `FlowReveal`, `FlowView`, `FlowZoomLevel`.
     Flow now ships in `dist` (104 kB JS, 4.5 kB CSS); `src/dev/artifacts.ts` stays out.
@@ -2677,3 +2678,30 @@ the library source conventions into 11C.
   arrangement and wiring Flow into `JourneyViewer`" is now the user's composition:
   `JourneyViewer` stays Tree/Columns, and the app's composition (Stage 16) chooses its
   arrangement in one file.
+
+### Stage-15 review corrections — 2026-10-30
+
+- **Initial selection without its occurrence (P2).** `initialInteraction` could change the
+  selection without the occurrence, lanes and location, the misuse the README already warns
+  about for `selectNode`. A nested “Login” left the occurrence at the app journey, so
+  Columns showed the wrong journey and the inspector lost its navigation. Replaced by
+  `initialCommands: readonly ViewerInitialCommand[]` (every `ViewerCommand` except
+  `reset`), applied in order through `reduceViewer` in the initial view. An initial
+  selection is a `navigate` with its target's occurrence, so it is consistent by
+  construction, and Reset replays it. The scenarios open with
+  `[collapseAll, toggle(app, IdP flow)]`, the same state as before.
+- **Flow Reset left the canvas where it was (P2).** The flow view turned the reset's "top"
+  request into a still view. `FlowReveal` gains `{ start: true }`: the viewport returns
+  to its first view (top-left, keeping the selection in sight), through the computation
+  it already used for its first render (`firstView`). A reveal with a target still
+  reveals that block; new settings still start from a still view.
+- **Evidence:**
+  - Viewer 93/93. The new reducer test: in Columns, an initial `navigate` to nested Login
+    equals `navigateViewer` on the columns snapshot (selection, occurrence, last lane and
+    location), and Reset after navigating elsewhere returns to it.
+  - Browser 37/37. The new check: after panning the canvas to (0, 0), Reset view brings it
+    back to its first view (1576, 1576) with the selected state inside the canvas. A
+    scratch Storybook built with the previous mapping stays at (0, 0), so the check
+    catches the bug; the source was restored and compared afterwards.
+  - Root 5/5, consumer 4/4, Prettier clean on the changed files. `JourneyViewer` passes no
+    initial commands, so its markup, the app and parity are unaffected (not re-run).

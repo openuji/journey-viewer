@@ -583,8 +583,11 @@ import { FlowKey } from "@journey-viewer/design-system";
   shared snapshot, the node the flow's path leads to, the active view, search, reveal
   and the hover preview) and resets it when `document` changes identity. Around its
   children it adds the screen preview, the lightbox and the browser shell (sticky-bar
-  offset, “/” for search, reveal scrolling). `initialView` and `initialInteraction`
-  set what it opens with, and what Reset returns to.
+  offset, “/” for search, reveal scrolling). `initialView` and `initialCommands` set
+  what it opens with, and what Reset returns to. The initial commands are ordinary
+  commands applied in that view, so an initial selection is a `navigate` with its
+  occurrence: `initialCommands={[{ type: "collapseAll" }, { type: "navigate", target }]}`.
+  Reset also returns the flow canvas to its first view.
 - **Views** are readonly `ViewerView` descriptors `{ id, label, render, enter?, inspector? }`.
   `ViewSwitch` lists them and `ViewerMain` renders the active one beside the inspector.
   `treeView` and `columnsView` use `enter` to set the snapshot's mode, and

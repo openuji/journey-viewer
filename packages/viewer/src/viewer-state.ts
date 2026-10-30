@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
 import { toggleContracts } from "@/interaction";
-import type { ViewerInteraction } from "@/interaction";
 import {
   createViewerSnapshot,
   selectTouchpoint,
@@ -40,13 +39,11 @@ export interface ViewerInputs {
   readonly views: readonly ViewerView[];
   /** The view the viewer opens with and returns to on reset; the first by default. */
   readonly initialView?: string | undefined;
-  /** The expansion and selection it opens with and returns to on reset. */
-  readonly initialInteraction?:
-    | ((
-        document: UjgDocument,
-        interaction: ViewerInteraction,
-      ) => ViewerInteraction)
-    | undefined;
+  /**
+   * Commands applied in order to a fresh viewer in its initial view, such as an expansion or a
+   * `navigate` to a selection at its call site; reset returns to their result.
+   */
+  readonly initialCommands?: readonly ViewerInitialCommand[] | undefined;
 }
 
 /** The tree and columns' hover preview of a screen. */
@@ -106,6 +103,9 @@ export type ViewerCommand =
   /** The initial view, expansion and selection, scrolled to the top. */
   | { readonly type: "reset" };
 
+/** A command a viewer can open with; reset returns to the initial state, so it is not one. */
+export type ViewerInitialCommand = Exclude<ViewerCommand, { type: "reset" }>;
+
 const revealOf = (target: ViewerTarget, seq: number): ViewerReveal => ({
   seq,
   kind: target.selection.kind,
@@ -117,25 +117,17 @@ const revealOf = (target: ViewerTarget, seq: number): ViewerReveal => ({
 const viewOf = (inputs: ViewerInputs, id: string | undefined) =>
   inputs.views.find((view) => view.id === id) ?? inputs.views[0];
 
-const enter = (
-  inputs: ViewerInputs,
-  snapshot: ViewerSnapshot,
-  id: string | undefined,
-) => viewOf(inputs, id)?.enter?.(inputs.document, snapshot) ?? snapshot;
-
+/**
+ * A fresh viewer in its initial view, after its initial commands. They go through the reducer, so
+ * a selection always comes with its occurrence, lanes and location.
+ */
 export function createViewerState(inputs: ViewerInputs): ViewerState {
-  const { document, initialInteraction } = inputs;
-  const created = createViewerSnapshot(document);
-  const snapshot = initialInteraction
-    ? {
-        ...created,
-        interaction: initialInteraction(document, created.interaction),
-      }
-    : created;
+  const { document, initialCommands = [] } = inputs;
+  const snapshot = createViewerSnapshot(document);
   const view = viewOf(inputs, inputs.initialView);
-  return {
+  const fresh: ViewerState = {
     disclosure: {
-      snapshot: enter(inputs, snapshot, view?.id),
+      snapshot: view?.enter?.(document, snapshot) ?? snapshot,
       location: null,
     },
     view: view?.id ?? "",
@@ -143,6 +135,10 @@ export function createViewerState(inputs: ViewerInputs): ViewerState {
     reveal: null,
     preview: null,
   };
+  return initialCommands.reduce(
+    (state, command) => reduceViewer(inputs, state, command),
+    fresh,
+  );
 }
 
 /**

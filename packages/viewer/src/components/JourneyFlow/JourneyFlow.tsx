@@ -28,10 +28,14 @@ import styles from "@/components/JourneyFlow/JourneyFlow.module.css";
 
 export type FlowZoomLevel = "actual" | "fit";
 
-/** Bring a block, or the block of a selection target, to the canvas's top-left corner. */
+/**
+ * Bring a block, or the block of a selection target, to the canvas's top-left corner; or return
+ * the canvas to its first view (`start`), as after a reset.
+ */
 export type FlowReveal =
   | Readonly<{ block: string; focus?: boolean }>
-  | Readonly<{ target: ViewerTarget }>;
+  | Readonly<{ target: ViewerTarget }>
+  | Readonly<{ start: true }>;
 
 /** Where the screen stays through the next layout, and what it brings into view. */
 export interface FlowView {
@@ -124,7 +128,7 @@ function FlowCanvas({
   // A target asks for the block that shows it in this layout, which arrives with the request.
   const reveal = useMemo(() => {
     const request = view.reveal;
-    if (!request || "block" in request) return request;
+    if (!request || !("target" in request)) return request;
     const { selection, occurrence } = request.target;
     const shows = (target: ViewerTarget) =>
       sameSelection(target.selection, selection) &&

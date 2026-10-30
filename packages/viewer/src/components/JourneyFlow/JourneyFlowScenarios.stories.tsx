@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button, FlowKey } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
-import { collapseAllJourneys, toggleChildJourneys } from "@/interaction";
-import type { ViewerInteraction } from "@/interaction";
+import type { ViewerInitialCommand } from "@/viewer-state";
 import { Viewer, useViewer } from "@/components/Viewer/Viewer";
 import { ViewerBar } from "@/components/ViewerBar/ViewerBar";
 import { DocumentSummary } from "@/components/DocumentSummary/DocumentSummary";
@@ -22,23 +20,21 @@ import { oidcDocument } from "~/.storybook/documents";
 import { oidcScreenshots, oidcTouchpoints } from "~/.storybook/screenshots";
 
 /** The spike's main scope: the app journey with the identity provider's flow open inside it. */
-const appWithIdpOpen = (
-  document: UjgDocument,
-  interaction: ViewerInteraction,
-) =>
-  toggleChildJourneys(
-    document,
-    collapseAllJourneys(interaction),
-    "urn:ujg:solid-oidc:app-auth-journey",
-    "urn:ujg:solid-oidc:idp-auth-flow",
-  );
+const appWithIdpOpen: readonly ViewerInitialCommand[] = [
+  { type: "collapseAll" },
+  {
+    type: "toggle",
+    journeyId: "urn:ujg:solid-oidc:app-auth-journey",
+    stateId: "urn:ujg:solid-oidc:idp-auth-flow",
+  },
+];
 
 const inputs = {
   document: oidcDocument,
   screenshots: oidcScreenshots,
   touchpoints: oidcTouchpoints,
   initialView: "flow",
-  initialInteraction: appWithIdpOpen,
+  initialCommands: appWithIdpOpen,
 };
 
 /** The explorer bar's other tools, after the view switch and anything placed beside it. */

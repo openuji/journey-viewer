@@ -22,10 +22,13 @@ export interface BrowserFlowViewportProps {
   readonly anchor: string | null;
   /**
    * A request to bring a block to the top-left corner, after `anchor` has kept it in place through
-   * the layout it arrives with. Keyboard focus follows it when `focus` is set and the reader is
-   * using the keyboard. Each new object is served once.
+   * the layout it arrives with, or (`start`) to return to the first view. Keyboard focus follows a
+   * block when `focus` is set and the reader is using the keyboard. Each new object is served once.
    */
-  readonly reveal: Readonly<{ block: string; focus?: boolean }> | null;
+  readonly reveal:
+    | Readonly<{ block: string; focus?: boolean }>
+    | Readonly<{ start: true }>
+    | null;
   /** A block the first view keeps in sight, such as the selection; else the top-left corner. */
   readonly initial?: string | null;
   readonly label: string;
@@ -38,6 +41,31 @@ interface Seen {
   readonly left: number;
   readonly top: number;
 }
+
+/**
+ * The first view's scroll position: the content's top-left corner, moved no further than keeping
+ * `rect` in sight needs.
+ */
+const firstView = (
+  element: HTMLElement,
+  rect: Rect | undefined,
+  scale: number,
+) => {
+  const keep = (start: number, end: number, room: number) =>
+    Math.max(
+      SLACK - MARGIN,
+      Math.min(
+        SLACK + end * scale + MARGIN - room,
+        SLACK + start * scale - MARGIN,
+      ),
+    );
+  return rect
+    ? {
+        left: keep(rect.x, rect.x + rect.width, element.clientWidth),
+        top: keep(rect.y, rect.y + rect.height, element.clientHeight),
+      }
+    : { left: SLACK - MARGIN, top: SLACK - MARGIN };
+};
 
 const reducedMotion = (element: Element) =>
   element.ownerDocument.defaultView?.matchMedia(
@@ -100,21 +128,13 @@ export function BrowserFlowViewport({
     // First render, or a zoom change: show the content's top-left corner. The first view also
     // keeps its initial block in sight, moving no further than that needs.
     if (!before || (before.blocks === blocks && before.scale !== scale)) {
-      const rect = !before && initial ? blocks.get(initial) : undefined;
-      const keep = (start: number, end: number, room: number) =>
-        Math.max(
-          SLACK - MARGIN,
-          Math.min(
-            SLACK + end * scale + MARGIN - room,
-            SLACK + start * scale - MARGIN,
-          ),
-        );
-      element.scrollLeft = rect
-        ? keep(rect.x, rect.x + rect.width, element.clientWidth)
-        : SLACK - MARGIN;
-      element.scrollTop = rect
-        ? keep(rect.y, rect.y + rect.height, element.clientHeight)
-        : SLACK - MARGIN;
+      const { left, top } = firstView(
+        element,
+        !before && initial ? blocks.get(initial) : undefined,
+        scale,
+      );
+      element.scrollLeft = left;
+      element.scrollTop = top;
       return commit();
     }
     if (before.blocks === blocks) return commit();
@@ -179,12 +199,19 @@ export function BrowserFlowViewport({
   }, []);
 
   // The request arrives in the same render as the layout it refers to, after anchoring has run. The
-  // canvas comes into view in the page first, then the block in the canvas.
+  // canvas comes into view in the page first, then the block in the canvas. Returning to the first
+  // view leaves the page to its own reveal.
   useEffect(() => {
     const element = scroller.current;
-    const rect = reveal ? blocks.get(reveal.block) : undefined;
-    if (!reveal || !rect || !element) return;
+    if (!reveal || !element) return;
     const behavior = reducedMotion(element) ? "auto" : "smooth";
+    if ("start" in reveal) {
+      const rect = initial ? blocks.get(initial) : undefined;
+      element.scrollTo({ ...firstView(element, rect, scale), behavior });
+      return;
+    }
+    const rect = blocks.get(reveal.block);
+    if (!rect) return;
     element.scrollIntoView({ block: "nearest", behavior });
     element.scrollTo({
       left: SLACK + rect.x * scale - MARGIN,

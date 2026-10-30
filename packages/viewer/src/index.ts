@@ -17,6 +17,7 @@ export type {
 export { createViewerState, reduceViewer } from "@/viewer-state";
 export type {
   ViewerCommand,
+  ViewerInitialCommand,
   ViewerInputs,
   ViewerReveal,
   ViewerState,
