@@ -2,13 +2,28 @@
 
 ## Current checkpoint
 
-- Current stage: **13 — flow layout library (complete, uncommitted)**. The
+- Current stage: **15 — Viewer composition kit (complete, uncommitted)**. `Viewer` holds
+  one pure `ViewerState` (reducer over `disclose`) and shares it with connected pieces
+  through context; views are readonly descriptors (`treeView`, `columnsView`, `flowView`);
+  any component can dispatch a `ViewerCommand` through `useViewer`. `JourneyViewer` and
+  `JourneyNavigation` are rebuilt from the same parts with unchanged props and markup; the
+  Stage-14 story harness is replaced by plain compositions. Stages 16–17 (portable
+  `@journey-viewer/app` with a `journey-viewer visualise` CLI, then `apps/web` on it) are
+  approved and planned. See "Stage-15 decisions and verification evidence".
+- Previous checkpoint: **14 — Flow building blocks and toolbar scenarios (complete,
+  uncommitted)**. Flow's primitives are design-system components, its projection,
+  composer, disclosure reducer and controlled `JourneyFlow` live in the viewer, and four
+  Storybook scenarios show toolbar arrangements around an unchanged explorer bar.
+  `JourneyViewer` changes only its row hover. All suites pass; Impeccable critique 23/40,
+  polish (user scope: bugs only) and audit 16/20. See "Stage-14 decisions and
+  verification evidence".
+- Earlier checkpoint: **13 — flow layout library (complete, uncommitted)**. The
   spike's own level engine is now `@journey-viewer/flow-layout` in
   `packages/flow-layout`: dependency-free, with generic node kinds, drawn sizes
   and spacing as options, and clean routes for corner radii 2–20. The spike
   consumes it through `link:`. Decisions and verification are recorded in
   "Stage-13 decisions and verification evidence".
-- Previous checkpoint: **12 — isolated flow-chart spike** (user checkpoints up to
+- Earlier checkpoint: **12 — isolated flow-chart spike** (user checkpoints up to
   `da45850`). The independent root `flow-spike/` folder owns the experiment, Storybook,
   dependencies, tests, report and evidence. Recommendation: keep Flow as an
   optional third view built on the spike's composition model and own layout
@@ -92,19 +107,24 @@
    measurement, and scrolling stay at browser/application boundaries. Refs must
    not hide mutable business state. Static and interactive presentations have
    distinct contracts; do not use mode flags that silently ignore supplied props.
+   (Stage 15) The composition kit's pieces read the enclosing `Viewer`'s state and
+   `dispatch` through context; the controlled components keep this contract, and
+   context is created only by the named state owners (`Viewer`, `FlowSettings`).
 5. The design system owns component data contracts. Fixture generation and fixture
    checking are separate operations. Generation must not invoke checking.
 6. Extensions use explicit functions/components and readonly configuration. No
    plugin runtime, event bus, service container, discovery, or mutable registry.
 7. Planned packages: `@journey-viewer/ujg-jsonld`, `@journey-viewer/lint`,
-   `@journey-viewer/design-system`, `@journey-viewer/viewer`, and (approved for
-   Stage 13) `@journey-viewer/flow-layout`. Add each package when its stage
-   starts. Generic helpers stay with their owners.
-8. The viewer uses UJG queries and design-system components. Parsing and rendering
-   never depend on lint. The design system has no UJG or viewer dependency.
-   The flow layout has no dependencies and knows no UJG, React or DOM; journey
-   projection, nesting and rendering stay with its consumer.
-   Packages never import application code.
+   `@journey-viewer/design-system`, `@journey-viewer/viewer`, (approved for
+   Stage 13) `@journey-viewer/flow-layout` and (approved 2026-10-30 for Stage 16)
+   `@journey-viewer/app`. Add each package when its stage starts. Generic helpers
+   stay with their owners.
+8. The viewer uses UJG queries, design-system components and (Stage 14) the flow
+   layout. Parsing and rendering never depend on lint. The design system has no UJG,
+   viewer or flow-layout dependency. The flow layout has no dependencies and knows no
+   UJG, React or DOM; journey projection, nesting and rendering stay with the viewer.
+   Packages never import application code. (Stage 16) The app composes the viewer,
+   lint and design system; no package imports the app.
 9. DTCG tokens own shared design values. Tailwind utilities and component styles
    consume their generated output. Shared controls, typography, and surfaces have
    one primitive owner; composed components reuse that implementation. This
@@ -159,6 +179,10 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 11C. Library cleanup | Independent ESM/declaration/CSS exports, external-consumer smoke check, self-contained viewer Storybook; library source conventions: `@/`/`~/` tsconfig aliases instead of relative imports and extensionless module imports (resolved to `./module.js` in tsc output by `tsc-alias --resolve-full-paths`; `tsx` for Node runs), Prettier. | Smoke check installs the packed tarballs outside the workspace; no global CSS leakage; viewer Storybook imports no private design-system files; layout test and `format:check` pass in `pnpm test`; story IDs unchanged; all package, browser, parity and app suites pass. |
 | 12. Isolated flow-chart spike | Independent root `flow-spike/` Storybook: a Flow view beside public Tree/Columns over one viewer snapshot, using unchanged Solid-OIDC plus existing test fixtures; own layered engine with ELK as a measure-only baseline; stakeholder/spec detail; Impeccable context, critique, polish and audit. | One connector per pair of blocks; the open composite's card stays its frame's corner and its screen position; contracts on borders; artifact metrics on all scopes and in the browser; UJG ED boundary semantics; shared state; report with own-vs-ELK evidence and a same-data reference capture; existing source/config/lockfiles unchanged. |
 | 13. Flow layout library | `packages/flow-layout` (`@journey-viewer/flow-layout`): the spike's own level engine as a dependency-free library with generic node kinds, port insets, drawn sizes and spacing as options, and the lengths it guarantees; steps fixed for large corner radii; the spike consumes it; recorded level fixtures. | Every recorded level × 3 placements × radii 2–20: no diagonals, kinks, short arrivals, lines through nodes or along frames; Solid-OIDC layouts reproduced before the step fix; packed tarball installs and lays out a level outside the workspace; spike tests, measure, build, capture and root suites pass. |
+| 14. Flow building blocks and toolbar scenarios | Design-system Flow primitives (frame, state node, composite card, contract glyph, connector, route overlay, journey path, key) with fixtures, checks, stories and token `color.connector`; viewer flow projection, composer, highlight, strokes, disclosure reducer, controlled `JourneyFlow` and browser adapters (not exported); four `Viewer/Flow scenarios` toolbar arrangements in a story-only harness; `JourneyViewer` row hover off. `JourneyNavigation` unchanged. | Spike layouts and route ink reproduced exactly; ported spike tests; real-text artifacts 0 in every flow story; disclosure ≤0.5px; Tree↔Flow state shared; no overflow 320–1440; all package, browser, consumer, spike, app and parity suites pass; Impeccable critique → polish → audit. |
+| 15. Viewer composition kit | Pure `ViewerState`/`ViewerCommand` reducer over `disclose`; `Viewer` root and `useViewer`; connected pieces (`ViewerBar`, `DocumentSummary`, `ViewSwitch`, `WhenView`, `ExpandCollapse`, `TouchpointFilter`, `GraphSearch`, `ResetView`, `ViewerMain`); view descriptors `treeView`, `columnsView`, `flowView`; `FlowSettings`, `FlowPlacement`, `FlowZoom`; `JourneyViewer` and `JourneyNavigation` rebuilt from the same parts; the story harness replaced by plain compositions. | `JourneyViewer`/`JourneyNavigation` props and markup unchanged; reducer tests with frozen inputs; scenario story IDs and browser checks unchanged plus a custom command; parity, consumer, app and root suites pass; no arrangement flags. |
+| 16. Portable application (planned) | `packages/app` (`@journey-viewer/app`): reading, check policy, findings header and empty state moved from `apps/web`; a static site built with a relative base; `journey-viewer visualise` CLI copying the site and a document with optional screenshots/touchpoints. | Packed tarball runs `visualise` outside the workspace; the served output shows Solid-OIDC (Tree, Columns, Flow) under a sub-path with no requests outside its folder; Open file replaces the document; Impeccable audit of the page. |
+| 17. App on the package (planned) | `apps/web` composes `@journey-viewer/app` with its brand and routes; its own copies are removed. | App unit and browser suites, parity and Cloudflare dry run pass. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -2428,3 +2452,228 @@ the library source conventions into 11C.
   - The spike's two strokes tests stay pinned to its own sizes (the two-way line that
     turns twice; the cap of 32 junction crossings). Active-route strokes are not in
     the package.
+
+## Stage-14 decisions and verification evidence — 2026-10-30
+
+- **Approved scope (user, 2026-10-29):** move Flow into the library stack and show it
+  in Storybook toolbar scenarios; keep `flow-spike/` in place and unchanged. User
+  decisions, asked before implementation:
+  - Tree and Columns hover is selection only, as in the spike: `JourneyViewer` no longer
+    passes `onHover`, so hovering a row changes no tones or marks. The spike's tree hover
+    and its dead "N entries · M exits" toggle came from `FlowStudy` omitting `onHover` and
+    `onToggleContracts`; `JourneyViewer` and the scenarios wire the toggle.
+  - Flow primitives move into the design system now.
+  - The toolbar stays under the user's control: `JourneyNavigation` is unchanged and
+    `JourneyViewer` does not offer Flow. Four scenarios show arrangements; the user
+    fills the toolbar afterwards. The side panel is always the inspector; the canvas uses
+    stakeholder markers (no detail switch).
+- **Responsibilities and interfaces (changed, approved):**
+  - Design system (public): `FlowFrame`, `StateNode`, `CompositeCard`, `ContractGlyph`,
+    `Connector`, `RouteOverlay`, `JourneyPath`, `FlowKey`, types (`FlowTone`, `FlowPoint`,
+    `RouteInk`, …), `flowGeometry`, `halfOffset`, `parallel`, and token
+    `color.connector` (the spike's 80 % mix of subtle into surface, precomputed: light
+    3.25:1, dark 4.98:1). They compose `Button`, `IconButton`, `Text` and
+    `TouchpointDot`; typography only through `Text`, buttons only through `Button`
+    (`.x.x` overrides, as `StateRow` does). No UJG or flow-layout import.
+  - Viewer: dependency on `@journey-viewer/flow-layout` (external in the build). Nothing
+    new is exported; `dist` is unchanged apart from the hover change. `ViewerMode`,
+    `setViewMode`, `JourneyNavigation` and `JourneyViewerProps` are unchanged.
+  - Test runner: the viewer's unit tests run with `tsx --test` (as in the design system
+    and flow-layout), so tests reach `@/flow/*` sources.
+- **Design (viewer, not exported):**
+  - `src/flow/scene.ts`: the projection; the only flow module that reads `@id`. Plain
+    view model (`id`, `kind`, `journeyId`, `label`, `target: ViewerTarget`); reuses
+    `occurrenceKey`, `childOccurrence` and `getJourneyStarts` instead of the spike's copies.
+  - `compose.ts` (synchronous, no ELK), `geometry.ts` (`flowLevel` with the design
+    system's drawn sizes), `text.ts` (role-based `TextMeasure`, `estimate`), `highlight.ts`,
+    `strokes.ts`, `blocks.ts`; `src/dev/artifacts.ts` for tests and stories only.
+  - `src/disclosure.ts`: `disclose` stays the only writer of `location`; actions use
+    `*Id` names; a new `pick` action handles search results (clears the query).
+  - `JourneyFlow` (controlled; private `FlowScene`): the journey path with an explicit
+    `pathEnd` slot, the canvas, reveal by block or by target, touchpoint-filter dimming.
+    `browser/BrowserTextMeasure` reads the fonts of hidden design-system `Text` samples
+    (no font literals); `browser/BrowserFlowViewport` ports the spike's viewport through
+    `ownerDocument`/`defaultView`.
+  - Scenarios: `.storybook/flow-scenarios/FlowScenario.tsx` mirrors `JourneyViewer`
+    with every navigating transition routed through `disclose`; `ScenarioNavigation.tsx`
+    is a story-only copy of the explorer bar with a configurable view list and a slot.
+    Stories `Viewer/Flow scenarios`: ControlsInTheBar, ControlsOnTheCanvas,
+    FlowWithDefaults, FlowOnItsOwn (each starts in Flow with App + IdP open).
+    `Viewer/JourneyFlow`: 8 scope/placement stories that report their artifacts.
+  - Dropped with the detail switch: `×N` chips, hollow tips, outgoing markers, StepDetails,
+    EngineComparison and ELK (they stay in the spike).
+- **Evidence:**
+  - **Port check (scratchpad):** the viewer composes exactly the spike's layouts for all
+    96 document × scope × placement cases (5 documents, every disclosure scope, 3
+    placements, `estimate`), and exactly the spike's highlight and route ink for all 570
+    Solid-OIDC activations.
+  - **Design system:** `pnpm --filter @journey-viewer/design-system test` 68/68 (8 new
+    fixture contracts, flow block/path/connector rendering, connector contrast ≥3:1 on
+    surface and background in both themes); `check:fixtures` 31 contracts; browser suite
+    8/8 including the new `Flow/*` stories.
+  - **Viewer:** `pnpm --filter @journey-viewer/viewer test` 86/86 (32 ported and new flow
+    tests: projection, disclosure incl. `pick`/tree toggle/screens, layout gate over every
+    scope × placement, highlight, strokes; boundaries incl. no artifact code in `dist`).
+    Browser suite 34/34: hover inverted (tones follow the selection only); all 8
+    `Viewer/JourneyFlow` stories report 0 artifacts with real text and no block text
+    leaves its box; card click and chevrons move the path; toggled card displacement
+    ≤0.5px; route overlay on hover and focus; Tree↔Flow keep selection and expansion;
+    contract toggle and screen lightbox; canvas controls; search reveals its result in the
+    canvas; no overflow at 320–1440 in all four scenarios. Real-text readout of IdP open:
+    width 1084, 3 crossings, ink 9,898, 238 bends (the spike's Stage-13 numbers).
+  - **Root:** `pnpm -r test` passes (ujg-jsonld 13, lint 17, design-system 68,
+    flow-layout 9, viewer 86); `tests/*.test.mjs` 5/5; `pnpm test:consumer` 4/4. Prettier
+    passes on every changed file; `pnpm format:check` as one command stops only at the
+    git-excluded Impeccable hook caches, as in Stage 13 (left in place).
+  - **Spike, unchanged:** `prepare:libraries`, `test` 27/27, `build`, `format:check` pass;
+    no diff under `flow-spike/`.
+  - **App, no source edits:** `apps/web` `build` + `test` 23/23, `test:app:browser` 8/8;
+    nested worktree clean. The app shows Tree and Columns only, until the toolbar is
+    chosen.
+  - **Parity:** `pnpm test:parity` 7/7 against the original (5174) and a temporary preview
+    of the built app (4329), both stopped afterwards. Accepted difference (user decision):
+    `hover-row` — the original re-tones rows around the hovered state; the viewer keeps the
+    selection's tones.
+  - **Impeccable:** context copied to the repository root (`PRODUCT.md`, `DESIGN.md`,
+    `.impeccable/design.json`; the spike's copies stay), updated for the libraries.
+    Critique (dual assessment, 2026-10-30): 23/40. Detector: 0 file findings; page scans
+    report only false positives (Inter as `overused-font`, flow blocks over frames as
+    `nested-cards`). axe: no contrast violations in either theme (only the Storybook
+    iframe's `landmark-one-main`/`page-has-heading-one`). Snapshot:
+    `.impeccable/critique/2026-10-30T07-26-52Z__packages-viewer-src-components-journeyflow.md`
+    (left open: its viewport, selection-mark and corridor issues remain).
+  - **Polish (user scope 2026-10-30: bugs only; first phone view keeps the current
+    journey at 100%):**
+    - `FlowKey` is a top-layer popover (`Button` + `popover="auto"`, CSS anchor positioning
+      with a flip fallback, centred where anchors are unsupported): no container clips it,
+      Escape and an outside click close it, and its button is a toolbar `outline` button
+      (44px on touch).
+    - Touch hit areas reach 44px on coarse pointers (`::after` on the state, card and
+      contract buttons) without changing the drawn sizes the layout depends on.
+    - The viewport's first view keeps the selected block in sight (no move when it already
+      is), so phones open on the selection instead of empty ground.
+    - The CompositeCard stories size their box from the layout's line metrics.
+    - Browser suite 35/35 with a new check: the key panel lies inside the window and on top
+      at 1440 (canvas scenario) and 375 (bar scenario) and closes on Escape; on an emulated
+      touch phone the first view shows the selected state and a touch 4px above it selects
+      it. All other suites re-run green (packages, root, design-system browser 8/8,
+      consumer 4/4, spike 27/27 + build, app 23/23 + 8/8).
+  - **Audit (2026-10-30): 16/20, Good.**
+
+    | Dimension | Score | Key finding |
+    | --- | --- | --- |
+    | Accessibility | 3 | axe: 0 violations on 66 pages (4 scenarios, key open, 375px, fully open, 27 `Flow/*` stories; light and dark) beyond the Storybook iframe's landmark/h1. Gaps: connections and nesting are not exposed to assistive technology; 100+ tab stops fully open; no arrow-key traversal. |
+    | Performance | 3 | Layout memoised on document, expansion, placement and measure; hover recomputes only highlight and route ink; FLIP uses transform/opacity and honours reduced motion. Hover re-renders every block. |
+    | Theming | 4 | Only `--jv-*` tokens; `color.connector` in both themes; no colour literals in the new CSS. |
+    | Responsive | 3 | No overflow 320–1440; 44px touch hit areas (emulated touch, Chromium); phone first view. Open: 1600px slack, the canvas contains overscroll, the bar wraps in ControlsInTheBar. |
+    | Implementation integrity | 3 | Detector 0 file findings (page-scan `nested-cards`/`overused-font` are false positives); design-system ownership kept. Intentional duplication: the story-only bar copy and the composer's box sizes mirrored in component CSS. |
+- **Open (not scoped):**
+  - Choosing the toolbar arrangement and wiring Flow into `JourneyViewer` (user).
+  - From the critique: viewport slack and reveal placement, a mark on the closed card that
+    holds the selection after a path return, corridor junctions that read as containers,
+    a fuller Key and one relation vocabulary, canvas semantics for assistive technology.
+
+## Stage-15 decisions and verification evidence — 2026-10-30
+
+- **Why:** the Stage-14 harness (`.storybook/flow-scenarios/FlowScenario.tsx`, 490 lines,
+  plus a story-only copy of the explorer bar) re-implemented `JourneyViewer`'s wiring and
+  switched arrangements with flags (`bar`, `controls`, `views`). The user asked to compose
+  the final rendering like `apps/web`'s `Application.tsx` instead, passing in the controls
+  they need, without if/else cascades or a plugin system.
+- **Approved decisions (user, 2026-10-30):** compound children (a `Viewer` root with
+  connected pieces); `JourneyViewer` and `JourneyNavigation` rebuilt as presets with
+  unchanged props and markup; the portable app as a new package `@journey-viewer/app`
+  (Stage 16) and `apps/web` on it (Stage 17); a CLI copies a prebuilt site plus the given
+  files, the browser derives the graph from the document in memory, and Open file still
+  replaces it (no build-time rendering, no `?src=`).
+- **No plugin runtime (constraint 6 kept).** Three plain mechanisms suffice: one pure
+  reducer with a typed command vocabulary; a context with the inputs, the state and
+  `dispatch`; components and readonly descriptors placed by JSX. A module with state of its
+  own (Flow's placement and zoom) brings its own provider; `ViewerState` never names a
+  view.
+- **Responsibilities and interfaces (changed, approved):**
+  - Constraint 4 amended: the pieces read the enclosing `Viewer` through context; context
+    is created only in `Viewer.tsx` and `FlowSettings.tsx`. `tests/boundaries.test.mjs`
+    now names those context owners and the state owners (`Viewer`, `FlowSettings`,
+    `FlowView`'s canvas hover/anchor) instead of `JourneyViewer.tsx`; `dist` may contain
+    context calls.
+  - Constraints 7 and 8 record `@journey-viewer/app` for Stage 16.
+  - New viewer exports: `Viewer`, `useViewer`, `createViewerState`, `reduceViewer`,
+    `ViewerBar`, `DocumentSummary`, `ViewSwitch`, `WhenView`, `ExpandCollapse`,
+    `TouchpointFilter`, `GraphSearch`, `ResetView`, `ViewerMain`, `treeView`,
+    `columnsView`, `flowView`, `FlowSettings`, `useFlowSettings`, `FlowPlacement`,
+    `FlowZoom`, the controlled `JourneyFlow`, and the types `ViewerCommand`, `ViewerState`,
+    `ViewerInputs`, `ViewerView`, `ViewerReveal`, `ScreenPreview`, `DisclosureAction`,
+    `ViewerDisclosure`, `WhenViewProps`, `FlowViewOptions`, `FlowSettingsProps`,
+    `FlowSettingsValue`, `JourneyFlowProps`, `FlowReveal`, `FlowView`, `FlowZoomLevel`.
+    Flow now ships in `dist` (104 kB JS, 4.5 kB CSS); `src/dev/artifacts.ts` stays out.
+  - Renamed (unexported in Stage 14): `JourneyFlow`'s zoom type `FlowZoom` →
+    `FlowZoomLevel`, so the `FlowZoom` control can keep its name.
+  - Unchanged: `JourneyViewerProps`, `JourneyNavigationProps`, `ViewerMode`,
+    `setViewMode`, all transitions and controlled components.
+- **Design:**
+  - `src/viewer-state.ts`: `ViewerState` = `disclosure` (snapshot + location), active
+    `view` id, `searchOpen`, `reveal` (the shell's request plus its `target`, so Flow can
+    reveal by target), and the hover `preview`. Selecting, screens and disclosure go
+    through `disclose`, which reproduces `JourneyViewer`'s previous snapshot transitions
+    exactly. Inspector links (`navigate` with `reveal: true`) and search picks reveal; a
+    view switch applies the descriptor's `enter` (Tree/Columns: `setViewMode`). Reset
+    returns to the initial view and interaction, as the original journey-graph store does,
+    and scrolls to the top.
+  - One folder per piece. The touchpoint filter, search, summary, expand/collapse and
+    reset each have one controlled part (`Controlled*`, not exported) that both the
+    connected piece and `JourneyNavigation` render. `GraphSearch` takes trailing tools
+    as children, so `<GraphSearch><ResetView /></GraphSearch>` keeps the bar's markup.
+  - `flowView({ pathEnd })` renders `JourneyFlow`. Its hover and anchor stay local; it
+    follows the core reveal and new settings by render-time adjustment (the pattern the
+    root uses for document replacement). The scenario's two stage classes became one:
+    `--jv-explorer-offset` is already 0 without a bar.
+  - Styles moved with their owners (`Viewer`, `ViewerMain`, `ExplorerView`,
+    `ExpandCollapse`, `TouchpointFilter`, `GraphSearch`, `FlowView`);
+    `JourneyViewer.module.css`, `JourneyNavigation.module.css` and
+    `.storybook/flow-scenarios/` are removed.
+  - Stories `Viewer/Flow scenarios`: the four IDs are unchanged, each now a plain
+    composition, plus **CustomCommand**, a story-local button dispatching a `toggle`.
+- **Accepted differences:**
+  - `ViewerMain`'s layout carries `data-view` (the active view id) as a test/CSS hook.
+  - In the scenarios, Reset now returns to the initial view (Flow) instead of keeping the
+    active view, and keeps placement and zoom, which are not graph state.
+- **Evidence:**
+  - **Markup (scratchpad):** server-rendered `JourneyViewer` (Solid-OIDC with screens;
+    hierarchy with header slots and level 3) and `JourneyNavigation` (filtered search;
+    columns, closed search) from the pre-change `dist` vs the new one, CSS-module hashes
+    stripped: the navigation cases are identical, and the viewer cases differ only by
+    `data-view="tree"`.
+  - **Viewer:** `pnpm --filter @journey-viewer/viewer test` 92/92. The 6 new tests in
+    `tests/viewer-state.test.mjs` cover: the initial state and named view/interaction;
+    navigation and pick against `navigateViewer`/`pickSearchResult` with reveals only
+    for inspector links and picks; views sharing selection and expansion with `enter`;
+    search, filter, contracts, screen and preview commands; reset; and identity on
+    no-ops. Boundaries pass with the named owners.
+  - **Browser:** `pnpm test:viewer:browser` 36/36, twice. The 46 stories load, all four
+    scenario IDs pass their unchanged checks, and the new check shows a custom control's
+    command followed by Flow and Tree. Fixed a pre-existing race in "card clicks and
+    chevrons…": after the MFA click the Identity consent card lies below the canvas, and
+    Playwright's scroll before the click could land between the two measurements. A
+    debug copy of the Stage-14 wiring showed the same geometry and the same race (removed
+    after the check). The test now scrolls the card into view before measuring, and is
+    deterministic on both.
+  - **Root:** `pnpm -r test` passes (ujg-jsonld 13, lint 17, design-system 68, flow-layout
+    9, viewer 92); `tests/*.test.mjs` 5/5. `pnpm test:consumer` 4/4: the packed viewer
+    type-checks and server-renders a composition (`Viewer`, `FlowSettings`, `ViewerBar`,
+    `ViewSwitch`, `FlowPlacement`, `ViewerMain`, a custom `useViewer` control).
+  - **App, no source edits:** `apps/web` `build`, `test` 23/23 and `test:app:browser` 8/8;
+    nested worktree clean.
+  - **Parity:** `pnpm test:parity` 7/7 against the original (5174) and a temporary preview
+    of the built app (4329), both stopped afterwards.
+  - **Formatting:** `pnpm format:check` stops only at the git-excluded Impeccable hook
+    caches, as in Stages 13–14. No arrangement flags remain (`controls ===`, `bar &&`,
+    `FlowScenario`, `ScenarioNavigation`: no matches); `flow-spike/` unchanged.
+  - **Impeccable:** not run. The stage changes no visual output (markup identical apart
+    from `data-view`; parity and browser suites unchanged). Stage 16's standalone page
+    gets the audit.
+- **Open (next stages):** Stage 16, `@journey-viewer/app` and `journey-viewer visualise`;
+  Stage 17, `apps/web` on the package. The Stage-14 open item "choosing the toolbar
+  arrangement and wiring Flow into `JourneyViewer`" is now the user's composition:
+  `JourneyViewer` stays Tree/Columns, and the app's composition (Stage 16) chooses its
+  arrangement in one file.

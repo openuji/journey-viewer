@@ -17,8 +17,10 @@ test("the public build keeps package boundaries and excludes development data an
   assert.match(js, /@journey-viewer\/ujg-jsonld/);
   assert.doesNotMatch(
     js,
-    /@journey-viewer\/lint|solid-oidc|JSON\.parse|fetch\(|useContext|createContext|window\.|document\.|new Image\(|<button/,
+    /@journey-viewer\/lint|solid-oidc|JSON\.parse|fetch\(|window\.|document\.|new Image\(|<button/,
   );
+  // Layout quality metrics are a development tool for tests and stories.
+  assert.doesNotMatch(js, /measureArtifacts|shortArrivals/);
   const css = await readFile(new URL("styles.css", directory), "utf8");
   assert.match(css, /var\(--jv-space-/);
   assert.doesNotMatch(
@@ -38,6 +40,14 @@ test("the public build keeps package boundaries and excludes development data an
   );
 });
 
+// The viewer root owns the graph state and shares it through context; the flow's settings and
+// its canvas's own hover and anchor are the only other state.
+const contextOwners = [
+  "components/Viewer/Viewer.tsx",
+  "components/FlowSettings/FlowSettings.tsx",
+];
+const stateOwners = [...contextOwners, "components/FlowView/FlowView.tsx"];
+
 test("graph state stays at the viewer boundary; browser-only effects/loading stay in named adapters", async () => {
   const root = new URL("../src/", import.meta.url);
   for (const file of await readdir(root, { recursive: true })) {
@@ -46,18 +56,16 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
     // Named browser adapters own DOM effects, measurement and listeners, reaching the page only
     // through their own elements' ownerDocument/defaultView, never through globals.
     const browser = file.startsWith("browser/");
-    assert.doesNotMatch(
-      source,
-      /useContext|createContext|window\.|document\./,
-      file,
-    );
+    assert.doesNotMatch(source, /window\.|document\./, file);
+    if (!contextOwners.includes(file))
+      assert.doesNotMatch(source, /useContext|createContext/, file);
     if (!browser)
       assert.doesNotMatch(
         source,
         /useEffect|useLayoutEffect|useRef|showModal|\.focus\(|getBoundingClientRect|addEventListener/,
         file,
       );
-    if (!file.endsWith("JourneyViewer.tsx") && !browser)
+    if (!stateOwners.includes(file) && !browser)
       assert.doesNotMatch(source, /useState|useReducer/, file);
     if (browser)
       assert.doesNotMatch(

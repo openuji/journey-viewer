@@ -22,6 +22,7 @@ export default defineConfig({
         "react/jsx-runtime",
         "@journey-viewer/ujg-jsonld",
         "@journey-viewer/design-system",
+        "@journey-viewer/flow-layout",
       ],
     },
   },

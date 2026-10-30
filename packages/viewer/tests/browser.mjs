@@ -190,7 +190,7 @@ try {
     const stories = Object.values(index.entries).filter(
       (entry) => entry.type === "story",
     );
-    assert.equal(stories.length, 33);
+    assert.equal(stories.length, 46);
     assert.ok(stories.every((entry) => entry.title.startsWith("Viewer/")));
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
@@ -1139,52 +1139,41 @@ try {
     assert.deepEqual(errors, []);
   });
 
-  await test("hover-derived tones and marks take precedence and document replacement resets all navigation", async () => {
+  await test("row tones follow the selection only, hover changes nothing, and document replacement resets all navigation", async () => {
     await consumerPage();
-    await stateButton(
-      first(),
-      `${prefix}app-sign-in-required`,
-      "Sign-in required",
-    ).hover();
-    assert.equal(
-      await row(first(), `${prefix}idp-auth-flow`).getAttribute("data-tone"),
-      "outgoing",
-    );
+    const tones = async () => ({
+      signIn: await row(first(), `${prefix}app-sign-in-required`).getAttribute(
+        "data-tone",
+      ),
+      idp: await row(first(), `${prefix}idp-auth-flow`).getAttribute(
+        "data-tone",
+      ),
+      loggedIn: await row(first(), `${prefix}app-logged-in`).getAttribute(
+        "data-tone",
+      ),
+    });
+    const selected = await tones();
+    assert.deepEqual(selected, {
+      signIn: "active",
+      idp: "outgoing",
+      loggedIn: "dim",
+    });
     assert.match(
       await row(first(), `${prefix}idp-auth-flow`).textContent(),
       /→5/,
-    );
-    assert.equal(
-      await row(first(), `${prefix}app-logged-in`).getAttribute("data-tone"),
-      "dim",
     );
     await stateButton(
       first(),
       `${prefix}idp-auth-flow`,
       "Authenticate with identity provider",
     ).hover();
-    assert.equal(
-      await row(first(), `${prefix}app-sign-in-required`).getAttribute(
-        "data-tone",
-      ),
-      "incoming",
-    );
-    assert.equal(
-      await row(first(), `${prefix}idp-auth-flow`).getAttribute("data-tone"),
-      "active",
+    assert.deepEqual(
+      await tones(),
+      selected,
+      "hovering another row keeps the selection's tones",
     );
     await first().getByRole("searchbox").hover();
-    assert.equal(
-      await row(first(), `${prefix}app-sign-in-required`).getAttribute(
-        "data-tone",
-      ),
-      "active",
-      "leaving rows restores the selection",
-    );
-    assert.equal(
-      await row(first(), `${prefix}idp-auth-flow`).getAttribute("data-tone"),
-      "outgoing",
-    );
+    assert.deepEqual(await tones(), selected);
     await mode(first(), "Columns").click();
     await first()
       .getByRole("group", { name: "Touchpoint filter" })
@@ -2061,6 +2050,362 @@ try {
       await page.locator('[data-journey-ref="urn:test:shared"]').count(),
       3,
     );
+    assert.deepEqual(errors, []);
+  });
+  // Flow: the building blocks and the toolbar scenarios, composed from the viewer's pieces.
+  const flowStory = async (id, width = 1440, height = 900) => {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${url}/iframe.html?id=${id}&viewMode=story`);
+    await page.getByRole("region", { name: "Journey flow" }).waitFor();
+  };
+  const urn = (local) => `urn:ujg:solid-oidc:${local}`;
+  const block = (kind, id) =>
+    page
+      .locator(`[data-flow-key^="${kind}:"][data-flow-key$=":${id}"]`)
+      .first();
+  const pathSteps = () =>
+    page
+      .getByRole("navigation", { name: "Journey path" })
+      .getByRole("listitem")
+      .allTextContents();
+  const boxOf = async (locator) => {
+    const { x, y } = await locator.boundingBox();
+    return { x, y };
+  };
+
+  await test("flow stories lay out real text with no artifacts, and no block text leaves its box", async () => {
+    const index = await (await fetch(`${url}/index.json`)).json();
+    const stories = Object.values(index.entries).filter(
+      (entry) => entry.type === "story" && entry.title === "Viewer/JourneyFlow",
+    );
+    assert.equal(stories.length, 8);
+    for (const story of stories) {
+      await flowStory(story.id);
+      const report = JSON.parse(
+        await page.locator("[data-artifacts]").getAttribute("data-artifacts"),
+      );
+      assert.deepEqual(
+        [
+          report.diagonals,
+          report.jogs,
+          report.shortArrivals,
+          report.throughBoxes,
+          report.borderCrossings,
+        ],
+        [0, 0, 0, 0, 0],
+        story.id,
+      );
+      const outside = await page.evaluate(() =>
+        [
+          ...document.querySelectorAll(
+            '[data-flow-key^="state:"], [data-flow-key^="card:"], [data-flow-key^="contract:"]',
+          ),
+        ].flatMap((block) => {
+          const box = block.getBoundingClientRect();
+          return [...block.querySelectorAll("[data-role]")]
+            .filter((text) => {
+              const r = text.getBoundingClientRect();
+              return (
+                r.left < box.left - 1 ||
+                r.right > box.right + 1 ||
+                r.top < box.top - 1 ||
+                r.bottom > box.bottom + 1
+              );
+            })
+            .map((text) => `${block.dataset.flowKey}: ${text.textContent}`);
+        }),
+      );
+      assert.deepEqual(outside, [], story.id);
+    }
+    const { width } = JSON.parse(
+      await page.locator("[data-artifacts]").getAttribute("data-artifacts"),
+    );
+    assert.ok(width > 0);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios: card clicks and chevrons move the journey path, and the toggled card stays in place", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await flowStory("viewer-flow-scenarios--controls-in-the-bar");
+    assert.deepEqual(await pathSteps(), ["App auth journey"]);
+    await block("card", urn("idp-mfa-challenge"))
+      .getByRole("button")
+      .first()
+      .click();
+    assert.deepEqual(await pathSteps(), [
+      "App auth journey",
+      "Authenticate with identity provider",
+      "MFA challenge",
+    ]);
+    assert.equal(
+      await page
+        .getByRole("complementary", { name: "Selection inspector" })
+        .getByRole("heading", { name: "MFA challenge", exact: true })
+        .count(),
+      1,
+    );
+    for (const name of [
+      "Expand Identity consent",
+      "Collapse Identity consent",
+    ]) {
+      const card = block("card", urn("idp-identity-consent-flow"));
+      // The MFA journey pushes the card below the canvas; bring it into view first, so the click
+      // does not scroll it between the two measurements.
+      await card.scrollIntoViewIfNeeded();
+      const before = await boxOf(card);
+      await page.getByRole("button", { name, exact: true }).click();
+      const after = await boxOf(card);
+      assert.ok(
+        Math.abs(after.x - before.x) <= 0.5 &&
+          Math.abs(after.y - before.y) <= 0.5,
+        `${name}: ${JSON.stringify([before, after])}`,
+      );
+    }
+    assert.equal(
+      (await pathSteps()).at(-1),
+      "Authenticate with identity provider",
+      "closing a composite hands the path to its journey",
+    );
+    // An earlier step closes what is open inside that journey.
+    await page
+      .getByRole("navigation", { name: "Journey path" })
+      .getByRole("button", { name: "App auth journey" })
+      .click();
+    assert.deepEqual(await pathSteps(), ["App auth journey"]);
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Collapse MFA challenge", exact: true })
+        .count(),
+      0,
+    );
+    await page.emulateMedia({ reducedMotion: null });
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios: hover draws a step's routes over the selection's and leaving restores them", async () => {
+    await flowStory("viewer-flow-scenarios--controls-in-the-bar");
+    const routes = () =>
+      page
+        .locator("svg path[data-tone]")
+        .evaluateAll((paths) =>
+          paths.map((path) => path.getAttribute("d")).join("|"),
+        );
+    const selected = await routes();
+    assert.ok(selected.length > 0, "the selection's routes show at rest");
+    await block("state", urn("idp-login")).hover();
+    const hovered = await routes();
+    assert.notEqual(hovered, selected);
+    await page.getByRole("searchbox").hover();
+    assert.equal(await routes(), selected);
+    await block("state", urn("idp-login")).getByRole("button").first().focus();
+    assert.equal(
+      await routes(),
+      hovered,
+      "keyboard focus activates like hover",
+    );
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios: Tree and Flow share selection and expansion; contracts and screens work in both", async () => {
+    await flowStory("viewer-flow-scenarios--controls-in-the-bar");
+    await block("state", urn("idp-login")).getByRole("button").first().click();
+    const view = page.getByRole("group", { name: "View" });
+    await view.getByRole("button", { name: "Tree" }).click();
+    const inspector = page.getByRole("complementary", {
+      name: "Selection inspector",
+    });
+    await inspector
+      .getByRole("heading", { name: "Login", exact: true })
+      .waitFor();
+    // The IdP flow the scenario opened is open in the tree; MFA (closed) is not.
+    assert.ok(
+      (await page.locator(`[data-state-ref="${urn("idp-login")}"]`).count()) >
+        0,
+    );
+    const contracts = page
+      .getByRole("button", { name: /\d+ entr(y|ies) · \d+ exits?/ })
+      .first();
+    await contracts.click();
+    assert.equal(await contracts.getAttribute("aria-expanded"), "true");
+    const exit = page
+      .locator('[data-contract-kind="exit"]')
+      .first()
+      .getByRole("button");
+    const exitName = (await exit.textContent()).trim();
+    await exit.click();
+    await inspector
+      .getByRole("heading", { name: exitName, exact: true })
+      .waitFor();
+    await view.getByRole("button", { name: "Flow" }).click();
+    assert.equal(
+      (await page
+        .locator('[data-flow-key^="contract:"] button[aria-current="true"]')
+        .count()) > 0,
+      true,
+      "the exit chosen in the tree stays selected in the flow",
+    );
+    await page
+      .getByRole("button", { name: "Screen: Sign-in required", exact: true })
+      .first()
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios: canvas controls change placement and zoom; search reveals its result in the flow", async () => {
+    await flowStory("viewer-flow-scenarios--controls-on-the-canvas");
+    const bar = page
+      .getByRole("navigation", { name: "Journey path" })
+      .locator("..");
+    await bar
+      .getByRole("group", { name: "Placement" })
+      .getByRole("button", { name: "Aligned left" })
+      .click();
+    await page.locator('[data-placement="aligned-left"]').waitFor();
+    await bar
+      .getByRole("group", { name: "Zoom" })
+      .getByRole("button", { name: "Fit" })
+      .click();
+    const viewport = page.getByRole("region", { name: "Journey flow" });
+    assert.equal(await viewport.getAttribute("data-zoom"), "fit");
+    await bar
+      .getByRole("group", { name: "Zoom" })
+      .getByRole("button", { name: "100%" })
+      .click();
+    await page.getByRole("searchbox").fill("Enter email code");
+    await page.keyboard.press("Enter");
+    const target = block("state", urn("mfa-enter-email-code"));
+    await target.waitFor();
+    await page.waitForTimeout(600);
+    const [shown, area] = await Promise.all([
+      target.boundingBox(),
+      viewport.boundingBox(),
+    ]);
+    assert.ok(
+      shown.x >= area.x &&
+        shown.y >= area.y &&
+        shown.x + shown.width <= area.x + area.width &&
+        shown.y + shown.height <= area.y + area.height,
+      "the picked state is revealed inside the canvas",
+    );
+    assert.equal((await pathSteps()).at(-1), "MFA challenge");
+    assert.equal(await page.getByRole("searchbox").inputValue(), "");
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios: a control outside the library dispatches a command that every view follows", async () => {
+    await flowStory("viewer-flow-scenarios--custom-command");
+    const collapse = page.getByRole("button", {
+      name: "Collapse MFA challenge",
+      exact: true,
+    });
+    const mfaRows = page.locator(
+      `[data-state-ref="${urn("mfa-method-choice")}"]`,
+    );
+    assert.equal(await collapse.count(), 0);
+    await page.getByRole("button", { name: "Toggle MFA", exact: true }).click();
+    assert.equal(await collapse.count(), 1, "the flow opens the MFA journey");
+    const view = page.getByRole("group", { name: "View" });
+    await view.getByRole("button", { name: "Tree" }).click();
+    assert.ok((await mfaRows.count()) > 0, "the tree shows it open too");
+    await page.getByRole("button", { name: "Toggle MFA", exact: true }).click();
+    assert.equal(await mfaRows.count(), 0);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow scenarios fit 320–1440px without page overflow", async () => {
+    for (const story of [
+      "controls-in-the-bar",
+      "controls-on-the-canvas",
+      "flow-with-defaults",
+      "flow-on-its-own",
+    ])
+      for (const width of [320, 375, 859, 1099, 1440]) {
+        await flowStory(`viewer-flow-scenarios--${story}`, width);
+        assert.equal(
+          await page.evaluate(
+            () =>
+              document.documentElement.scrollWidth <=
+              document.documentElement.clientWidth,
+          ),
+          true,
+          `${story} at ${width}px`,
+        );
+      }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    assert.deepEqual(errors, []);
+  });
+  await test("flow polish: the key opens above everything and closes on Escape; touch reaches 44px; the first phone view keeps the selection", async () => {
+    for (const [story, width] of [
+      ["controls-on-the-canvas", 1440],
+      ["controls-in-the-bar", 375],
+    ]) {
+      await flowStory(`viewer-flow-scenarios--${story}`, width, 812);
+      await page.getByRole("button", { name: "Key", exact: true }).click();
+      const panel = page.locator("[popover]:popover-open");
+      await panel.waitFor();
+      const box = await panel.boundingBox();
+      assert.ok(
+        box.x >= 0 && box.y >= 0 && box.x + box.width <= width,
+        `${story}: the key panel lies inside the window`,
+      );
+      assert.equal(
+        await page.evaluate(
+          ([x, y]) =>
+            document
+              .elementFromPoint(x, y)
+              ?.closest("[popover]")
+              ?.matches(":popover-open") ?? false,
+          [box.x + box.width / 2, box.y + box.height / 2],
+        ),
+        true,
+        `${story}: nothing covers or clips the key panel`,
+      );
+      await page.keyboard.press("Escape");
+      await panel.waitFor({ state: "detached" });
+    }
+    const touch = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    try {
+      const phone = await touch.newPage();
+      await phone.goto(
+        `${url}/iframe.html?id=viewer-flow-scenarios--flow-on-its-own&viewMode=story`,
+      );
+      const viewport = phone.getByRole("region", { name: "Journey flow" });
+      await viewport.waitFor();
+      const signIn = phone
+        .locator(
+          `[data-flow-key^="state:"][data-flow-key$=":${urn("app-sign-in-required")}"]`,
+        )
+        .first();
+      const [shown, area] = await Promise.all([
+        signIn.boundingBox(),
+        viewport.boundingBox(),
+      ]);
+      assert.ok(
+        shown.x >= area.x && shown.x + shown.width <= area.x + area.width,
+        "the first view at 100% keeps the selected state in sight",
+      );
+      assert.ok(shown.height < 44, "the drawn state stays the layout's size");
+      assert.equal(
+        await phone.evaluate(
+          ([x, y]) =>
+            document.elementFromPoint(x, y)?.closest("button")?.ariaLabel ??
+            null,
+          [shown.x + shown.width / 3, shown.y - 4],
+        ),
+        "Sign-in required",
+        "a touch just above the state still selects it",
+      );
+    } finally {
+      await touch.close();
+    }
     assert.deepEqual(errors, []);
   });
 } finally {

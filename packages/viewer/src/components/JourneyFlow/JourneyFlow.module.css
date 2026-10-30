@@ -1,0 +1,30 @@
+.flow {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+.scene {
+  position: relative;
+  isolation: isolate;
+}
+.frame {
+  position: absolute;
+}
+.lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.block {
+  position: absolute;
+  isolation: isolate;
+  transition: opacity var(--jv-duration-fast) ease-out;
+}
+.block[data-filtered] {
+  opacity: var(--jv-opacity-filtered);
+}
+.fill {
+  inline-size: 100%;
+  block-size: 100%;
+}

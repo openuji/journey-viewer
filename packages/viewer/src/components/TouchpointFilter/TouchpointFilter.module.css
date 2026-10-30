@@ -1,0 +1,6 @@
+.touchpoints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jv-space-2xs);
+  min-inline-size: 0;
+}

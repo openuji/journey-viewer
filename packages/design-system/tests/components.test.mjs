@@ -17,6 +17,14 @@ import {
   JourneyContracts,
   JourneyContractControls,
   InspectorPanel,
+  CompositeCard,
+  StateNode,
+  ContractGlyph,
+  JourneyPath,
+  Connector,
+  RouteOverlay,
+  parallel,
+  flowGeometry,
 } from "@journey-viewer/design-system";
 
 test("contract controls compose native buttons with explicit disclosure, selection snapshots and callbacks", () => {
@@ -387,4 +395,119 @@ test("a composite without a toggle callback renders a decorative caret instead o
   assert.doesNotMatch(html, /aria-expanded/);
   assert.match(html, /data-open="true"/);
   assert.match(html, /aria-pressed="false"/);
+});
+
+test("flow blocks compose native buttons and announce selection, location and disclosure", () => {
+  const card = renderToStaticMarkup(
+    h(CompositeCard, {
+      title: ["Authenticate with identity", "provider"],
+      caption: ["IdP auth flow"],
+      toggle: "collapse",
+      heading: true,
+      current: true,
+      selected: true,
+      onSelect: () => assert.fail("rendering does not invoke event callbacks"),
+      onToggle: () => assert.fail("rendering does not invoke event callbacks"),
+    }),
+  );
+  assert.equal((card.match(/<button/g) ?? []).length, 2);
+  assert.match(card, /aria-current="true"/);
+  assert.match(card, /aria-expanded="true"/);
+  assert.match(
+    card,
+    /aria-label="Collapse Authenticate with identity provider"/,
+  );
+  assert.match(card, />Current journey</);
+  assert.doesNotMatch(
+    renderToStaticMarkup(
+      h(CompositeCard, {
+        title: ["Account recovery"],
+        caption: ["No child journey"],
+        toggle: null,
+        onSelect: () => undefined,
+      }),
+    ),
+    /aria-expanded|Current journey/,
+  );
+  const state = renderToStaticMarkup(
+    h(StateNode, {
+      lines: ["Enter the email", "code"],
+      label: "Enter the email code",
+      tone: "incoming",
+      screen: {
+        label: "Screen: Enter the email code",
+        onOpen: () => undefined,
+      },
+      onSelect: () => undefined,
+    }),
+  );
+  assert.equal((state.match(/<button/g) ?? []).length, 2);
+  assert.match(state, /aria-label="Enter the email code"/);
+  assert.match(state, /data-tone="incoming"/);
+  const contract = renderToStaticMarkup(
+    h(ContractGlyph, {
+      kind: "entry",
+      isDefault: true,
+      lines: ["Sign in"],
+      label: "Sign in",
+      onSelect: () => undefined,
+    }),
+  );
+  assert.match(contract, /aria-label="Default entry: Sign in"/);
+  assert.match(contract, /data-default="true"/);
+});
+
+test("the journey path marks its last step as the current location", () => {
+  const html = renderToStaticMarkup(
+    h(JourneyPath, {
+      items: [
+        { id: "app", title: "App auth journey", onSelect: () => undefined },
+        { id: "idp", title: "IdP auth flow", onSelect: () => undefined },
+      ],
+    }),
+  );
+  assert.match(html, /<nav[^>]*aria-label="Journey path"/);
+  assert.equal((html.match(/aria-current="location"/g) ?? []).length, 1);
+  assert.match(html, /aria-current="location"[^>]*>.*IdP auth flow/);
+  assert.equal(renderToStaticMarkup(h(JourneyPath, { items: [] })), "");
+});
+
+test("connectors and routes draw rounded orthogonal paths with arrowheads only on routes", () => {
+  const points = [
+    { x: 0, y: 0 },
+    { x: 0, y: 40 },
+    { x: 40, y: 40 },
+  ];
+  const line = renderToStaticMarkup(
+    h("svg", null, h(Connector, { points, kind: "association", rest: true })),
+  );
+  assert.match(line, /data-kind="association"/);
+  assert.match(line, /data-rest="true"/);
+  assert.match(line, /d="M0,0 L0,34 Q0,40 6,40 L40,40"/);
+  assert.equal(
+    renderToStaticMarkup(
+      h(
+        "svg",
+        null,
+        h(Connector, { points: points.slice(0, 1), kind: "bundle" }),
+      ),
+    ),
+    "<svg></svg>",
+  );
+  const routes = renderToStaticMarkup(
+    h(
+      "svg",
+      null,
+      h(RouteOverlay, {
+        ink: {
+          strokes: [{ tone: "incoming", points }],
+          tips: [{ tone: "incoming", from: points[1], to: points[2] }],
+        },
+      }),
+    ),
+  );
+  assert.match(routes, /aria-hidden="true"/);
+  assert.equal((routes.match(/data-tone="incoming"/g) ?? []).length, 2);
+  assert.deepEqual(parallel(points, 0), points);
+  assert.equal(flowGeometry.cornerRadius, 6);
 });

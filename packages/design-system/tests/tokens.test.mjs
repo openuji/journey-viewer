@@ -200,3 +200,34 @@ test("only semantic theme variables are emitted publicly; foundation values stay
   assert.doesNotMatch(generated.tokensCss, /--jv-foundation-/);
   assert.match(generated.tokensCss, /--jv-color-accent:/);
 });
+
+test("flow connectors keep 3:1 against paper and ground in both themes", () => {
+  const luminance = (token) =>
+    token.$value.components
+      .map((channel) =>
+        channel <= 0.04045
+          ? channel / 12.92
+          : ((channel + 0.055) / 1.055) ** 2.4,
+      )
+      .reduce(
+        (sum, channel, i) => sum + channel * [0.2126, 0.7152, 0.0722][i],
+        0,
+      );
+  const contrast = (a, b) => {
+    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (high + 0.05) / (low + 0.05);
+  };
+  for (const [name, theme] of Object.entries(themes))
+    assert.equal(
+      theme.color.connector.$value,
+      `{foundation.${name}.connector}`,
+    );
+  for (const name of ["light", "dark"]) {
+    const palette = foundation.foundation[name];
+    for (const paper of ["surface", "background"])
+      assert.ok(
+        contrast(palette.connector, palette[paper]) >= 3,
+        `${name} connector on ${paper}`,
+      );
+  }
+});

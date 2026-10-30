@@ -1,12 +1,4 @@
 @reference "@journey-viewer/design-system/tailwind.css";
-.viewer {
-  --jv-explorer-offset: 0px;
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
-  background: var(--jv-color-background);
-  color: var(--jv-color-foreground);
-}
 .content {
   box-sizing: border-box;
   inline-size: 100%;
@@ -31,12 +23,6 @@
 .stage {
   min-inline-size: 0;
 }
-.tree {
-  max-inline-size: var(--jv-size-tree);
-}
-.columns {
-  min-inline-size: 0;
-}
 .inspector {
   order: -1;
   min-inline-size: 0;
@@ -51,4 +37,8 @@
     overscroll-behavior: contain;
     border-radius: var(--jv-radius-lg);
   }
+}
+/* A view that asks for it keeps its stage before the inspector on phones. */
+.after {
+  order: 0;
 }

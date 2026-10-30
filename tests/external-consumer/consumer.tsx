@@ -8,7 +8,21 @@ import {
   uniqueNodeIds,
 } from "@journey-viewer/lint/ujg";
 import { getNodesByType, type UjgDocument } from "@journey-viewer/ujg-jsonld";
-import { JourneyViewer } from "@journey-viewer/viewer";
+import {
+  FlowPlacement,
+  FlowSettings,
+  GraphSearch,
+  JourneyViewer,
+  ResetView,
+  Viewer,
+  ViewerBar,
+  ViewerMain,
+  ViewSwitch,
+  WhenView,
+  flowView,
+  treeView,
+  useViewer,
+} from "@journey-viewer/viewer";
 
 export function levelSize(input: LevelInput): number {
   const { width, height } = layoutLevel(input, {
@@ -31,5 +45,30 @@ export function Consumer({ document }: Readonly<{ document: UjgDocument }>) {
       <Button>{`${journeys.length} journeys, ${findings.length} findings`}</Button>
       <JourneyViewer document={document} />
     </main>
+  );
+}
+
+function ExpandEverything() {
+  const { dispatch } = useViewer();
+  return <Button onClick={() => dispatch({ type: "expandAll" })}>Open</Button>;
+}
+
+export function Composition({ document }: Readonly<{ document: UjgDocument }>) {
+  return (
+    <Viewer document={document} views={[treeView, flowView()]}>
+      <FlowSettings>
+        <ViewerBar>
+          <ViewSwitch />
+          <WhenView id="flow">
+            <FlowPlacement />
+          </WhenView>
+          <ExpandEverything />
+          <GraphSearch>
+            <ResetView />
+          </GraphSearch>
+        </ViewerBar>
+        <ViewerMain />
+      </FlowSettings>
+    </Viewer>
   );
 }

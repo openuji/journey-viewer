@@ -1,0 +1,74 @@
+/* The layout sized the contract: the button fills it without the control minimums. */
+.contract.contract {
+  position: relative;
+  display: flex;
+  gap: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0 0 0 18px;
+  border: 0;
+}
+.contract[data-kind="entry"].contract {
+  align-items: flex-start;
+  padding-block-start: 6px;
+}
+.contract[data-kind="exit"].contract {
+  align-items: flex-end;
+  padding-block-end: 6px;
+}
+.contract:hover .line.line,
+.contract[data-current] .line.line {
+  color: var(--jv-color-foreground);
+}
+.contract[data-current] .text {
+  background: var(--jv-color-accent-soft);
+  box-shadow: 0 0 0 2px var(--jv-color-accent-soft);
+}
+.glyph {
+  position: absolute;
+  inset-inline-start: 0;
+  overflow: visible;
+}
+.contract[data-kind="entry"] .glyph {
+  inset-block-start: -7px;
+}
+.contract[data-kind="exit"] .glyph {
+  inset-block-end: -7px;
+}
+.glyph circle {
+  fill: var(--jv-color-surface);
+  stroke-width: 1.5;
+}
+.contract[data-kind="entry"] .glyph circle {
+  stroke: var(--jv-color-entry);
+}
+.contract[data-kind="entry"] .glyph circle[data-default] {
+  fill: var(--jv-color-entry);
+}
+.contract[data-kind="exit"] .glyph circle {
+  stroke: var(--jv-color-exit);
+}
+.contract[data-kind="exit"] .glyph circle[data-core] {
+  fill: var(--jv-color-exit);
+  stroke: none;
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--jv-radius-sm);
+}
+.line.line {
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* Touch reaches 44px without changing the size the layout drew. */
+@media (pointer: coarse) {
+  .contract.contract::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(50% - 22px));
+  }
+}

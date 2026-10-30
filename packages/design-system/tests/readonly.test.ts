@@ -12,6 +12,27 @@ import type {
 import { createStateRowFixture } from "@/components/StateRow/StateRow.fixtures";
 import type { SearchFieldProps } from "@/index";
 import type { ScreenImageProps, ScreenLightboxProps } from "@/index";
+import type { CompositeCardProps, JourneyPathProps, RouteInk } from "@/index";
+import { flowGeometry } from "@/index";
+
+const card: CompositeCardProps = {
+  title: ["Account"],
+  caption: ["2 states"],
+  toggle: null,
+  onSelect: () => undefined,
+};
+// @ts-expect-error Rendering does not own disclosure state.
+card.toggle = "expand";
+const path: JourneyPathProps = {
+  items: [{ id: "app", title: "App", onSelect: () => undefined }],
+};
+// @ts-expect-error The path is an immutable snapshot.
+path.items[0]!.title = "Other";
+const ink: RouteInk = { strokes: [], tips: [] };
+// @ts-expect-error Route geometry is readonly data.
+ink.strokes = [];
+// @ts-expect-error Drawn sizes are frozen constants.
+flowGeometry.cornerRadius = 8;
 
 const button: ButtonProps = { children: "Select", selected: false };
 // @ts-expect-error Component props are immutable snapshots.

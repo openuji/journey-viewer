@@ -1,14 +1,4 @@
 @reference "@journey-viewer/design-system/tailwind.css";
-.tools {
-  display: flex;
-  gap: var(--jv-space-2xs);
-}
-.touchpoints {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--jv-space-2xs);
-  min-inline-size: 0;
-}
 .search {
   display: flex;
   flex: 1 1 100%;

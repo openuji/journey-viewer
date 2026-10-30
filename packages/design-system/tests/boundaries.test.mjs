@@ -27,6 +27,14 @@ const owners = [
   "ScreenThumbnail",
   "SegmentedControl",
   "ExplorerBar",
+  "FlowFrame",
+  "StateNode",
+  "CompositeCard",
+  "ContractGlyph",
+  "Connector",
+  "RouteOverlay",
+  "JourneyPath",
+  "FlowKey",
 ];
 
 test("shared primitives have single owners and colocated public contracts, fixtures, checks, and stories", async () => {

@@ -68,10 +68,10 @@ import "@journey-viewer/viewer/styles.css";
 </main>
 ```
 
-`JourneyViewer` owns a local immutable interaction snapshot and composes the
-controlled `JourneyNavigation` (the explorer bar), `JourneyExplorer` (tree or
-columns) and a sticky `JourneyInspector`, following the original Solid-OIDC
-hierarchy layout. Each instance is independent, even when instances receive the
+`JourneyViewer` is the default arrangement of the composition kit described in
+“Composing a viewer” below: a `Viewer` with the explorer bar's pieces, Tree and
+Columns (`JourneyExplorer`) and a sticky `JourneyInspector`, following the original
+Solid-OIDC hierarchy layout. Its state is one local immutable `ViewerState`. Each instance is independent, even when instances receive the
 same frozen document. The state boundary retains the original document reference
 only to detect replacement. A new document object, including one with the same
 `@id` and node objects, resets selection, expansion, mode, search, filters, hover,
@@ -173,12 +173,14 @@ The newest column scrolls into view. Opening a screenshot follows its call path
 without opening a composite's children. “Reset view” restores selection, expansion,
 the tree, blank search, all touchpoints and no hover, and scrolls the viewer into view.
 
-Rows show relations to the active state — the hovered state, else the selection —
-in the same journey: incoming rows are tinted green with ←n, outgoing rows purple
-with →n, both with a split stripe, unrelated rows are dimmed and the active row
-gets a dark stripe. The selected row is highlighted as a whole. Marks count
-explicit local transitions and their title lists them; hovering the marks shows
-relations to the selection. Entry/exit counts are not shown on rows.
+Rows show relations to the selected state in the same journey: incoming rows are
+tinted green with ←n, outgoing rows purple with →n, both with a split stripe,
+unrelated rows are dimmed and the active row gets a dark stripe. The selected row is
+highlighted as a whole. Marks count explicit local transitions and their title lists
+them. Entry/exit counts are not shown on rows. `JourneyViewer` does not report row
+hover, so hovering a row changes nothing (Stage 14). A controlled composition can still
+pass `JourneyExplorer.onHover` and `hoverNode`: `getRowHighlight` then relates rows to
+the hovered state, else the selection.
 
 Search matches journey/state/entry/exit labels, full IDs and tags without case
 sensitivity, in hierarchy traversal order. “/” focuses the field from outside a
@@ -534,3 +536,105 @@ writes paired screenshots to `.test-output/parity/`.
 Production exports contain only the renderer and compiled layout CSS. Fixtures,
 Storybook, consumer fixtures, tests, example assets and tooling stay outside `dist`.
 App composition and deployment retain their later stage boundaries in the root plan.
+
+## Composing a viewer
+
+`JourneyViewer` is one arrangement. The same pieces compose any other: a different
+toolbar, a Flow view, controls on the canvas, or the canvas alone. An arrangement is a
+different JSX tree, not a set of flags, and there is no plugin runtime or registry.
+
+```tsx
+import {
+  DocumentSummary, ExpandCollapse, FlowPlacement, FlowSettings, FlowZoom,
+  GraphSearch, ResetView, TouchpointFilter, Viewer, ViewerBar, ViewerMain,
+  ViewSwitch, WhenView, columnsView, flowView, treeView,
+} from "@journey-viewer/viewer";
+import { FlowKey } from "@journey-viewer/design-system";
+
+<Viewer
+  document={document}
+  screenshots={screenshots}
+  touchpoints={touchpoints}
+  views={[treeView, columnsView, flowView()]}
+>
+  <FlowSettings>
+    <ViewerBar>
+      <DocumentSummary />
+      <ViewSwitch />
+      <WhenView id="flow">
+        <FlowPlacement />
+        <FlowZoom />
+        <FlowKey />
+      </WhenView>
+      <WhenView id="tree">
+        <ExpandCollapse />
+      </WhenView>
+      <TouchpointFilter />
+      <GraphSearch>
+        <ResetView />
+      </GraphSearch>
+    </ViewerBar>
+    <ViewerMain />
+  </FlowSettings>
+</Viewer>
+```
+
+- **`Viewer`** is the state boundary. It holds one immutable `ViewerState` (the
+  shared snapshot, the node the flow's path leads to, the active view, search, reveal
+  and the hover preview) and resets it when `document` changes identity. Around its
+  children it adds the screen preview, the lightbox and the browser shell (sticky-bar
+  offset, “/” for search, reveal scrolling). `initialView` and `initialInteraction`
+  set what it opens with, and what Reset returns to.
+- **Views** are readonly `ViewerView` descriptors `{ id, label, render, enter?, inspector? }`.
+  `ViewSwitch` lists them and `ViewerMain` renders the active one beside the inspector.
+  `treeView` and `columnsView` use `enter` to set the snapshot's mode, and
+  `flowView({ pathEnd })` renders `JourneyFlow` with optional controls at the end of
+  its journey path. All views share selection and expansion.
+- **Pieces** read the enclosing viewer and dispatch commands: `ViewerBar`,
+  `DocumentSummary`, `ViewSwitch`, `WhenView` (children only while a view is active),
+  `ExpandCollapse`, `TouchpointFilter`, `GraphSearch` (with trailing tools as
+  children), `ResetView` and `ViewerMain`. `JourneyNavigation`, the controlled bar,
+  arranges the same parts for callers that own the snapshot.
+- **Flow settings.** Placement and zoom are not graph state. `FlowSettings` holds them
+  for `FlowPlacement`, `FlowZoom` and the flow view, wherever those sit. Without it the
+  flow draws median at 100%, and the two controls throw.
+
+### Writing a control
+
+Any component inside a `Viewer` can be a control. `useViewer()` returns the inputs
+(`document`, `views`, `screenshots`, `touchpoints`, `level`, `extensions`), the current
+`state` and `dispatch`:
+
+```tsx
+function OpenEverything() {
+  const { dispatch } = useViewer();
+  return <Button onClick={() => dispatch({ type: "expandAll" })}>Open all</Button>;
+}
+```
+
+`ViewerCommand` is the complete vocabulary. Selecting, screens and disclosure:
+`navigate` (with `reveal: true` it also scrolls the target into view, as the
+inspector's links do), `pick` (a search result), `toggle`, `expandAll`, `collapseAll`,
+`openScreen`, `stepScreen` and `return` (an earlier step on the flow's journey path).
+The rest are `view`, `query`, `searchFocus`, `searchDismiss`, `touchpoint`,
+`toggleContracts`, `closeScreen`, `preview`, `hidePreview` and `reset`.
+`reduceViewer(inputs, state, command)` and `createViewerState(inputs)` are the pure
+functions behind `dispatch`: frozen inputs are supported, and unchanged results keep
+the state's identity. A module with state of its own, as Flow's settings show, brings
+its own provider instead of extending `ViewerState`.
+
+### Flow internals
+
+- `src/flow/`: the projection of UJG plus the shared expansion into a scene with plain ids
+  (`scene.ts`, the only flow module that reads the document), the bottom-up composer over
+  `@journey-viewer/flow-layout` (`compose.ts`, `geometry.ts`), text sizing (`text.ts`), the
+  highlight and active-route geometry (`highlight.ts`, `strokes.ts`) and block rects.
+- `src/disclosure.ts`: `disclose`, the reducer behind every navigation, screen and
+  disclosure command; it also marks `location`, the node the journey path leads to.
+- `JourneyFlow`: the controlled canvas with its journey path, composed of the design
+  system's `Flow/*` primitives. `browser/BrowserTextMeasure` sizes text with the rendered
+  fonts and `browser/BrowserFlowViewport` owns scrolling, fit, anchoring and reveals.
+- `src/dev/artifacts.ts`: layout metrics for tests and stories; never in `dist`.
+- Storybook: `Viewer/JourneyFlow` (scopes and placements, each reporting its artifacts) and
+  `Viewer/Flow scenarios`, five arrangements written as plain compositions, including a
+  custom command.

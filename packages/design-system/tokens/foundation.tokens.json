@@ -49,6 +49,14 @@
           "components": [0.4, 0.4549019607843137, 0.5294117647058824]
         }
       },
+      "connector": {
+        "$type": "color",
+        "$description": "Resting flow connectors: the subtle ink mixed 80% into the surface, at least 3:1 on paper and ground.",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [0.52, 0.563922, 0.623529]
+        }
+      },
       "border": {
         "$type": "color",
         "$value": {
@@ -236,6 +244,14 @@
           "components": [
             0.6352941176470588, 0.6862745098039216, 0.7647058823529411
           ]
+        }
+      },
+      "connector": {
+        "$type": "color",
+        "$description": "Resting flow connectors: the subtle ink mixed 80% into the surface, at least 3:1 on paper and ground.",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [0.529412, 0.578039, 0.652549]
         }
       },
       "border": {

@@ -100,6 +100,16 @@ explanatory text and hides the visual glyphs from the accessibility tree; provid
 a complete spoken label, including any count. An explicit `title` overrides its
 tooltip without replacing that accessible explanation.
 
+## Flow primitives
+
+`FlowFrame`, `StateNode`, `CompositeCard`, `ContractGlyph`, `Connector`, `RouteOverlay`,
+`JourneyPath` and `FlowKey` draw a flow chart from positions and pre-wrapped text that the
+caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`, `Text` and
+`TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
+radius, arrowheads, route width, contract glyph), so a layout engine can reserve room for them;
+`parallel` offsets an orthogonal polyline to one side of its travel. Resting connectors use the
+`color.connector` token, which keeps at least 3:1 on paper and ground in both themes.
+
 ## Tokens and themes
 
 Edit `tokens/foundation.tokens.json` and `tokens/themes/*.tokens.json`.

@@ -45,6 +45,22 @@ import { checkHeadingFixture } from "@/components/Heading/Heading.checks";
 import { createTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.fixtures";
 import { checkTouchpointDotFixture } from "@/components/TouchpointDot/TouchpointDot.checks";
 
+import { createFlowFrameFixture } from "@/components/FlowFrame/FlowFrame.fixtures";
+import { checkFlowFrameFixture } from "@/components/FlowFrame/FlowFrame.checks";
+import { createStateNodeFixture } from "@/components/StateNode/StateNode.fixtures";
+import { checkStateNodeFixture } from "@/components/StateNode/StateNode.checks";
+import { createCompositeCardFixture } from "@/components/CompositeCard/CompositeCard.fixtures";
+import { checkCompositeCardFixture } from "@/components/CompositeCard/CompositeCard.checks";
+import { createContractGlyphFixture } from "@/components/ContractGlyph/ContractGlyph.fixtures";
+import { checkContractGlyphFixture } from "@/components/ContractGlyph/ContractGlyph.checks";
+import { createConnectorFixture } from "@/components/Connector/Connector.fixtures";
+import { checkConnectorFixture } from "@/components/Connector/Connector.checks";
+import { createRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.fixtures";
+import { checkRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.checks";
+import { createJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.fixtures";
+import { checkJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.checks";
+import { createFlowKeyFixture } from "@/components/FlowKey/FlowKey.fixtures";
+import { checkFlowKeyFixture } from "@/components/FlowKey/FlowKey.checks";
 const findings = [
   ...checkIconFixture(createIconFixture()).map((finding) => ({
     ...finding,
@@ -139,9 +155,41 @@ const findings = [
     ...finding,
     path: ["TouchpointDot", ...finding.path],
   })),
+  ...checkFlowFrameFixture(createFlowFrameFixture()).map((finding) => ({
+    ...finding,
+    path: ["FlowFrame", ...finding.path],
+  })),
+  ...checkStateNodeFixture(createStateNodeFixture()).map((finding) => ({
+    ...finding,
+    path: ["StateNode", ...finding.path],
+  })),
+  ...checkCompositeCardFixture(createCompositeCardFixture()).map((finding) => ({
+    ...finding,
+    path: ["CompositeCard", ...finding.path],
+  })),
+  ...checkContractGlyphFixture(createContractGlyphFixture()).map((finding) => ({
+    ...finding,
+    path: ["ContractGlyph", ...finding.path],
+  })),
+  ...checkConnectorFixture(createConnectorFixture()).map((finding) => ({
+    ...finding,
+    path: ["Connector", ...finding.path],
+  })),
+  ...checkRouteOverlayFixture(createRouteOverlayFixture()).map((finding) => ({
+    ...finding,
+    path: ["RouteOverlay", ...finding.path],
+  })),
+  ...checkJourneyPathFixture(createJourneyPathFixture()).map((finding) => ({
+    ...finding,
+    path: ["JourneyPath", ...finding.path],
+  })),
+  ...checkFlowKeyFixture(createFlowKeyFixture()).map((finding) => ({
+    ...finding,
+    path: ["FlowKey", ...finding.path],
+  })),
 ];
 if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("23 component fixture contracts pass independently.");
+} else console.log("31 component fixture contracts pass independently.");

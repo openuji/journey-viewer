@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "vite build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths",
-    "test": "pnpm build && tsc -p tsconfig.json && node --test tests/*.test.mjs",
+    "test": "pnpm build && tsc -p tsconfig.json && tsx --test tests/*.test.mjs",
     "build:consumer": "tsc -p tests/consumer/tsconfig.json && vite build --config tests/consumer/vite.config.ts",
     "storybook": "pnpm --filter @journey-viewer/viewer... build && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6007 --no-open",
     "build:storybook": "pnpm --filter @journey-viewer/viewer... build && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "@journey-viewer/ujg-jsonld": "workspace:*",
-    "@journey-viewer/design-system": "workspace:*"
+    "@journey-viewer/design-system": "workspace:*",
+    "@journey-viewer/flow-layout": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.0",
@@ -53,6 +54,7 @@
     "@storybook/addon-docs": "catalog:",
     "@storybook/addon-a11y": "catalog:",
     "playwright": "catalog:",
-    "tsc-alias": "catalog:"
+    "tsc-alias": "catalog:",
+    "tsx": "catalog:"
   }
 }

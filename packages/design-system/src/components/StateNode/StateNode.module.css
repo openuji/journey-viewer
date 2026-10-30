@@ -1,0 +1,89 @@
+.node {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  transition:
+    background-color var(--jv-duration-fast) ease-out,
+    border-color var(--jv-duration-fast) ease-out;
+}
+.node::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 3px;
+  inset-block: 6px;
+  inline-size: var(--jv-size-stripe);
+  border-radius: var(--jv-radius-sm);
+  background: transparent;
+}
+.node:hover {
+  border-color: var(--jv-color-border-strong);
+}
+.node[data-selected] {
+  border-color: var(--jv-color-accent);
+  background: var(--jv-color-accent-soft);
+}
+.node[data-selected]::before {
+  background: var(--jv-color-accent);
+}
+.node[data-tone="incoming"] {
+  background: var(--jv-color-entry-soft);
+}
+.node[data-tone="incoming"]::before {
+  background: var(--jv-color-entry);
+}
+.node[data-tone="outgoing"] {
+  background: var(--jv-color-exit-soft);
+}
+.node[data-tone="outgoing"]::before {
+  background: var(--jv-color-exit);
+}
+.node[data-tone="both"] {
+  background: linear-gradient(
+    90deg,
+    var(--jv-color-entry-soft),
+    var(--jv-color-exit-soft)
+  );
+}
+.node[data-tone="both"]::before {
+  background: linear-gradient(
+    var(--jv-color-entry) 50%,
+    var(--jv-color-exit) 50%
+  );
+}
+/* The layout sized the node: the button fills it without the control minimums. */
+.select.select {
+  position: relative;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 0 var(--jv-space-md) 0 var(--jv-space-lg);
+  border: 0;
+  border-radius: inherit;
+}
+.line.line {
+  line-height: 17px;
+  white-space: nowrap;
+}
+.screen {
+  align-self: center;
+  margin-inline-end: var(--jv-space-2xs);
+}
+
+/* Touch reaches 44px without changing the size the layout drew. */
+@media (pointer: coarse) {
+  .select.select::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(50% - 22px));
+  }
+}

@@ -1,0 +1,50 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-2xs) var(--jv-space-md);
+  padding: var(--jv-space-2xs) var(--jv-space-sm);
+  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
+  background: var(--jv-color-surface);
+}
+.path {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-sm);
+}
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jv-space-2xs);
+  min-inline-size: 0;
+}
+.item + .item::before {
+  content: "";
+  flex: 0 0 auto;
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline: var(--jv-space-2xs) var(--jv-space-xs);
+  border-block-start: 1.5px solid var(--jv-color-subtle);
+  border-inline-end: 1.5px solid var(--jv-color-subtle);
+  transform: rotate(45deg);
+}
+.step.step {
+  gap: 6px;
+}
+.step[aria-current].step {
+  color: var(--jv-color-foreground);
+}

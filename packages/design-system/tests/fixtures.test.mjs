@@ -33,6 +33,14 @@ for (const name of [
   "ScreenThumbnail",
   "SegmentedControl",
   "ExplorerBar",
+  "FlowFrame",
+  "StateNode",
+  "CompositeCard",
+  "ContractGlyph",
+  "Connector",
+  "RouteOverlay",
+  "JourneyPath",
+  "FlowKey",
 ]) {
   const { [`create${name}Fixture`]: generate } = await import(
     `../src/components/${name}/${name}.fixtures.ts`

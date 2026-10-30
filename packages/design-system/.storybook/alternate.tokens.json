@@ -24,6 +24,10 @@
       "$type": "color",
       "$value": "{foundation.light.subtle}"
     },
+    "connector": {
+      "$type": "color",
+      "$value": "{foundation.light.connector}"
+    },
     "border": {
       "$type": "color",
       "$value": "{foundation.light.border}"

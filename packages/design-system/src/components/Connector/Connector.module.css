@@ -1,0 +1,23 @@
+.connector {
+  cursor: pointer;
+}
+.line {
+  fill: none;
+  stroke: var(--jv-color-connector);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+.connector[data-kind="association"] .line {
+  stroke-dasharray: 2 3;
+}
+.connector[data-rest] .line {
+  stroke-width: 1;
+}
+.connector:hover .line {
+  stroke-width: 2;
+}
+.hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 10;
+}

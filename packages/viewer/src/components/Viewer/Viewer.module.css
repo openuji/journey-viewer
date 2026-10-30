@@ -1,0 +1,8 @@
+.viewer {
+  --jv-explorer-offset: 0px;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  background: var(--jv-color-background);
+  color: var(--jv-color-foreground);
+}

@@ -1,0 +1,137 @@
+.card {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  border: var(--jv-border-thin) solid var(--jv-color-border-strong);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  transition:
+    background-color var(--jv-duration-fast) ease-out,
+    border-color var(--jv-duration-fast) ease-out;
+}
+.card:hover {
+  border-color: var(--jv-color-muted);
+}
+.card[data-selected] {
+  border-color: var(--jv-color-accent);
+  background: var(--jv-color-accent-soft);
+}
+.card[data-tone="incoming"] {
+  background: var(--jv-color-entry-soft);
+}
+.card[data-tone="outgoing"] {
+  background: var(--jv-color-exit-soft);
+}
+.card[data-tone="both"] {
+  background: linear-gradient(
+    90deg,
+    var(--jv-color-entry-soft),
+    var(--jv-color-exit-soft)
+  );
+}
+/* A heading has no box: selection and relations show as the state node's leading stripe. */
+.card[data-heading],
+.card[data-heading][data-selected] {
+  border-color: transparent;
+  background: transparent;
+}
+.card[data-heading]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 3px;
+  inset-block: 6px;
+  inline-size: var(--jv-size-stripe);
+  border-radius: var(--jv-radius-sm);
+  background: transparent;
+}
+.card[data-heading][data-selected]::before {
+  background: var(--jv-color-accent);
+}
+.card[data-heading][data-tone="incoming"]::before {
+  background: var(--jv-color-entry);
+}
+.card[data-heading][data-tone="outgoing"]::before {
+  background: var(--jv-color-exit);
+}
+.card[data-heading][data-tone="both"]::before {
+  background: linear-gradient(
+    var(--jv-color-entry) 50%,
+    var(--jv-color-exit) 50%
+  );
+}
+/* The layout sized the card: the button fills it without the control minimums. */
+.select.select {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 0 var(--jv-space-md) 0 var(--jv-space-lg);
+  border: 0;
+  border-radius: inherit;
+}
+.title.title {
+  line-height: 17px;
+  white-space: nowrap;
+}
+.card[data-heading] .select:hover .title {
+  text-decoration: underline;
+  text-decoration-color: var(--jv-color-border-strong);
+  text-underline-offset: 3px;
+}
+.caption {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.captionText {
+  display: flex;
+  flex-direction: column;
+}
+.captionLine.captionLine {
+  line-height: 16px;
+  white-space: nowrap;
+}
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dot {
+  display: inline-flex;
+  transform: translateY(-1px);
+}
+.toggle.toggle {
+  flex: 0 0 auto;
+  margin: var(--jv-space-xs) var(--jv-space-xs) 0 0;
+}
+.toggle svg {
+  transition: transform var(--jv-duration-fast) ease-out;
+}
+.card[data-open] .toggle svg {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle svg {
+    transition: none;
+  }
+}
+
+/* Touch reaches 44px without changing the size the layout drew. */
+@media (pointer: coarse) {
+  .select.select::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(50% - 22px));
+  }
+}

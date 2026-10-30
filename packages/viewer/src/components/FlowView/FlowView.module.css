@@ -1,0 +1,16 @@
+@reference "@journey-viewer/design-system/tailwind.css";
+/* The canvas fills the window below the explorer bar; without a bar the offset is 0. */
+.stage {
+  box-sizing: border-box;
+  block-size: 70dvh;
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  overflow: hidden;
+  @variant md {
+    position: sticky;
+    inset-block-start: calc(var(--jv-explorer-offset) + var(--jv-space-lg));
+    block-size: calc(
+      100dvh - var(--jv-explorer-offset) - 2 * var(--jv-space-lg)
+    );
+  }
+}

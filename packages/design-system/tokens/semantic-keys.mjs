@@ -14,6 +14,7 @@ export const semanticKeys = Object.freeze([
   "color.category-rose",
   "color.category-teal",
   "color.category-violet",
+  "color.connector",
   "color.danger",
   "color.danger-soft",
   "color.entry",

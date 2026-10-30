@@ -14,7 +14,17 @@ import {
   uniqueNodeIds,
 } from "@journey-viewer/lint/ujg";
 import { getNodesByType } from "@journey-viewer/ujg-jsonld";
-import { JourneyViewer } from "@journey-viewer/viewer";
+import {
+  FlowPlacement,
+  FlowSettings,
+  JourneyViewer,
+  Viewer,
+  ViewerBar,
+  ViewerMain,
+  ViewSwitch,
+  flowView,
+  treeView,
+} from "@journey-viewer/viewer";
 
 const document = JSON.parse(await readFile("solid-oidc.ujg.jsonld", "utf8"));
 assert.equal(getNodesByType(document, "Journey").length, 10);
@@ -28,6 +38,26 @@ assert.match(
   renderToString(createElement(JourneyViewer, { document })),
   /App auth journey/,
 );
+// A composition of the viewer's pieces, opening in Flow with its placement control in the bar.
+const composed = renderToString(
+  createElement(
+    Viewer,
+    { document, views: [treeView, flowView()], initialView: "flow" },
+    createElement(
+      FlowSettings,
+      null,
+      createElement(
+        ViewerBar,
+        null,
+        createElement(ViewSwitch),
+        createElement(FlowPlacement),
+      ),
+      createElement(ViewerMain),
+    ),
+  ),
+);
+assert.match(composed, /aria-label="Placement"/);
+assert.match(composed, />Flow</);
 assert.match(
   renderToString(createElement(Button, null, "Continue")),
   /<button[^>]*>Continue<\/button>/,
@@ -55,5 +85,5 @@ for (const specifier of [
   );
 }
 console.log(
-  `Rendered JourneyViewer, laid out a level and resolved 5 CSS exports (${findings.length} findings).`,
+  `Rendered JourneyViewer and a composition, laid out a level and resolved 5 CSS exports (${findings.length} findings).`,
 );

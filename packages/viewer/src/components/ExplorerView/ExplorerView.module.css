@@ -1,0 +1,6 @@
+.tree {
+  max-inline-size: var(--jv-size-tree);
+}
+.columns {
+  min-inline-size: 0;
+}
