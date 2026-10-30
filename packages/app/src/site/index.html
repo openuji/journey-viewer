@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-jv-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A User Journey Graph document in Journey Viewer: its journeys as a tree, columns and a flow chart."
+    />
+    <title>Journey Viewer</title>
+    <link
+      rel="icon"
+      href="../components/BrandLink/icon.svg"
+      type="image/svg+xml"
+    />
+  </head>
+  <body>
+    <a href="#application" class="skip">Skip to viewer</a>
+    <!-- The application renders the header and its main landmark (#application). -->
+    <div id="application-root">
+      <p class="loading">Loading viewer…</p>
+    </div>
+    <noscript>
+      <p class="loading">
+        Enable JavaScript to view this journey. It is read and drawn in your
+        browser.
+      </p>
+    </noscript>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+/* No-document panel layout. Typography and controls come from design-system primitives. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--jv-space-sm);
+  max-inline-size: 30rem;
+  margin: var(--jv-space-2xl) auto;
+  padding: var(--jv-space-xl) var(--jv-space-lg);
+  text-align: center;
+}
+.open {
+  gap: var(--jv-space-sm);
+  margin-block: var(--jv-space-sm);
+}
+.note {
+  max-inline-size: 24rem;
+}
+.empty a {
+  color: var(--jv-color-accent);
+}

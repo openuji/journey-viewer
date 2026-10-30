@@ -1,0 +1,170 @@
+/* Application shell header layout. Typography, controls and colors come from design-system primitives and tokens. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-xs) var(--jv-space-sm);
+  min-block-size: 3rem;
+  padding: var(--jv-space-xs) var(--jv-space-lg);
+  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+}
+/* The caller's brand content styles itself; the slot only keeps it on the first row. */
+.brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+.divider,
+.identity {
+  display: none;
+}
+.document {
+  display: flex;
+  flex: 1 1 0;
+  align-items: baseline;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.title {
+  min-inline-size: 0;
+}
+.identity {
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.status {
+  display: flex;
+  align-items: center;
+  order: 3;
+  flex: 1 0 100%;
+  min-inline-size: 0;
+}
+.status:empty {
+  display: none;
+}
+/* On phones the status row lines up under the title, past the brand icon (BrandLink's 22px). */
+.divider ~ .status {
+  padding-inline-start: calc(
+    1.375rem + var(--jv-space-sm) + var(--jv-space-2xs)
+  );
+}
+.ok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jv-space-xs);
+}
+.status .statusChip[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--jv-color-warning) 30%, transparent);
+  background: var(--jv-color-warning-soft);
+  color: var(--jv-color-warning);
+}
+.status .statusChip[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--jv-color-danger) 30%, transparent);
+  background: var(--jv-color-danger-soft);
+  color: var(--jv-color-danger);
+}
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  margin-inline-start: auto;
+}
+.open {
+  gap: var(--jv-space-xs);
+}
+.openLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.findings {
+  inline-size: min(26rem, calc(100vw - 2 * var(--jv-space-lg)));
+  max-block-size: min(70vh, 32rem);
+  margin: 0;
+  inset: auto;
+  inset-block-start: 3.25rem;
+  inset-inline-start: var(--jv-space-lg);
+  overflow: auto;
+  padding: var(--jv-space-md);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-lg);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  box-shadow: var(--jv-shadow-popover);
+}
+.findings > * + * {
+  margin-block-start: var(--jv-space-sm);
+}
+.findingsList {
+  display: grid;
+  gap: var(--jv-space-sm);
+  margin: 0;
+  padding: var(--jv-space-sm) 0;
+  list-style: none;
+  border-block: var(--jv-border-thin) solid var(--jv-color-muted-surface);
+}
+.findingsList li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 var(--jv-space-sm);
+}
+.findingsPath {
+  grid-column: 2;
+  overflow-wrap: anywhere;
+}
+[data-severity="error"] > .findingsSeverity {
+  color: var(--jv-color-danger);
+}
+[data-severity="warning"] > .findingsSeverity {
+  color: var(--jv-color-warning);
+}
+@supports (position-area: bottom) {
+  .statusChip {
+    anchor-name: --app-status;
+  }
+  .findings {
+    position-anchor: --app-status;
+    position-area: bottom span-right;
+    position-try-fallbacks: bottom span-left;
+    inset-block-start: auto;
+    inset-inline-start: auto;
+    margin-block-start: var(--jv-space-xs);
+  }
+}
+/* From md: one row with the identity, inline status and visible action labels. */
+@media (min-width: 53.75rem) {
+  .header {
+    flex-wrap: nowrap;
+    gap: var(--jv-space-md);
+  }
+  .divider,
+  .identity {
+    display: inline;
+  }
+  .document {
+    flex: 0 1 auto;
+  }
+  .status,
+  .divider ~ .status {
+    order: 0;
+    flex: 1 1 auto;
+    padding-inline-start: 0;
+  }
+  .openLabel {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+  }
+}

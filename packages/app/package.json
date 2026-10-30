@@ -1,0 +1,55 @@
+{
+  "name": "@journey-viewer/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "journey-viewer": "./dist/cli/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --config vite.site.config.ts && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && tsc -p tsconfig.cli.json && tsc-alias -p tsconfig.cli.json --resolve-full-paths",
+    "test": "pnpm build && tsc -p tsconfig.json && tsx --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "dependencies": {
+    "@journey-viewer/design-system": "workspace:*",
+    "@journey-viewer/lint": "workspace:*",
+    "@journey-viewer/ujg-jsonld": "workspace:*",
+    "@journey-viewer/viewer": "workspace:*",
+    "vite": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "@types/react": "^19.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "playwright": "catalog:",
+    "tsc-alias": "catalog:",
+    "tsx": "catalog:"
+  }
+}

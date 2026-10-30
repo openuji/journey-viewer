@@ -3,6 +3,7 @@ import { getNodesByType } from "@journey-viewer/ujg-jsonld";
 import {
   collapseAllJourneys,
   createViewerInteraction,
+  expandAllJourneys,
 } from "@journey-viewer/viewer";
 
 const freeze = (value) => {
@@ -45,8 +46,8 @@ export const id = (local) => `urn:ujg:solid-oidc:${local}`;
  * as in the tree), and everything open.
  */
 export function scopes(document) {
-  const open = createViewerInteraction(document);
-  const closed = collapseAllJourneys(open);
+  const closed = collapseAllJourneys(createViewerInteraction(document));
+  const open = expandAllJourneys(document, closed);
   const journeys = getNodesByType(document, "Journey");
   const composites = getNodesByType(document, "CompositeState");
   const parentsOf = (journeyId) =>

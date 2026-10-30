@@ -8,6 +8,7 @@ import {
   JourneyExplorer,
   JourneyInspector,
   createViewerSnapshot,
+  expandAllJourneys,
 } from "@journey-viewer/viewer";
 
 const freeze = (value) => {
@@ -25,7 +26,12 @@ const document = freeze(
     ),
   ),
 );
-const snapshot = freeze(createViewerSnapshot(document));
+const initial = createViewerSnapshot(document);
+// Every journey open, so each call site renders.
+const snapshot = freeze({
+  ...initial,
+  interaction: expandAllJourneys(document, initial.interaction),
+});
 const unexpected = () => assert.fail("render must not invoke action callbacks");
 const explorerProps = {
   document,

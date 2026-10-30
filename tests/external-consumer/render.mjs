@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
+import { Application, checkDocument } from "@journey-viewer/app";
 import { Button } from "@journey-viewer/design-system";
 import { layoutLevel } from "@journey-viewer/flow-layout";
 import { lint } from "@journey-viewer/lint";
@@ -58,6 +59,14 @@ const composed = renderToString(
 );
 assert.match(composed, /aria-label="Placement"/);
 assert.match(composed, />Flow</);
+assert.equal(checkDocument(document).kind, "ready");
+// Without a source the application opens on its empty state; reading happens in the browser.
+assert.match(
+  renderToString(
+    createElement(Application, { alternatives: "or try the example" }),
+  ),
+  /Choose a journey file.*or try the example/,
+);
 assert.match(
   renderToString(createElement(Button, null, "Continue")),
   /<button[^>]*>Continue<\/button>/,
@@ -78,6 +87,7 @@ for (const specifier of [
   "@journey-viewer/design-system/reset.css",
   "@journey-viewer/design-system/tailwind.css",
   "@journey-viewer/viewer/styles.css",
+  "@journey-viewer/app/styles.css",
 ]) {
   assert.ok(
     existsSync(fileURLToPath(import.meta.resolve(specifier))),
@@ -85,5 +95,5 @@ for (const specifier of [
   );
 }
 console.log(
-  `Rendered JourneyViewer and a composition, laid out a level and resolved 5 CSS exports (${findings.length} findings).`,
+  `Rendered JourneyViewer, a composition and the application, laid out a level and resolved 6 CSS exports (${findings.length} findings).`,
 );

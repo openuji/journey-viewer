@@ -12,6 +12,10 @@ landing at `/`. Stage 10C adds the application at `/app/`, the Solid-OIDC route,
 local-file reading and application-owned findings. Stage 10D restores the original
 `journey-graph` hierarchy layout and behavior in the viewer and design system;
 `pnpm test:parity` compares the two side by side while both dev servers run.
+Stage 15 turns the viewer into a composition kit; Stage 16 adds the portable
+application, `@journey-viewer/app`, whose `journey-viewer generate` command
+writes a static site for a document that runs on any static host, and whose
+`journey-viewer run` serves it locally with Vite.
 
 ## Run
 
@@ -23,6 +27,7 @@ pnpm test
 pnpm build
 pnpm format
 pnpm test:consumer
+pnpm test:visualise
 ```
 
 ```sh
@@ -32,10 +37,12 @@ pnpm dev
 pnpm storybook:web
 ```
 
-`pnpm build` builds the five parent library packages; `pnpm test` checks the
+`pnpm build` builds the six parent library packages; `pnpm test` checks the
 formatting and source layout and verifies the packages and the captured baseline.
 `pnpm format` applies Prettier. `pnpm test:consumer` installs the packed libraries
-in a temporary project (see Distribution). None of them includes `apps/web`. The web convenience
+in a temporary project (see Distribution). `pnpm test:visualise` runs the packed
+`journey-viewer generate` on Solid-OIDC outside the workspace and checks the
+served output in Chromium. None of them includes `apps/web`. The web convenience
 commands delegate into that independent project: `pnpm build:app` builds its
 Astro landing to `apps/web/dist`; `pnpm build:storybook:web` builds its 45-story
 native Astro catalog. See [its README](apps/web/README.md) for all commands.
@@ -56,6 +63,10 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
   (positions and orthogonal metro-style routes for sized nodes and fixed-port
   frames), with drawn sizes and spacing as options. It knows nothing of UJG;
   `flow-spike/` composes it into nested journey frames.
+- `packages/app`: the application (reading, check policy, findings header, empty
+  state and its Tree/Columns/Flow arrangement), a prebuilt static site with a
+  relative base, and the `journey-viewer` commands: `generate` copies the site
+  and a document into a folder, `run` also serves it with Vite. See [its README](packages/app/README.md).
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export, the source layout check and the
   external-consumer smoke check with its fixture.
@@ -138,7 +149,7 @@ Its browser acceptance suite is `pnpm --dir apps/web test:app:browser` after bui
   tokens), `~/*` → the package root. The viewer adds `~/examples/*` for the shared
   example. A package's own `dist` is imported by its package name.
 - TypeScript modules are imported without `.js`/`.ts` (`@/components/Button/Button`);
-  real file names keep theirs (`.module.css`, `.json`, `.mjs`). All five packages
+  real file names keep theirs (`.module.css`, `.json`, `.mjs`). All six packages
   use TypeScript's `Bundler` resolution.
 - Tools read the same aliases: `tsc-alias --resolve-full-paths` turns them into
   full `./module.js` paths in each package's tsc output, so published JavaScript
@@ -160,21 +171,27 @@ its manifest, README and `dist`.
 - ESM only, with declarations and compiled CSS. Consumers resolve the packages'
   `exports` with TypeScript's `bundler`, `node16` or `nodenext` resolution.
 - Dependencies: `@journey-viewer/flow-layout`, `ujg-jsonld` and `lint` have none.
+  `@journey-viewer/app` depends on the viewer, design system, lint and
+  `ujg-jsonld`, on `vite` for `journey-viewer run`, and peers on `react`; its
+  `journey-viewer` bin runs on Node 22.13 or newer with the prebuilt site in its
+  own `dist`.
   Peers: `react` ^19.2 for the design system and viewer; `@types/react` is an
   optional peer for TypeScript consumers. The viewer depends on
   `@journey-viewer/ujg-jsonld` and `@journey-viewer/design-system`; their packed
   version is `0.0.0`, so install the tarballs together (with overrides if your
   package manager resolves them from a registry).
 - CSS: import `@journey-viewer/design-system/styles.css`, then
-  `@journey-viewer/viewer/styles.css`. Both contain only CSS-module classes and
+  `@journey-viewer/viewer/styles.css` (and `@journey-viewer/app/styles.css` for the
+  application's components). Both contain only CSS-module classes and
   scoped `data-jv-theme` tokens. `reset.css` is an opt-in global reset;
   `tokens.css` and `tailwind.css` serve consumers that build their own styles on
   the tokens. Typing CSS side-effect imports is the consumer bundler's job (for
   example `vite/client`).
-- `pnpm test:consumer` packs all five libraries, installs the tarballs in a
+- `pnpm test:consumer` packs all six libraries, installs the tarballs in a
   temporary project outside the workspace, type-checks them without Vite types
-  under `bundler` and `nodenext` resolution, server-renders `JourneyViewer`, lays
-  out a flow level and resolves every CSS export. It needs registry access or a warm pnpm store.
+  under `bundler` and `nodenext` resolution, server-renders `JourneyViewer`, a
+  composition and `Application`, lays out a flow level, resolves every CSS export
+  and runs the installed `journey-viewer generate` and `run`. It needs registry access or a warm pnpm store.
 
 ## Nested repository ownership
 

@@ -125,9 +125,7 @@ export function createViewerInteraction(
           nodeRef: state?.["@id"] ?? journey["@id"],
         }
       : null,
-    expandedJourneys: getNodesByType(document, "Journey").map(
-      (node) => node["@id"],
-    ),
+    expandedJourneys: [],
     openContracts: [],
   };
 }

@@ -2,15 +2,22 @@
 
 ## Current checkpoint
 
-- Current stage: **15 — Viewer composition kit (complete, uncommitted)**. `Viewer` holds
-  one pure `ViewerState` (reducer over `disclose`) and shares it with connected pieces
-  through context; views are readonly descriptors (`treeView`, `columnsView`, `flowView`);
-  any component can dispatch a `ViewerCommand` through `useViewer`. `JourneyViewer` and
-  `JourneyNavigation` are rebuilt from the same parts with unchanged props and markup; the
-  Stage-14 story harness is replaced by plain compositions. Stages 16–17 (portable
-  `@journey-viewer/app` with a `journey-viewer visualise` CLI, then `apps/web` on it) are
-  approved and planned. See "Stage-15 decisions and verification evidence".
-- Previous checkpoint: **14 — Flow building blocks and toolbar scenarios (complete,
+- Current stage: **16 — Portable application (complete, uncommitted)**. New package
+  `@journey-viewer/app` in `packages/app`: the application's reading, check policy,
+  findings header and empty state (copied from `apps/web`, which is unchanged until
+  Stage 17), its Tree | Columns | Flow arrangement in one file, a prebuilt static site
+  with a relative base, and the `journey-viewer` CLI: `generate` copies the site and a
+  document (with optional screenshots and touchpoints) into a folder, `run` also serves
+  it with Vite. The browser reads
+  and checks the document and derives the graph in memory. Stage 17 (`apps/web` on the
+  package) is next. See "Stage-16 decisions and verification evidence".
+- Previous checkpoint: **15 — Viewer composition kit (complete, uncommitted)**. `Viewer`
+  holds one pure `ViewerState` (reducer over `disclose`) and shares it with connected
+  pieces through context; views are readonly descriptors (`treeView`, `columnsView`,
+  `flowView`); any component can dispatch a `ViewerCommand` through `useViewer`.
+  `JourneyViewer` and `JourneyNavigation` are rebuilt from the same parts with unchanged
+  props and markup. See "Stage-15 decisions and verification evidence".
+- Earlier checkpoint: **14 — Flow building blocks and toolbar scenarios (complete,
   uncommitted)**. Flow's primitives are design-system components, its projection,
   composer, disclosure reducer and controlled `JourneyFlow` live in the viewer, and four
   Storybook scenarios show toolbar arrangements around an unchanged explorer bar.
@@ -181,7 +188,7 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 13. Flow layout library | `packages/flow-layout` (`@journey-viewer/flow-layout`): the spike's own level engine as a dependency-free library with generic node kinds, port insets, drawn sizes and spacing as options, and the lengths it guarantees; steps fixed for large corner radii; the spike consumes it; recorded level fixtures. | Every recorded level × 3 placements × radii 2–20: no diagonals, kinks, short arrivals, lines through nodes or along frames; Solid-OIDC layouts reproduced before the step fix; packed tarball installs and lays out a level outside the workspace; spike tests, measure, build, capture and root suites pass. |
 | 14. Flow building blocks and toolbar scenarios | Design-system Flow primitives (frame, state node, composite card, contract glyph, connector, route overlay, journey path, key) with fixtures, checks, stories and token `color.connector`; viewer flow projection, composer, highlight, strokes, disclosure reducer, controlled `JourneyFlow` and browser adapters (not exported); four `Viewer/Flow scenarios` toolbar arrangements in a story-only harness; `JourneyViewer` row hover off. `JourneyNavigation` unchanged. | Spike layouts and route ink reproduced exactly; ported spike tests; real-text artifacts 0 in every flow story; disclosure ≤0.5px; Tree↔Flow state shared; no overflow 320–1440; all package, browser, consumer, spike, app and parity suites pass; Impeccable critique → polish → audit. |
 | 15. Viewer composition kit | Pure `ViewerState`/`ViewerCommand` reducer over `disclose`; `Viewer` root and `useViewer`; connected pieces (`ViewerBar`, `DocumentSummary`, `ViewSwitch`, `WhenView`, `ExpandCollapse`, `TouchpointFilter`, `GraphSearch`, `ResetView`, `ViewerMain`); view descriptors `treeView`, `columnsView`, `flowView`; `FlowSettings`, `FlowPlacement`, `FlowZoom`; `JourneyViewer` and `JourneyNavigation` rebuilt from the same parts; the story harness replaced by plain compositions. | `JourneyViewer`/`JourneyNavigation` props and markup unchanged; reducer tests with frozen inputs; scenario story IDs and browser checks unchanged plus a custom command; parity, consumer, app and root suites pass; no arrangement flags. |
-| 16. Portable application (planned) | `packages/app` (`@journey-viewer/app`): reading, check policy, findings header and empty state moved from `apps/web`; a static site built with a relative base; `journey-viewer visualise` CLI copying the site and a document with optional screenshots/touchpoints. | Packed tarball runs `visualise` outside the workspace; the served output shows Solid-OIDC (Tree, Columns, Flow) under a sub-path with no requests outside its folder; Open file replaces the document; Impeccable audit of the page. |
+| 16. Portable application | `packages/app` (`@journey-viewer/app`): reading, check policy, findings header and empty state moved from `apps/web`; a static site built with a relative base; `journey-viewer generate` CLI copying the site and a document with optional screenshots/touchpoints, and `journey-viewer run` serving it with Vite (user, 2026-10-30; first named `visualise`). | Packed tarball runs `generate` outside the workspace; the served output shows Solid-OIDC (Tree, Columns, Flow) under a sub-path with no requests outside its folder; Open file replaces the document; Impeccable audit of the page. |
 | 17. App on the package (planned) | `apps/web` composes `@journey-viewer/app` with its brand and routes; its own copies are removed. | App unit and browser suites, parity and Cloudflare dry run pass. |
 
 ## Stage-10A refinement — approved 2026-10-22
@@ -2705,3 +2712,203 @@ the library source conventions into 11C.
     catches the bug; the source was restored and compared afterwards.
   - Root 5/5, consumer 4/4, Prettier clean on the changed files. `JourneyViewer` passes no
     initial commands, so its markup, the app and parity are unaffected (not re-run).
+
+## Stage-16 decisions and verification evidence — 2026-10-30
+
+- **Approved scope:** the Stage-16 row above (planned with Stage 15, 2026-10-30). User
+  decision asked before implementation: the application's arrangement is **controls on
+  the canvas** (the `ControlsOnTheCanvas` scenario): the bar is the same in every view and
+  Flow's Placement, Zoom and Key sit beside its journey path. The app opens in Tree, as
+  `apps/web` does today.
+- **Responsibilities and interfaces (new package, as approved in constraints 7–8):**
+  - `@journey-viewer/app` depends on the viewer, design system, lint and `ujg-jsonld`;
+    `react` is a peer. Nothing imports it. Library build (Vite lib + tsc declarations):
+    `dist/index.js` 12.5 kB, `dist/styles.css` 3.8 kB. Exports: `Application`,
+    `ApplicationHeader`, `ApplicationEmpty`, `checkDocument`, `blocksOpening`,
+    `findingPath`, `readSource`, `useFilePicker`, `JOURNEY_FILE_TYPES` and the types
+    `ApplicationProps`, `ApplicationHeaderProps`, `ApplicationEmptyProps`,
+    `DocumentCheck`, `DocumentSource`, `SourceInput`, `ApplicationReport`; plus
+    `./styles.css` and the bin `journey-viewer` (`dist/cli/cli.js`, tsc + tsc-alias).
+  - Copied from `apps/web/src/components/application` with these interface changes (the
+    `apps/web` copies stay until Stage 17):
+    - `Application({ openExample })` → `Application({ source?, brand?, alternatives? })`.
+      `source: DocumentSource` (`name`, `document`, optional `screenshots`,
+      `touchpoints` URLs) is read once on mount; `brand` leads the header; `alternatives`
+      sits below the empty state's button (where the example link was).
+    - `readExample(signal)` → `readSource(source, signal, base = document.baseURI)`:
+      every reference resolves against the URL of the file that holds it (screenshot
+      paths against their map), so a source works under any base path. Absent maps are
+      `{}` and never requested.
+    - `ApplicationHeader`: `route` → `placeholder` (the title while nothing is open) and an
+      optional `brand` slot; `EXAMPLE_TITLE` and the `/brand/icon.svg` home link stay in
+      `apps/web`. The brand slot only keeps its content on the first row; the phone
+      status row is no longer indented by the icon's width (`apps/web` gets this in
+      Stage 17).
+    - `ApplicationEmpty`: `children` replace the fixed example link.
+    - The empty state's privacy note uses `tone="muted"` instead of `subtle` (audit fix:
+      subtle is 4.44:1 on the ground, muted 5.05:1).
+  - Arrangement: `src/components/ApplicationViewer/ApplicationViewer.tsx` composes
+    `FlowSettings` › `Viewer` (`treeView`, `columnsView`, `flowView({ pathEnd })`) ›
+    `ViewerBar` (the document's counts, `ViewSwitch`, `ExpandCollapse` in Tree and Flow,
+    `TouchpointFilter`, `GraphSearch` › `ResetView`) and `ViewerMain`. Changing the
+    arrangement means editing this one file.
+- **Site and CLI (smallest mechanism for the gate):**
+  - `src/site/` (`index.html`, `main.tsx`, `site.css`) builds with
+    `vite.site.config.ts` (`base: "./"`) to `dist/site`: one 319 kB JS file (99 kB gzip)
+    and 48 kB CSS (8.3 kB gzip), with no favicon request (`data:,`), no fonts and no
+    absolute URLs. It reads `journey/source.json` (the shared constant
+    `VISUALISED_SOURCE`), resolves its paths against that file and renders
+    `Application`; without one it opens on the empty state.
+  - `journey-viewer visualise <document> [--screenshots] [--touchpoints] [--out]` (default
+    `journey-viewer`; since split into `generate` and `run`, see the review corrections): reads every input first, refuses a folder that is not empty, copies
+    the site, writes `journey/document.jsonld`, `screenshots.json` and every local image
+    it names (same relative paths; paths outside the map's folder are rejected, URLs with
+    a scheme are kept and not copied), `touchpoints.json` and `source.json` (the original
+    file name as `name`). Inputs are copied unchanged; nothing is parsed except the
+    screenshot map, and nothing is rendered.
+  - Simplifications: no `--serve` (any static server works; the earlier sketch listed it,
+    the gate does not need it), no build-time rendering, no `?src=`, no persistence.
+- **Evidence:**
+  - **App package:** `pnpm --filter @journey-viewer/app test` 12/12: the check-policy
+    tests copied from `apps/web` (4), `readSource` against a local HTTP host under a
+    sub-path (relative resolution, absent maps never requested, missing file names its
+    URL and status), and the built CLI in temporary folders (document only; local and
+    remote screenshots; escaping or malformed maps write nothing; a non-empty folder is
+    left alone; usage errors and `--help`).
+  - **Gate:** `pnpm test:visualise` 5/5 (twice). It packs the package, extracts the
+    tarball and runs its `dist/cli/cli.js` in a temporary folder outside the workspace on
+    copies of the Solid-OIDC inputs, then serves the output at `/maps/solid-oidc/`:
+    the document and maps are byte-identical copies with all 37 screens; the page shows
+    `solid-oidc.ujg.jsonld`, "No findings" and "10 journeys · 47 states · 120 transitions ·
+    37 screens", Tree (10 journeys, 47 states), Columns and Flow (state blocks, Placement
+    and Zoom beside the journey path and not in the bar); a lightbox screen loads from
+    `/maps/solid-oidc/journey/screens/`; every browser and server request stays under
+    `/maps/solid-oidc/` and none fails; Open file replaces the document (title, identity,
+    Tree), and a broken file keeps it; no overflow at 320, 375, 859, 860, 1099, 1100 and
+    1440 in Tree and Flow. Screenshots: `packages/app/.test-output/`.
+  - **Consumer:** `pnpm test:consumer` 5/5 with six tarballs: the app tarball holds only
+    its manifest, README and `dist`; its declarations type-check under `bundler` and
+    `nodenext`; `Application` server-renders its empty state with `alternatives`;
+    `@journey-viewer/app/styles.css` resolves; the installed `pnpm exec journey-viewer
+    visualise` writes a folder whose page names only `./` URLs.
+  - **Root:** `pnpm -r test` (ujg-jsonld 13, lint 17, design-system 68, flow-layout 9,
+    viewer 93, app 12); `tests/*.test.mjs` 5/5, including the source-layout checks over
+    `packages/app` (aliases only, no relative imports; built output resolved). Prettier
+    passes on every file except the git-excluded Impeccable hook caches, as in Stages
+    13–15.
+  - **Unchanged:** no edits to the other five packages, `flow-spike/`, `examples/` or
+    `apps/web`, so the viewer browser suite, parity and the app suites were not re-run.
+    The lockfile adds only the `packages/app` importer.
+  - **Impeccable audit (2026-10-30), the served page at 1440 and 375 (touch emulated,
+    Chromium): 16/20, Good.**
+
+    | Dimension | Score | Key finding |
+    | --- | --- | --- |
+    | Accessibility | 3 | axe: 0 violations in Columns, Flow, the lightbox, the findings popover and the empty state at both widths, and in Tree at 375. One remaining (P2, library): in Tree at 1440, the caption "IdP auth journey" on the outgoing-tinted composite row is 4.17:1 (`subtle` on `exit-soft`); the same row ships in `JourneyViewer` today. The empty-state note (4.43:1) was fixed in this stage. The skip link is the first tab stop, visible, and moves focus to `#application`. |
+    | Performance | 3 | One 99 kB gzip bundle with React, viewer and Flow; no fonts or remote requests. The viewer still preloads screens when idle. |
+    | Theming | 3 | Only `--jv-*` tokens; no colour literals in the package. The application fixes the light theme, as `apps/web` does; no dark preference is offered. |
+    | Responsive | 4 | No overflow 320–1440; every header and bar control ≥44px on touch at 375; on phones the header's Open file becomes an icon button with its name kept. |
+    | Implementation integrity | 3 | Detector: 0 source findings. Page scans report `side-tab` (the State row's documented 3px stripe) and `overused-font` (Inter, pinned in DESIGN.md) as false positives, and two advisory stragglers in the empty state's copy. |
+- **Open:**
+  - Stage 17: `apps/web` composes `Application` with its brand link (and its styles) and
+    its example as `source`/`alternatives`; its own copies and `readExample` are removed.
+    Its parity and browser suites will see Flow in the view switch and expand/collapse in
+    Flow.
+  - Library (not scoped): `subtle` captions on tinted rows fall below 4.5:1 (above).
+
+### Stage-16 review corrections — 2026-10-30
+
+- **Commands (user request, 2026-10-30).** `python3 -m http.server` was the wrong advice for a
+  Node stack, and a separate server is a hassle. `visualise` is replaced by two commands
+  with the same options:
+  - `journey-viewer generate <document> [--screenshots] [--touchpoints] [--out]` writes the
+    folder (default `journey-viewer`), as `visualise` did.
+  - `journey-viewer run <document> [same options]` generates and serves the folder with
+    Vite's `preview()` until Ctrl+C. Without `--out` it uses a temporary folder, removed on
+    exit. It serves like a static host (`appType: "mpa"`: a missing file is a 404, no
+    fallback to the page), `configFile: false`, `envDir: false`, and the folder's parent as
+    `root`, so Vite does not warn about `outDir` = `root`. Vite's preview exits on SIGTERM
+    (and on stdin end outside CI) without waiting for other handlers, so the temporary
+    folder is removed synchronously on `exit`; the CLI turns SIGINT and SIGTERM into exits.
+  - **Changed interface:** `vite` moves from `devDependencies` to `dependencies` of
+    `@journey-viewer/app` (loaded only by `run`). Modules: `src/cli/visualise.ts` →
+    `generate.ts` (`generate`, `GenerateOptions`, `Generated`) and `run.ts`; none are
+    exported from the package entry.
+- **Review findings (all three reproduced by the reviewer, P2):**
+  1. *Malformed touchpoints crashed the application.* A touchpoint file holding `null`
+     reached the viewer and its render error removed the whole application, Open file
+     included. New `src/presentation-input.ts`: `isScreenshotMap` and
+     `isTouchpointPresentation` guards, shared by the browser and `generate`. `readSource`
+     parses and checks each presentation input; one that is not JSON of its shape fails the
+     read ("… must map Touchpoint IDs to objects with an optional shortLabel and color"),
+     so the header reports it and the empty state's Open file still works. `generate`
+     refuses such inputs before writing.
+  2. *A missing screenshot left a partial folder* that a retry then refused as not empty.
+     `generate` now checks that every local image is a file before writing anything, and if
+     a later copy still fails it removes what it wrote (the whole folder if it was new, its
+     contents if it was empty).
+  3. *An HTML answer for the optional `journey/source.json` stopped startup* on hosts that
+     answer missing files with the page: JSON parsing threw before React mounted, leaving
+     "Loading viewer…". `main.tsx` now treats a failed request, non-JSON or a value without
+     a string `name` and `document` as no source, so the site always mounts.
+- **Evidence:**
+  - App package 16/16 (was 12). The CLI tests (`tests/cli.test.mjs`, replacing
+    `visualise.test.mjs`) add: malformed maps, a missing image, an image that is a folder,
+    `null` or mistyped touchpoints and non-JSON input all write nothing, and a retry into the
+    same folder succeeds; an unreadable image (mode 000) fails after writing began and leaves
+    no new folder and an empty folder empty; `run` serves `journey/source.json`, answers 404
+    for a missing file, and on SIGTERM exits and removes its temporary folder; `run --out`
+    keeps its folder after SIGINT. `readSource` rejects `null`, mistyped and non-JSON
+    presentation inputs with their URL.
+  - Gate `pnpm test:visualise` 7/7 (was 5): a served copy with `touchpoints.json` = `null`
+    shows "Couldn't open solid-oidc.ujg.jsonld" with the shape message, and Open file then
+    opens a document; the bare site on a host that answers missing files with the page
+    mounts on "Choose a journey file". Built once with the pre-fix `main.tsx` and
+    `read-source.ts`, these two checks fail (and the overflow check after them, from their
+    page errors); the sources were restored, compared and rebuilt.
+  - Consumer `pnpm test:consumer` 6/6 (was 5): the installed bin runs `generate`, and the
+    installed package's `run` serves `journey/source.json` with the Vite it depends on.
+  - Root `pnpm -r test` (ujg-jsonld 13, lint 17, design-system 68, flow-layout 9, viewer 93,
+    app 16) and `tests/*.test.mjs` 5/5; Prettier clean apart from the Impeccable hook
+    caches. The lockfile changes only the `packages/app` importer (`vite` now a dependency).
+  - The audited page is unchanged apart from these error paths, so the audit was not re-run.
+
+### Stage-16 collapsed start and brand icon — 2026-10-30
+
+- **Every viewer opens collapsed (user decision).** `createViewerInteraction`
+  (`packages/viewer/src/interaction.ts`) starts with `expandedJourneys: []` instead of every
+  journey. Root journeys still show their states; Expand all, Collapse all and the chevrons
+  open and close the rest. This changes the default of `JourneyViewer`, `Viewer`,
+  `createViewerSnapshot` and therefore `apps/web`'s `/app/` routes. The briefly added
+  app-only `openFirstComposite` (first composite open) is removed, so the app has no
+  `initialCommands`. The Flow scenario stories keep their explicit `appWithIdpOpen`.
+- **Brand icon (user request).** `apps/web/public/brand/icon.svg` is copied unchanged into
+  `packages/app/src/components/BrandLink/icon.svg`. New exported `BrandLink({ href })`: the
+  icon as a "Journey Viewer home" link with `apps/web`'s styles (22px, `2xs` padding, focus
+  ring); the generated site passes it to `Application`'s `brand` slot with `href="./"` (its
+  own folder), and the header restores `apps/web`'s phone status indent when a brand is
+  present. The icon is also the site's favicon. Vite emits it once as
+  `assets/icon-….svg`, referenced relatively from the page and the bundle; the library
+  inlines it. This copies a brand asset that Stage 10A gave to `apps/web`; Stage 17 can use
+  `BrandLink` there instead of its own copy.
+- **Tests that relied on the old default now set it up explicitly** (no assertion weakened):
+  - Viewer unit: the initial-state test asserts `[]`; the expansion test starts collapsed
+    and checks Expand all/Collapse all identity; extensions, flow-disclosure,
+    flow-projection, the shared `scopes()` "all open" scope and two screens tests start
+    from `expandAllJourneys`.
+  - Viewer browser: `consumerPage()` presses each viewer's Expand all (keyboard, so
+    focus-visible checks keep working); the removable-extensions test expands first; the
+    same-ID replacement test now expects the collapsed default after reset (10 states)
+    and a new document to open collapsed before it expands it.
+  - App gate: the Tree opens with only the root journey (Expand all then shows 10
+    journeys and 47 states); the brand link points to `./` and its 22px icon loads from
+    the site's `assets/`. The test server serves `.svg` as `image/svg+xml`, as hosts do.
+- **Evidence:** viewer 93/93 and browser 37/37 (twice); app 16/16 and `pnpm test:visualise`
+  7/7; `pnpm test:consumer` 6/6; root 5/5; ujg-jsonld 13, lint 17, design-system 68,
+  flow-layout 9; Prettier clean apart from the hook caches.
+- **`apps/web` (user request):** its first browser test no longer asserts that the example opens
+  with 10 journeys and 47 states rendered (the old default); it presses Expand all before
+  counting the 20 entries and 24 exits. Only `tests/application.browser.mjs` changed in its
+  repository (uncommitted). `build`, `test` 23/23 and `test:app:browser` 8/8 pass. Parity was
+  not run (the original on 5174 is not running) and will differ on load, because the
+  original opens fully expanded.

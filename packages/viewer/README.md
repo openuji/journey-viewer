@@ -161,7 +161,10 @@ sticks to the top of the viewport and its height is exposed as
 `--jv-explorer-offset`, which positions the sticky inspector and row scroll margins.
 Below `md` the inspector precedes the graph, as in the original hierarchy.
 
-`JourneyViewer` starts in the tree with all journeys expanded. Nested journeys
+`JourneyViewer`, like every viewer, starts in the tree with every composite
+closed: root journeys show their states, and Expand all, Collapse all or a chevron
+open and close the rest. A `Viewer` can start elsewhere through `initialCommands`.
+Nested journeys
 render as indented row lists beneath their composite, with a touchpoint guide line;
 the composite row shows the child journey names and a dot when the child changes
 touchpoint. “Columns” shows fixed-width columns along the selected occurrence path

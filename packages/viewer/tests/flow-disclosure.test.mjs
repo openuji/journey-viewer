@@ -5,6 +5,7 @@ import {
   collapseAllJourneys,
   createViewerInteraction,
   createViewerSnapshot,
+  expandAllJourneys,
   getNodeScreens,
   setSearchQuery,
 } from "@journey-viewer/viewer";
@@ -74,6 +75,11 @@ const collapsed = (document) =>
     document,
     collapseAllJourneys(createViewerInteraction(document)),
   );
+const expanded = (document) =>
+  startingWith(
+    document,
+    expandAllJourneys(document, createViewerInteraction(document)),
+  );
 
 const verticesOf = (scene) =>
   framesOf(scene).flatMap((f) =>
@@ -100,10 +106,7 @@ const click = (card) => ({ type: "navigate", target: card.target });
 
 test("until the user acts, the path is the first root", () => {
   assert.deepEqual(namesOf(oidcDocument, collapsed(oidcDocument)), [APP]);
-  const open = startingWith(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const open = expanded(oidcDocument);
   assert.deepEqual(namesOf(oidcDocument, open), [APP]);
 });
 
@@ -198,10 +201,7 @@ test("a click on a state marks it: the path ends at its journey", () => {
 });
 
 test("a search result marks its target like a click and clears the query", () => {
-  const open = startingWith(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const open = expanded(oidcDocument);
   const choice = vertexOf(sceneOf(oidcDocument, open), CHOICE);
   const searching = {
     ...collapsed(oidcDocument),
@@ -229,10 +229,7 @@ test("a screen marks the node its lightbox shows, and stepping moves the mark", 
       "utf8",
     ),
   );
-  const open = startingWith(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const open = expanded(oidcDocument);
   const state = verticesOf(sceneOf(oidcDocument, open)).find(
     (v) =>
       v.kind === "state" &&
@@ -256,10 +253,7 @@ test("a screen marks the node its lightbox shows, and stepping moves the mark", 
 });
 
 test("a link into closed journeys opens them; the path ends at the journey that shows its target", () => {
-  const open = startingWith(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const open = expanded(oidcDocument);
   const choice = vertexOf(sceneOf(oidcDocument, open), CHOICE);
   const state = run(oidcDocument, collapsed(oidcDocument), {
     type: "navigate",
@@ -292,10 +286,7 @@ test("the active journey and the frames inside it are paper; the frames around a
 });
 
 test("returning to a step closes what is open inside it and marks it", () => {
-  const open = startingWith(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const open = expanded(oidcDocument);
   const state = {
     ...open,
     location: cardOf(sceneOf(oidcDocument, open), MFA).target,
@@ -315,7 +306,7 @@ test("returning to a step closes what is open inside it and marks it", () => {
 
 test("rows and recursion keep their frames when returning to them", () => {
   for (const document of [screensFixture, hierarchyFixture]) {
-    const state = startingWith(document, createViewerInteraction(document));
+    const state = expanded(document);
     for (const frame of framesOf(sceneOf(document, state))) {
       const returned = run(document, state, { type: "return", frame });
       const path = pathOf(document, returned);

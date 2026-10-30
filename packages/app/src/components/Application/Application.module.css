@@ -1,0 +1,18 @@
+/* The shell header and the viewer's explorer bar run full width; the viewer owns its own content padding. */
+.application {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+  min-inline-size: 0;
+  background: var(--jv-color-background);
+}
+.main {
+  flex: 1;
+  min-inline-size: 0;
+}
+.main:focus {
+  outline: none;
+}
+.loaded {
+  min-inline-size: 0;
+}

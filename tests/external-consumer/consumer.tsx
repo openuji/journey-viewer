@@ -1,4 +1,6 @@
 // Type-checked inside a temporary install of the packed packages; see ../external-consumer.mjs.
+import { Application, checkDocument } from "@journey-viewer/app";
+import type { DocumentSource } from "@journey-viewer/app";
 import { Button } from "@journey-viewer/design-system";
 import { layoutLevel, type LevelInput } from "@journey-viewer/flow-layout";
 import { lint } from "@journey-viewer/lint";
@@ -70,5 +72,23 @@ export function Composition({ document }: Readonly<{ document: UjgDocument }>) {
         <ViewerMain />
       </FlowSettings>
     </Viewer>
+  );
+}
+
+const example: DocumentSource = {
+  name: "Example",
+  document: "/examples/example.jsonld",
+  screenshots: "/examples/screenshots.json",
+};
+
+export function Site({ value }: Readonly<{ value: unknown }>) {
+  return checkDocument(value).kind === "ready" ? (
+    <Application
+      source={example}
+      brand={<a href="/">Home</a>}
+      alternatives={<a href="/examples/">Open the example</a>}
+    />
+  ) : (
+    <Application />
   );
 }

@@ -1,15 +1,29 @@
-// Packs the five libraries, installs the tarballs in a temporary project outside the
+// Packs the six libraries, installs the tarballs in a temporary project outside the
 // workspace and uses them there the way an external consumer would. Run after `pnpm build`.
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { execFileSync, spawn } from "node:child_process";
+import {
+  cp,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const repository = fileURLToPath(new URL("../", import.meta.url));
-const names = ["ujg-jsonld", "lint", "design-system", "viewer", "flow-layout"];
+const names = [
+  "ujg-jsonld",
+  "lint",
+  "design-system",
+  "viewer",
+  "flow-layout",
+  "app",
+];
 const run = (command, args, cwd) =>
   execFileSync(command, args, {
     cwd,
@@ -120,6 +134,72 @@ try {
 
   await test("the packages import, server-render, lay out a level and resolve their CSS exports", () => {
     process.stdout.write(run("node", ["render.mjs"], consumer));
+  });
+
+  await test("the installed journey-viewer bin generates a self-contained folder", async () => {
+    process.stdout.write(
+      run(
+        "pnpm",
+        [
+          "exec",
+          "journey-viewer",
+          "generate",
+          "solid-oidc.ujg.jsonld",
+          "--out",
+          "www/maps/solid-oidc",
+        ],
+        consumer,
+      ),
+    );
+    const out = join(consumer, "www", "maps", "solid-oidc");
+    assert.deepEqual((await readdir(join(out, "journey"))).sort(), [
+      "document.jsonld",
+      "source.json",
+    ]);
+    const html = await readFile(join(out, "index.html"), "utf8");
+    const urls = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(
+      ([, url]) => url,
+    );
+    assert.ok(urls.some((url) => url.startsWith("./assets/")));
+    assert.deepEqual(
+      urls.filter((url) => !/^(?:\.\/|#|data:)/.test(url)),
+      [],
+    );
+  });
+
+  await test("the installed run serves the document with the Vite it depends on", async () => {
+    const cli = join(
+      consumer,
+      "node_modules",
+      "@journey-viewer",
+      "app",
+      "dist",
+      "cli",
+      "cli.js",
+    );
+    // A piped stdin stays open: Vite's preview exits when stdin ends outside CI.
+    const child = spawn("node", [cli, "run", "solid-oidc.ujg.jsonld"], {
+      cwd: consumer,
+    });
+    const exited = new Promise((done) => child.once("exit", done));
+    let output = "";
+    child.stderr.on("data", (chunk) => (output += chunk));
+    try {
+      const url = await new Promise((done, reject) => {
+        child.stdout.on("data", (chunk) => {
+          output += chunk;
+          const found = /Serving at (\S+)/.exec(output)?.[1];
+          if (found) done(found);
+        });
+        child.once("exit", () => reject(new Error(output)));
+      });
+      const source = await fetch(new URL("journey/source.json", url));
+      assert.equal((await source.json()).name, "solid-oidc.ujg.jsonld");
+      console.log(`Served at ${url}`);
+    } finally {
+      child.kill("SIGTERM");
+      await exited;
+    }
   });
 } finally {
   await rm(consumer, { recursive: true, force: true });

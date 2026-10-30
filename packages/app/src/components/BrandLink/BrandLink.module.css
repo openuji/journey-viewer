@@ -1,0 +1,19 @@
+/* The brand home link, as the apps/web header places it. */
+.brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: var(--jv-space-2xs);
+  border-radius: var(--jv-radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+.brand img {
+  display: block;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+}
+.brand:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: var(--jv-border-focus);
+}

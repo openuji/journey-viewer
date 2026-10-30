@@ -1,0 +1,5 @@
+/* Decorative glyph layout inside design-system buttons and captions. */
+.glyph {
+  display: block;
+  flex: none;
+}

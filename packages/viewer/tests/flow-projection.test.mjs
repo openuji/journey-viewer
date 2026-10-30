@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getNodesByType } from "@journey-viewer/ujg-jsonld";
-import { createViewerInteraction } from "@journey-viewer/viewer";
+import {
+  createViewerInteraction,
+  expandAllJourneys,
+} from "@journey-viewer/viewer";
 import { buildFlowScene, terminalKey } from "@/flow/scene";
 import {
   emptyCompositesFixture,
@@ -12,6 +15,10 @@ import {
   scopes,
   screensFixture,
 } from "~/tests/flow-scopes.mjs";
+
+/** Every journey open: the full disclosure the projection tests draw. */
+const fullyOpen = (document) =>
+  expandAllJourneys(document, createViewerInteraction(document));
 
 const journeyOf = (document, id) =>
   getNodesByType(document, "Journey").find((j) => j["@id"] === id);
@@ -42,10 +49,7 @@ test("every transition of a drawn journey is in exactly one bundle, and pairs ne
 });
 
 test("the full disclosure draws all 120 transitions, each once, without touching the document", () => {
-  const scene = buildFlowScene(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const scene = buildFlowScene(oidcDocument, fullyOpen(oidcDocument));
   const drawn = journeysOf(scene).flatMap((j) =>
     j.bundles.flatMap((b) => [...b.forward, ...b.backward].map((t) => t.id)),
   );
@@ -60,10 +64,7 @@ test("the full disclosure draws all 120 transitions, each once, without touching
 });
 
 test("boundary mappings follow UJG ED Graph: explicit entries, default entries, no inference", () => {
-  const scene = buildFlowScene(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const scene = buildFlowScene(oidcDocument, fullyOpen(oidcDocument));
   const transitions = new Map(
     getNodesByType(oidcDocument, "Transition").map((t) => [t["@id"], t]),
   );
@@ -98,10 +99,7 @@ test("boundary mappings follow UJG ED Graph: explicit entries, default entries, 
 });
 
 test("recursion stops with a marker, and sibling child journeys get separate frames with no edges between them", () => {
-  const scene = buildFlowScene(
-    hierarchyFixture,
-    createViewerInteraction(hierarchyFixture),
-  );
+  const scene = buildFlowScene(hierarchyFixture, fullyOpen(hierarchyFixture));
   const cards = journeysOf(scene).flatMap((j) =>
     j.vertices.flatMap((v) =>
       v.kind === "composite"
@@ -119,9 +117,7 @@ test("recursion stops with a marker, and sibling child journeys get separate fra
     if (c.children.length > 0 && c.children.every((child) => child.recursive))
       assert.equal(c.toggle, null);
   const rowsOf = (document) =>
-    journeysOf(
-      buildFlowScene(document, createViewerInteraction(document)),
-    ).flatMap((j) =>
+    journeysOf(buildFlowScene(document, fullyOpen(document))).flatMap((j) =>
       j.vertices.flatMap((v) =>
         v.kind === "frame" && v.frame.content.kind === "row"
           ? [v.frame.content]
@@ -148,10 +144,7 @@ test("recursion stops with a marker, and sibling child journeys get separate fra
 
 test("childless composites have no toggle; outgoing navigation is never an edge", () => {
   const empty = journeysOf(
-    buildFlowScene(
-      emptyCompositesFixture,
-      createViewerInteraction(emptyCompositesFixture),
-    ),
+    buildFlowScene(emptyCompositesFixture, fullyOpen(emptyCompositesFixture)),
   );
   const childless = empty.flatMap((j) =>
     j.vertices.flatMap((v) =>
@@ -160,10 +153,7 @@ test("childless composites have no toggle; outgoing navigation is never an edge"
   );
   assert.ok(childless.length > 0);
   for (const card of childless) assert.equal(card.toggle, null);
-  const minimal = buildFlowScene(
-    minimalFixture,
-    createViewerInteraction(minimalFixture),
-  );
+  const minimal = buildFlowScene(minimalFixture, fullyOpen(minimalFixture));
   const outgoing = new Set(
     getNodesByType(minimalFixture, "OutgoingTransition").map((o) => o["@id"]),
   );
@@ -175,10 +165,7 @@ test("childless composites have no toggle; outgoing navigation is never an edge"
 });
 
 test("the scene carries plain ids and labels, with the canonical selection target of every block", () => {
-  const scene = buildFlowScene(
-    oidcDocument,
-    createViewerInteraction(oidcDocument),
-  );
+  const scene = buildFlowScene(oidcDocument, fullyOpen(oidcDocument));
   const [root] = scene.frames;
   assert.equal(root.card.kind, "journey");
   assert.deepEqual(root.card.target.selection, {

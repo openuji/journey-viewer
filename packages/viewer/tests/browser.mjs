@@ -287,6 +287,14 @@ try {
   const consumerPage = async () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${url}/viewer-consumer/`);
+    // Viewers open collapsed; these checks start with every viewer fully expanded. The keyboard
+    // keeps focus-visible on for the checks that focus controls afterwards.
+    const expandAll = page.getByRole("button", {
+      name: "Expand all",
+      exact: true,
+    });
+    await expandAll.first().waitFor();
+    for (const button of await expandAll.all()) await button.press("Enter");
   };
   const inspector = (scope) =>
     scope.getByRole("complementary", { name: "Selection inspector" });
@@ -488,8 +496,9 @@ try {
         exact: true,
       })
       .click();
+    // Back to the default: the selection at the first root's entry, every composite closed.
     assert.equal(await identity(first()), `${prefix}app-sign-in-required`);
-    assert.equal(await first().locator("[data-state-ref]").count(), 47);
+    assert.equal(await first().locator("[data-state-ref]").count(), 10);
     await page
       .getByRole("button", { name: "Load empty document", exact: true })
       .click();
@@ -511,6 +520,14 @@ try {
       .getByRole("button", { name: "Load topology document", exact: true })
       .click();
     assert.equal(await identity(first()), "urn:test:compose");
+    assert.equal(
+      await first().locator('[data-journey-ref="urn:test:shared"]').count(),
+      0,
+      "a new document opens collapsed",
+    );
+    await first()
+      .getByRole("button", { name: "Expand all", exact: true })
+      .press("Enter");
     assert.equal(
       await first().locator('[data-journey-ref="urn:test:shared"]').count(),
       3,
@@ -2003,6 +2020,10 @@ try {
     await page
       .getByRole("heading", { name: "Source note", exact: true })
       .waitFor();
+    // The nested boundaries the extensions annotate are inside composites.
+    await page
+      .getByRole("button", { name: "Expand all", exact: true })
+      .press("Enter");
     for (const width of [320, 859, 860, 861, 1099, 1100, 1101, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(

@@ -1,0 +1,20 @@
+/* Page styles of the prebuilt site, outside the application; tokens come from the html theme. */
+.skip {
+  position: absolute;
+  inset: var(--jv-space-sm) auto auto var(--jv-space-sm);
+  z-index: 30;
+  padding: var(--jv-space-sm);
+  border-radius: var(--jv-radius-sm);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-accent);
+  transform: translateY(-200%);
+}
+.skip:focus {
+  transform: none;
+}
+.loading {
+  margin: 0;
+  padding: var(--jv-space-md) var(--jv-space-lg);
+  color: var(--jv-color-muted);
+  font-size: var(--jv-text-label);
+}

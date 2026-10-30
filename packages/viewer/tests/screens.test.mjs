@@ -16,6 +16,7 @@ import {
   closeScreenshot,
   stepScreenshot,
   collapseAllJourneys,
+  expandAllJourneys,
   navigateViewer,
   searchViewer,
   hoverNode,
@@ -43,6 +44,11 @@ const touchpoints = await readJson(
   "../../../examples/solid-oidc/touchpoints.json",
 );
 const baseline = await readJson("../../../examples/solid-oidc/baseline.json");
+/** The OIDC snapshot with every journey open. */
+const expanded = (snapshot) => ({
+  ...snapshot,
+  interaction: expandAllJourneys(oidc, snapshot.interaction),
+});
 const document = await readJson("fixtures/screens.ujg.jsonld");
 const mapped = freeze({
   "opaque:7": "./custom/alpha.png",
@@ -170,8 +176,9 @@ test("opening a screenshot reveals its ancestry without expanding a selected com
 });
 
 test("lightbox navigation wraps over 37 screens, updates selection, and closes without resetting navigation", () => {
+  // Everything open, so stepping reveals nothing new and a full cycle returns to the start.
   const initial = freeze(
-    setSearchQuery(createViewerSnapshot(oidc), "kept query"),
+    setSearchQuery(expanded(createViewerSnapshot(oidc)), "kept query"),
   );
   const screen = getScreens(oidc, screenshots)[0];
   const open = freeze(
@@ -343,7 +350,7 @@ test("reused screen positions distinguish every call site and count mapped views
 });
 
 test("configured screenshots and presentation use readonly inputs without invoking callbacks or copying into UJG", () => {
-  const initial = freeze(createViewerSnapshot(oidc));
+  const initial = freeze(expanded(createViewerSnapshot(oidc)));
   const before = JSON.stringify({ oidc, screenshots, touchpoints, initial });
   const explorer = renderToStaticMarkup(
     h(JourneyExplorer, {

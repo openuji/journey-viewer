@@ -28,7 +28,8 @@
     "storybook": "pnpm --filter @journey-viewer/design-system storybook",
     "build:storybook": "pnpm --filter @journey-viewer/design-system build:storybook",
     "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser",
-    "test:parity": "pnpm --filter @journey-viewer/viewer test:parity"
+    "test:parity": "pnpm --filter @journey-viewer/viewer test:parity",
+    "test:visualise": "pnpm --filter @journey-viewer/app... build && pnpm --filter @journey-viewer/app test:browser"
   },
   "devDependencies": {
     "prettier": "catalog:"

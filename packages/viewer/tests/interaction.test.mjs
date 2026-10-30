@@ -38,7 +38,7 @@ const fixture = freeze(
 const stateSelection = (journeyRef, nodeRef) =>
   freeze({ kind: "state", journeyRef, nodeRef });
 
-test("initial OIDC selection follows the explicit default entry, with every journey expanded", () => {
+test("initial OIDC selection follows the explicit default entry, with no journey expanded", () => {
   const before = JSON.stringify(oidc);
   const initial = createViewerInteraction(oidc);
   assert.deepEqual(
@@ -48,12 +48,7 @@ test("initial OIDC selection follows the explicit default entry, with every jour
       "urn:ujg:solid-oidc:app-sign-in-required",
     ),
   );
-  assert.deepEqual(
-    initial.expandedJourneys,
-    oidc.nodes
-      .filter((node) => node["@type"] === "Journey")
-      .map((node) => node["@id"]),
-  );
+  assert.deepEqual(initial.expandedJourneys, []);
   assert.equal(JSON.stringify(oidc), before);
 });
 
@@ -161,11 +156,17 @@ test("expansion transitions and independent snapshots preserve frozen inputs and
   const first = freeze(createViewerInteraction(oidc));
   const second = freeze(createViewerInteraction(oidc));
   const before = JSON.stringify({ oidc, first, second });
-  assert.equal(expandAllJourneys(oidc, first), first);
-  const collapsed = freeze(collapseAllJourneys(first));
-  assert.equal(collapseAllJourneys(collapsed), collapsed);
-  assert.equal(collapsed.selection, first.selection);
-  assert.deepEqual(expandAllJourneys(oidc, collapsed), first);
+  assert.equal(collapseAllJourneys(first), first);
+  const expanded = freeze(expandAllJourneys(oidc, first));
+  assert.equal(expandAllJourneys(oidc, expanded), expanded);
+  assert.equal(expanded.selection, first.selection);
+  assert.deepEqual(
+    expanded.expandedJourneys,
+    oidc.nodes
+      .filter((node) => node["@type"] === "Journey")
+      .map((node) => node["@id"]),
+  );
+  assert.deepEqual(collapseAllJourneys(expanded), first);
   assert.equal(JSON.stringify({ oidc, first, second }), before);
   assert.notEqual(first, second);
 });
