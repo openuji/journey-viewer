@@ -11,3 +11,10 @@ packages/viewer/.test-output/
 packages/app/.test-output/
 /tmp/
 /apps/web/
+.codex
+.impeccable
+flow-spike
+PLAN.md
+AGENTS.md
+PRODUCT.md
+DESIGN.md
