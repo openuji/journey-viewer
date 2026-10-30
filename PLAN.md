@@ -2,16 +2,22 @@
 
 ## Current checkpoint
 
-- Current stage: **16 — Portable application (complete, uncommitted)**. New package
+- Current stage: **17 — App on the package (complete, uncommitted in both
+  repositories)**. `apps/web`'s `/app/` routes render `@journey-viewer/app`'s
+  `Application` with the site's `BrandLink`, the Solid-OIDC example as `source` and its
+  link as `alternatives`; the site's copies of the reading, policy, header, empty state,
+  glyphs and file picker are removed, and it no longer links lint or `ujg-jsonld`. The
+  parity harness expands the viewer before comparing. No stage is scoped next. See
+  "Stage-17 decisions and verification evidence".
+- Previous checkpoint: **16 — Portable application (complete, uncommitted)**. New package
   `@journey-viewer/app` in `packages/app`: the application's reading, check policy,
-  findings header and empty state (copied from `apps/web`, which is unchanged until
-  Stage 17), its Tree | Columns | Flow arrangement in one file, a prebuilt static site
-  with a relative base, and the `journey-viewer` CLI: `generate` copies the site and a
-  document (with optional screenshots and touchpoints) into a folder, `run` also serves
-  it with Vite. The browser reads
-  and checks the document and derives the graph in memory. Stage 17 (`apps/web` on the
-  package) is next. See "Stage-16 decisions and verification evidence".
-- Previous checkpoint: **15 — Viewer composition kit (complete, uncommitted)**. `Viewer`
+  findings header and empty state (copied from `apps/web`), its Tree | Columns | Flow
+  arrangement in one file, a prebuilt static site with a relative base, and the
+  `journey-viewer` CLI: `generate` copies the site and a document (with optional
+  screenshots and touchpoints) into a folder, `run` also serves it with Vite. The browser
+  reads and checks the document and derives the graph in memory. See "Stage-16 decisions
+  and verification evidence".
+- Earlier checkpoint: **15 — Viewer composition kit (complete, uncommitted)**. `Viewer`
   holds one pure `ViewerState` (reducer over `disclose`) and shares it with connected
   pieces through context; views are readonly descriptors (`treeView`, `columnsView`,
   `flowView`); any component can dispatch a `ViewerCommand` through `useViewer`.
@@ -189,7 +195,7 @@ packages or changing the existing site; Stage 11C finishes the library exports.
 | 14. Flow building blocks and toolbar scenarios | Design-system Flow primitives (frame, state node, composite card, contract glyph, connector, route overlay, journey path, key) with fixtures, checks, stories and token `color.connector`; viewer flow projection, composer, highlight, strokes, disclosure reducer, controlled `JourneyFlow` and browser adapters (not exported); four `Viewer/Flow scenarios` toolbar arrangements in a story-only harness; `JourneyViewer` row hover off. `JourneyNavigation` unchanged. | Spike layouts and route ink reproduced exactly; ported spike tests; real-text artifacts 0 in every flow story; disclosure ≤0.5px; Tree↔Flow state shared; no overflow 320–1440; all package, browser, consumer, spike, app and parity suites pass; Impeccable critique → polish → audit. |
 | 15. Viewer composition kit | Pure `ViewerState`/`ViewerCommand` reducer over `disclose`; `Viewer` root and `useViewer`; connected pieces (`ViewerBar`, `DocumentSummary`, `ViewSwitch`, `WhenView`, `ExpandCollapse`, `TouchpointFilter`, `GraphSearch`, `ResetView`, `ViewerMain`); view descriptors `treeView`, `columnsView`, `flowView`; `FlowSettings`, `FlowPlacement`, `FlowZoom`; `JourneyViewer` and `JourneyNavigation` rebuilt from the same parts; the story harness replaced by plain compositions. | `JourneyViewer`/`JourneyNavigation` props and markup unchanged; reducer tests with frozen inputs; scenario story IDs and browser checks unchanged plus a custom command; parity, consumer, app and root suites pass; no arrangement flags. |
 | 16. Portable application | `packages/app` (`@journey-viewer/app`): reading, check policy, findings header and empty state moved from `apps/web`; a static site built with a relative base; `journey-viewer generate` CLI copying the site and a document with optional screenshots/touchpoints, and `journey-viewer run` serving it with Vite (user, 2026-10-30; first named `visualise`). | Packed tarball runs `generate` outside the workspace; the served output shows Solid-OIDC (Tree, Columns, Flow) under a sub-path with no requests outside its folder; Open file replaces the document; Impeccable audit of the page. |
-| 17. App on the package (planned) | `apps/web` composes `@journey-viewer/app` with its brand and routes; its own copies are removed. | App unit and browser suites, parity and Cloudflare dry run pass. |
+| 17. App on the package | `apps/web` composes `@journey-viewer/app` with its brand and routes; its own copies are removed. | App unit and browser suites, parity and Cloudflare dry run pass. |
 
 ## Stage-10A refinement — approved 2026-10-22
 
@@ -2912,3 +2918,58 @@ the library source conventions into 11C.
   repository (uncommitted). `build`, `test` 23/23 and `test:app:browser` 8/8 pass. Parity was
   not run (the original on 5174 is not running) and will differ on load, because the
   original opens fully expanded.
+
+## Stage-17 decisions and verification evidence — 2026-10-30
+
+- **Approved scope:** the Stage-17 row above (planned with Stages 15–16), following the
+  Stage-16 open item: `apps/web` composes `Application` with its brand link and its
+  example as `source`/`alternatives`; its own copies and `readExample` are removed. No
+  package source or public interface changes; the libraries were rebuilt from their
+  current sources first.
+- **Composition (`apps/web`; details in its `PLAN.md`):**
+  - `components/application/Application/Application.tsx` keeps
+    `Application({ openExample })`, so `mount.tsx` is unchanged. It renders the package's
+    `Application` with `brand` = `BrandLink href="/"`, `alternatives` = the example link,
+    and on the example route `source` = `{ name: "Solid-OIDC example", ...EXAMPLE_FILES }`
+    (new in `site/links.ts`, the site's only href owner). `styles/application.css` adds
+    `@journey-viewer/app/styles.css` after the design-system and viewer CSS.
+  - Removed: `Application.module.css`, `ApplicationHeader/`, `ApplicationEmpty/`,
+    `Glyphs/`, `document-policy.ts`, `read-example.ts`, `report.ts`, `file-picker.tsx`, and
+    `tests/document-policy.test.mjs` (the package's copy is the same four tests).
+  - The six `Application/Shell` stories keep their IDs and render the package's header and
+    empty state with fixtures; "In context" renders the site's `Application`.
+- **Changed responsibilities (follow from the stage):** `apps/web` no longer owns reading,
+  check policy or the findings header; it links `app`, `design-system` (CSS) and `viewer`
+  (CSS) and drops `lint` and `ujg-jsonld`, which nothing there imports. Its unit suite
+  goes from 23 to 19 tests accordingly.
+- **Parity harness (`packages/viewer/tests/parity.mjs`):** the viewer side now presses
+  Expand all after loading (`start`), because every viewer opens collapsed since Stage 16
+  and the original opens fully expanded. Without it the hover and columns checks fail:
+  "Login" sits inside a collapsed composite (38 vs 120 buttons). No assertion changed.
+- **Evidence:**
+  - `apps/web`: `pnpm test` 19/19 (0 Astro diagnostics); `pnpm build` 3 pages, one 321 kB
+    application bundle (100 kB gzip, one React), no new asset files; `pnpm build:storybook`
+    51 stories; `pnpm test:app:browser` 8/8 against the build and 8/8 against a fresh dev
+    server, now including Flow (canvas state blocks; Placement and Zoom beside the journey
+    path, not in the bar) and no page overflow in Flow at 320–1440.
+  - `apps/web` `pnpm test:browser` 7/10, 9/9 with check 3 skipped: check 3 waits for the
+    landing header menu that the user's commit `ece6942` removed, and leaves a 320px
+    viewport that fails checks 4–5. Pre-existing, outside the stage, left unchanged.
+  - `pnpm test:parity` 7/7 against the original (5174) and the `apps/web` dev server
+    (4331), both stopped afterwards. Metrics as in 10D/11B (56 vs 63px, 340/340, 300/300);
+    buttons 120 vs 120 (Flow adds one). Paired screenshots inspected: the hierarchy
+    matches; the view switch gains Flow.
+  - `wrangler deploy --dry-run` (56 asset files) and `pnpm test:cloudflare` 3/3 (app 8/8
+    through `wrangler dev`).
+  - Root `tests/*.test.mjs` 5/5; Prettier clean on the changed files; `git diff --check`
+    clean in both repositories. The parent shows `apps/web/package.json` as modified only
+    because the parent index still tracks it (the pending parent-index handoff).
+  - **Impeccable:** not run; no styles changed. The application is the one audited in
+    Stage 16 (16/20); the inspected screenshots show it unchanged in the site.
+- **Open:**
+  - `apps/web` catalog check 3 needs your call: drop its menu assertions (the menu is
+    gone) or restore the menu.
+  - Flow at 320px (pre-existing in the Stage-16 arrangement, measured identically on the
+    package's own site): the Placement group ends 5px past its path row and the card
+    clips "Aligned left" by about 4px; 375px fits. Library styling, not scoped.
+  - Library (from Stage 16, not scoped): `subtle` captions on tinted rows below 4.5:1.

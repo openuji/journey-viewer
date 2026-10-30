@@ -1,6 +1,7 @@
 /**
  * Development-only parity harness: compares the original journey-graph hierarchy with the
- * Journey Viewer app route. Both servers must already be running; nothing is started here.
+ * Journey Viewer app route, both with every journey expanded. Both servers must already be
+ * running; nothing is started here.
  *
  *   ORIGINAL_URL (default http://localhost:5174/hierarchy)
  *   VIEWER_URL   (default http://localhost:4321/app/examples/solid-oidc/)
@@ -61,12 +62,16 @@ const viewer = {
   lane: '[aria-label="Journey columns"] > *',
   results: "[data-search-field] ul",
   previewCard: "[data-visible]",
+  // The viewer opens collapsed; the original opens with every journey expanded.
+  start: (page) =>
+    page.getByRole("button", { name: "Expand all", exact: true }).click(),
 };
 
 async function open(side, width, height = 900) {
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(side.url, { waitUntil: "networkidle" });
   await page.locator(side.row("Sign-in required")).first().waitFor();
+  await side.start?.(page);
   // Align both pages so their explorer bars start at the viewport top.
   await page.evaluate((selector) => {
     const bar = document.querySelector(selector);

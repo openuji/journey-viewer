@@ -50,8 +50,9 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 ## Layout
 
 - `apps/web`: independent nested Git/pnpm repository; Astro landing and application,
-  local brand tokens/primitives and native Astro Storybook on port 6008. The app
-  links four of the built public library packages (not flow-layout) and mounts the React viewer.
+  local brand tokens/primitives and native Astro Storybook on port 6008. Its `/app/`
+  routes mount the built `@journey-viewer/app` with the site's brand and example
+  (Stage 17), linking the app, design-system and viewer packages.
 - `packages/ujg-jsonld`: readonly source document types and pure data queries.
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
@@ -110,8 +111,8 @@ pnpm test:design-system:browser
 
 See [the design-system documentation](packages/design-system/README.md) for exports,
 primitive ownership, token authoring, theming, and browser-test setup. The site
-owns a separate local landing UI. The application composes the built viewer and
-design-system primitives/CSS inside a scoped theme without changing the landing.
+owns a separate local landing UI. Its application composes the built
+`@journey-viewer/app` and its CSS inside a scoped theme without changing the landing.
 
 The viewer has its own Storybook on port 6007 with its own light/dark theme
 toolbar, decorator and Vite setup; it imports only the design system's public
@@ -138,9 +139,9 @@ map while retaining the loaded UJG object and its interaction state.
 Stage 9 adds caller-supplied inspector panels, annotations and state-row rendering
 overrides. Replacing/removing descriptors preserves interaction; removal restores
 built-ins. Examples live in the viewer Storybook and compiled consumer. Parsing
-and view selection stay explicit in the caller. The Stage-10C app imports native
-JSON parsing, independently selected lint rules and `JourneyViewer` explicitly.
-Its browser acceptance suite is `pnpm --dir apps/web test:app:browser` after building.
+and view selection stay explicit in the caller. The application package imports native
+JSON parsing, independently selected lint rules and the viewer's views explicitly;
+`apps/web` composes it (Stage 17). The site's browser acceptance suite is `pnpm --dir apps/web test:app:browser` after building.
 
 ## Source conventions
 
