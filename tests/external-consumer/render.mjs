@@ -14,7 +14,11 @@ import {
   referenceTargets,
   uniqueNodeIds,
 } from "@journey-viewer/lint/ujg";
-import { getNodesByType } from "@journey-viewer/ujg-jsonld";
+import {
+  detectUjgVersion,
+  projectJourneyGraph,
+} from "@journey-viewer/ujg-jsonld";
+import { getNodesByType } from "@journey-viewer/ujg-jsonld/ed";
 import {
   FlowPlacement,
   FlowSettings,
@@ -29,6 +33,13 @@ import {
 
 const document = JSON.parse(await readFile("solid-oidc.ujg.jsonld", "utf8"));
 assert.equal(getNodesByType(document, "Journey").length, 10);
+assert.deepEqual(detectUjgVersion(document), {
+  kind: "supported",
+  version: "ed",
+});
+// The viewer renders the version-independent graph, derived once per document.
+const graph = projectJourneyGraph(document);
+assert.equal(graph.journeys.length, 10);
 const findings = lint(document, [
   documentShape,
   uniqueNodeIds,
@@ -36,14 +47,14 @@ const findings = lint(document, [
 ]);
 assert.ok(Array.isArray(findings));
 assert.match(
-  renderToString(createElement(JourneyViewer, { document })),
+  renderToString(createElement(JourneyViewer, { graph })),
   /App auth journey/,
 );
 // A composition of the viewer's pieces, opening in Flow with its placement control in the bar.
 const composed = renderToString(
   createElement(
     Viewer,
-    { document, views: [treeView, flowView()], initialView: "flow" },
+    { graph, views: [treeView, flowView()], initialView: "flow" },
     createElement(
       FlowSettings,
       null,

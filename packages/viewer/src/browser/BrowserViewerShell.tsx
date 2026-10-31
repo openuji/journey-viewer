@@ -7,7 +7,7 @@ export interface RevealRequest {
   readonly kind: "top" | "journey" | "state" | "entry" | "exit";
   /** Occurrence key of the containing journey; empty for "top". */
   readonly occurrence: string;
-  readonly ref: string;
+  readonly id: string;
 }
 
 export interface BrowserViewerShellProps {
@@ -39,14 +39,14 @@ function findRevealTarget(
     const state = [
       ...journey.querySelectorAll<HTMLElement>("[data-state-ref]"),
     ].find(
-      (element) => element.dataset.stateRef === request.ref && own(element),
+      (element) => element.dataset.stateRef === request.id && own(element),
     );
     return state?.querySelector<HTMLElement>("[data-row]") ?? state ?? null;
   }
   return (
     [...journey.querySelectorAll<HTMLElement>("[data-contract-ref]")].find(
       (element) =>
-        element.dataset.contractRef === request.ref &&
+        element.dataset.contractRef === request.id &&
         element.dataset.contractKind === request.kind &&
         own(element),
     ) ?? null

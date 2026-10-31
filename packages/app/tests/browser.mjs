@@ -280,10 +280,14 @@ try {
     assert.ok(requests.some((url) => url.endsWith("journey/source.json")));
   });
 
-  await test("Open file replaces the document; a rejected file keeps it", async () => {
+  await test("Open file replaces the document; a rejected file or UJG version keeps it", async () => {
     const input = page.locator("#journey-file");
+    // Editor's Draft contexts: they name the version and are never fetched.
     const local = {
-      "@context": "https://example.invalid/context-is-not-fetched",
+      "@context": [
+        "https://ujg.specs.openuji.org/ed/ns/core.context.jsonld",
+        "https://ujg.specs.openuji.org/ed/ns/graph.context.jsonld",
+      ],
       "@id": "urn:local:document",
       "@type": "UJGDocument",
       nodes: [
@@ -341,6 +345,26 @@ try {
     await status
       .getByRole("button", { name: "Couldn't open broken.json" })
       .waitFor();
+    assert.equal(await title.textContent(), "local.jsonld");
+    await viewer
+      .getByRole("heading", { name: "Local journey", exact: true })
+      .waitFor();
+    // A UJG version the app cannot read is refused with its contexts, keeping the open graph.
+    const dated =
+      "https://ujg.specs.openuji.org/2027-01-15/ns/core.context.jsonld";
+    await input.setInputFiles({
+      name: "future.jsonld",
+      mimeType: "application/ld+json",
+      buffer: Buffer.from(JSON.stringify({ ...local, "@context": dated })),
+    });
+    await status
+      .getByRole("button", { name: "Couldn't open future.jsonld" })
+      .click();
+    await page
+      .locator("[data-findings]")
+      .getByText(`Unsupported UJG version: ${dated}`, { exact: false })
+      .waitFor();
+    await page.keyboard.press("Escape");
     assert.equal(await title.textContent(), "local.jsonld");
     await viewer
       .getByRole("heading", { name: "Local journey", exact: true })

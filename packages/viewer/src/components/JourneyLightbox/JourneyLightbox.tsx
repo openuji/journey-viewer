@@ -1,6 +1,6 @@
 import { ScreenLightbox } from "@journey-viewer/design-system";
-import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { BrowserLightbox } from "@/browser/BrowserLightbox";
 import { BrowserScreenImage } from "@/browser/BrowserScreenImage";
 import { getNodeScreens, getScreens } from "@/screens";
@@ -12,7 +12,7 @@ import type { TouchpointPresentation } from "@/presentation";
 import { touchpointColor, touchpointLabel } from "@/presentation";
 
 export interface JourneyLightboxProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   readonly lightbox: ViewerLightbox;
   readonly touchpoints?: TouchpointPresentation;
@@ -22,7 +22,7 @@ export interface JourneyLightboxProps {
 }
 
 export function JourneyLightbox({
-  document,
+  graph,
   screenshots,
   lightbox,
   touchpoints = {},
@@ -30,30 +30,29 @@ export function JourneyLightbox({
   onPrevious,
   onNext,
 }: JourneyLightboxProps) {
-  const resolved = resolveSelection(document, lightbox.target.selection);
+  const resolved = resolveSelection(graph, lightbox.target.selection);
   const title =
     typeof resolved?.node.label === "string"
       ? resolved.node.label
-      : lightbox.target.selection.nodeRef;
+      : lightbox.target.selection.nodeId;
   const screen = getNodeScreens(
-    document,
+    graph,
     screenshots,
-    lightbox.target.selection.nodeRef,
-  ).find((item) => item.surface["@id"] === lightbox.surfaceRef);
-  const configured = getScreens(document, screenshots).filter(
+    lightbox.target.selection.nodeId,
+  ).find((item) => item.surface.id === lightbox.surfaceId);
+  const configured = getScreens(graph, screenshots).filter(
     (item) => item.source !== undefined,
   );
   const index = configured.findIndex(
     (item) =>
-      item.surface["@id"] === lightbox.surfaceRef &&
+      item.surface.id === lightbox.surfaceId &&
       sameSelection(item.target.selection, lightbox.target.selection) &&
       sameOccurrence(item.target.occurrence, lightbox.target.occurrence),
   );
   const hasRepeatedScreens =
-    new Set(configured.map((item) => item.surface["@id"])).size <
-    configured.length;
+    new Set(configured.map((item) => item.surface.id)).size < configured.length;
   const callSites = configured.filter(
-    (item) => item.surface["@id"] === lightbox.surfaceRef,
+    (item) => item.surface.id === lightbox.surfaceId,
   );
   const callSiteIndex = callSites.findIndex(
     (item) =>
@@ -65,9 +64,9 @@ export function JourneyLightbox({
     index < 0
       ? `Screenshot unavailable · ${configured.length} mapped ${unit}${configured.length === 1 ? "" : "s"}`
       : `${index + 1} / ${configured.length}${hasRepeatedScreens ? " views" : ""}${callSites.length > 1 ? ` · ${callSiteIndex + 1} of ${callSites.length} call sites` : ""}`;
-  const touchpoint = getJourneyTouchpoints(
-    document,
-    lightbox.target.selection.journeyRef,
+  const touchpoint = journeyTouchpoints(
+    graph,
+    lightbox.target.selection.journeyId,
   )[0];
   const color = touchpoint
     ? touchpointColor(touchpoint, touchpoints)
@@ -76,11 +75,11 @@ export function JourneyLightbox({
     ? touchpointLabel(touchpoint, touchpoints)
     : undefined;
   const journeyLabel = resolved
-    ? (resolved.journey.label ?? resolved.journey["@id"])
-    : lightbox.target.selection.journeyRef;
+    ? resolved.journey.label
+    : lightbox.target.selection.journeyId;
   const context = [
     callSites.length > 1
-      ? occurrenceLabel(document, lightbox.target.occurrence)
+      ? occurrenceLabel(graph, lightbox.target.occurrence)
       : journeyLabel,
     ...(short ? [short] : []),
   ].join(" · ");

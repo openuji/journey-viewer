@@ -8,14 +8,8 @@ import {
   expandAllJourneys,
   collapseAllJourneys,
 } from "@journey-viewer/viewer";
+import { edContext, freeze, graphOf } from "~/tests/graphs.mjs";
 
-const freeze = (value) => {
-  if (value && typeof value === "object") {
-    Object.values(value).forEach(freeze);
-    Object.freeze(value);
-  }
-  return value;
-};
 const oidc = freeze(
   JSON.parse(
     await readFile(
@@ -35,12 +29,12 @@ const fixture = freeze(
     ),
   ),
 );
-const stateSelection = (journeyRef, nodeRef) =>
-  freeze({ kind: "state", journeyRef, nodeRef });
+const stateSelection = (journeyId, nodeId) =>
+  freeze({ kind: "state", journeyId, nodeId });
 
 test("initial OIDC selection follows the explicit default entry, with no journey expanded", () => {
   const before = JSON.stringify(oidc);
-  const initial = createViewerInteraction(oidc);
+  const initial = createViewerInteraction(graphOf(oidc));
   assert.deepEqual(
     initial.selection,
     stateSelection(
@@ -54,11 +48,11 @@ test("initial OIDC selection follows the explicit default entry, with no journey
 
 test("selection reveals all explicit ancestors of a reused journey without choosing a parent", () => {
   const collapsed = freeze(
-    collapseAllJourneys(freeze(createViewerInteraction(fixture))),
+    collapseAllJourneys(freeze(createViewerInteraction(graphOf(fixture)))),
   );
   const before = JSON.stringify(collapsed);
   const selected = selectNode(
-    fixture,
+    graphOf(fixture),
     collapsed,
     stateSelection("urn:test:shared", "urn:test:repeat"),
   );
@@ -67,7 +61,7 @@ test("selection reveals all explicit ancestors of a reused journey without choos
   assert.equal(selected.expandedJourneys.includes("urn:test:cycle-a"), false);
   assert.equal(JSON.stringify(collapsed), before);
   assert.equal(
-    selectNode(fixture, freeze(selected), freeze(selected.selection)),
+    selectNode(graphOf(fixture), freeze(selected), freeze(selected.selection)),
     selected,
     "unchanged selection is a no-op",
   );
@@ -75,10 +69,10 @@ test("selection reveals all explicit ancestors of a reused journey without choos
 
 test("selecting a composite opens every ordered child, while toggling operates on the whole group", () => {
   const current = freeze(
-    collapseAllJourneys(freeze(createViewerInteraction(fixture))),
+    collapseAllJourneys(freeze(createViewerInteraction(graphOf(fixture)))),
   );
   const selection = stateSelection("urn:test:first", "urn:test:compose");
-  const opened = freeze(selectNode(fixture, current, selection));
+  const opened = freeze(selectNode(graphOf(fixture), current, selection));
   assert.ok(opened.expandedJourneys.includes("urn:test:shared"));
   assert.ok(opened.expandedJourneys.includes("urn:test:other"));
   assert.equal(
@@ -86,63 +80,86 @@ test("selecting a composite opens every ordered child, while toggling operates o
     1,
   );
   const closed = freeze(
-    toggleChildJourneys(fixture, opened, "urn:test:first", "urn:test:compose"),
+    toggleChildJourneys(
+      graphOf(fixture),
+      opened,
+      "urn:test:first",
+      "urn:test:compose",
+    ),
   );
   assert.equal(closed.expandedJourneys.includes("urn:test:shared"), false);
   assert.equal(closed.expandedJourneys.includes("urn:test:other"), false);
   assert.deepEqual(closed.selection, selection);
   assert.deepEqual(
-    toggleChildJourneys(fixture, closed, "urn:test:first", "urn:test:compose"),
+    toggleChildJourneys(
+      graphOf(fixture),
+      closed,
+      "urn:test:first",
+      "urn:test:compose",
+    ),
     opened,
   );
   assert.equal(
-    toggleChildJourneys(fixture, closed, "urn:test:first", "urn:test:missing"),
+    toggleChildJourneys(
+      graphOf(fixture),
+      closed,
+      "urn:test:first",
+      "urn:test:missing",
+    ),
     closed,
   );
   assert.equal(
-    toggleChildJourneys(fixture, closed, "urn:test:second", "urn:test:compose"),
+    toggleChildJourneys(
+      graphOf(fixture),
+      closed,
+      "urn:test:second",
+      "urn:test:compose",
+    ),
     closed,
   );
 });
 
 test("explicit entry/exit/journey selections work and wrong kinds, owners and unresolved IDs are no-ops", () => {
-  const current = freeze(createViewerInteraction(fixture));
+  const current = freeze(createViewerInteraction(graphOf(fixture)));
   for (const selection of [
-    { kind: "entry", journeyRef: "urn:test:first", nodeRef: "urn:test:entry" },
-    { kind: "exit", journeyRef: "urn:test:first", nodeRef: "urn:test:exit" },
+    { kind: "entry", journeyId: "urn:test:first", nodeId: "urn:test:entry" },
+    { kind: "exit", journeyId: "urn:test:first", nodeId: "urn:test:exit" },
     {
       kind: "journey",
-      journeyRef: "urn:test:second",
-      nodeRef: "urn:test:second",
+      journeyId: "urn:test:second",
+      nodeId: "urn:test:second",
     },
   ])
     assert.deepEqual(
-      selectNode(fixture, current, freeze(selection)).selection,
+      selectNode(graphOf(fixture), current, freeze(selection)).selection,
       selection,
     );
   for (const selection of [
-    { kind: "state", journeyRef: "urn:test:first", nodeRef: "urn:test:entry" },
-    { kind: "entry", journeyRef: "urn:test:second", nodeRef: "urn:test:entry" },
+    { kind: "state", journeyId: "urn:test:first", nodeId: "urn:test:entry" },
+    { kind: "entry", journeyId: "urn:test:second", nodeId: "urn:test:entry" },
     {
       kind: "state",
-      journeyRef: "urn:test:missing",
-      nodeRef: "urn:test:terminal",
+      journeyId: "urn:test:missing",
+      nodeId: "urn:test:terminal",
     },
     {
       kind: "journey",
-      journeyRef: "urn:test:first",
-      nodeRef: "urn:test:second",
+      journeyId: "urn:test:first",
+      nodeId: "urn:test:second",
     },
   ])
-    assert.equal(selectNode(fixture, current, freeze(selection)), current);
+    assert.equal(
+      selectNode(graphOf(fixture), current, freeze(selection)),
+      current,
+    );
 });
 
 test("mutual and self recursion are bounded in ancestor revelation", () => {
   const initial = freeze(
-    collapseAllJourneys(freeze(createViewerInteraction(fixture))),
+    collapseAllJourneys(freeze(createViewerInteraction(graphOf(fixture)))),
   );
   const selected = selectNode(
-    fixture,
+    graphOf(fixture),
     initial,
     stateSelection("urn:test:cycle-a", "urn:test:cycle-a-state"),
   );
@@ -153,12 +170,12 @@ test("mutual and self recursion are bounded in ancestor revelation", () => {
 });
 
 test("expansion transitions and independent snapshots preserve frozen inputs and useful no-op identity", () => {
-  const first = freeze(createViewerInteraction(oidc));
-  const second = freeze(createViewerInteraction(oidc));
+  const first = freeze(createViewerInteraction(graphOf(oidc)));
+  const second = freeze(createViewerInteraction(graphOf(oidc)));
   const before = JSON.stringify({ oidc, first, second });
   assert.equal(collapseAllJourneys(first), first);
-  const expanded = freeze(expandAllJourneys(oidc, first));
-  assert.equal(expandAllJourneys(oidc, expanded), expanded);
+  const expanded = freeze(expandAllJourneys(graphOf(oidc), first));
+  assert.equal(expandAllJourneys(graphOf(oidc), expanded), expanded);
   assert.equal(expanded.selection, first.selection);
   assert.deepEqual(
     expanded.expandedJourneys,
@@ -174,22 +191,28 @@ test("expansion transitions and independent snapshots preserve frozen inputs and
 test("empty documents and empty/rootless journeys have explicit initial-selection policies", () => {
   assert.deepEqual(
     createViewerInteraction(
-      freeze({ "@context": "urn:c", "@type": "UJGDocument", "@id": "urn:d" }),
+      graphOf(
+        freeze({
+          "@context": edContext,
+          "@type": "UJGDocument",
+          "@id": "urn:d",
+        }),
+      ),
     ),
     { selection: null, expandedJourneys: [], openContracts: [] },
   );
   const emptyJourney = freeze({
-    "@context": "urn:c",
+    "@context": edContext,
     "@type": "UJGDocument",
     "@id": "urn:d",
     nodes: [
       { "@id": "urn:j", "@type": "Journey", stateRefs: [], entryRefs: [] },
     ],
   });
-  assert.deepEqual(createViewerInteraction(emptyJourney).selection, {
+  assert.deepEqual(createViewerInteraction(graphOf(emptyJourney)).selection, {
     kind: "journey",
-    journeyRef: "urn:j",
-    nodeRef: "urn:j",
+    journeyId: "urn:j",
+    nodeId: "urn:j",
   });
   const rootless = freeze({
     ...fixture,
@@ -198,14 +221,14 @@ test("empty documents and empty/rootless journeys have explicit initial-selectio
     ),
   });
   assert.deepEqual(
-    createViewerInteraction(rootless).selection,
+    createViewerInteraction(graphOf(rootless)).selection,
     stateSelection("urn:test:cycle-a", "urn:test:cycle-a-state"),
   );
 });
 
 test("an explicit default entry chooses its own state, while an unresolved default does not invent an entry", () => {
   const document = freeze({
-    "@context": "urn:c",
+    "@context": edContext,
     "@id": "urn:d",
     "@type": "UJGDocument",
     nodes: [
@@ -222,7 +245,7 @@ test("an explicit default entry chooses its own state, while an unresolved defau
     ],
   });
   assert.deepEqual(
-    createViewerInteraction(document).selection,
+    createViewerInteraction(graphOf(document)).selection,
     stateSelection("urn:j", "urn:second"),
   );
   const unresolved = freeze({
@@ -234,7 +257,7 @@ test("an explicit default entry chooses its own state, while an unresolved defau
     ),
   });
   assert.deepEqual(
-    createViewerInteraction(unresolved).selection,
+    createViewerInteraction(graphOf(unresolved)).selection,
     stateSelection("urn:j", "urn:first"),
   );
 });

@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { JourneyPath } from "@journey-viewer/design-system";
 import type { Placement } from "@journey-viewer/flow-layout";
-import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { sameSelection } from "@/interaction";
 import type { ViewerInteraction, ViewerSelection } from "@/interaction";
 import { matchesTouchpoints } from "@/navigation";
@@ -47,7 +47,7 @@ export interface FlowView {
 
 export interface JourneyFlowProps {
   /** Keep this reference stable between actual replacements; a new one lays the flow out again. */
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   /** The expansion and selection shared with Tree and Columns. */
   readonly interaction: ViewerInteraction;
   /** The node last clicked, expanded or returned to; the journey path leads to it. */
@@ -57,7 +57,7 @@ export interface JourneyFlowProps {
   readonly screenshots?: ScreenshotMap;
   readonly touchpoints?: TouchpointPresentation;
   /** The touchpoint filter: blocks of other journeys recede. */
-  readonly touchpointRefs?: readonly string[];
+  readonly touchpointIds?: readonly string[];
   /** A hovered or focused block, whose routes show without selecting it. */
   readonly active?: ViewerSelection | null;
   readonly view?: FlowView;
@@ -97,14 +97,14 @@ export function JourneyFlow(props: JourneyFlowProps) {
 }
 
 function FlowCanvas({
-  document,
+  graph,
   interaction,
   location,
   placement = "median",
   zoom = "actual",
   screenshots = {},
   touchpoints = {},
-  touchpointRefs = [],
+  touchpointIds = [],
   active = null,
   view = still,
   pathEnd,
@@ -117,8 +117,8 @@ function FlowCanvas({
 }: JourneyFlowProps & { readonly measure: TextMeasure }) {
   const { expandedJourneys } = interaction;
   const scene = useMemo(
-    () => buildFlowScene(document, { expandedJourneys }),
-    [document, expandedJourneys],
+    () => buildFlowScene(graph, { expandedJourneys }),
+    [graph, expandedJourneys],
   );
   const layout = useMemo(
     () => composeFlow(scene, flowLevel(placement), measure),
@@ -144,7 +144,7 @@ function FlowCanvas({
   }, [view.reveal]);
 
   const touchpointOf = (journeyId: string) => {
-    const touchpoint = getJourneyTouchpoints(document, journeyId)[0];
+    const touchpoint = journeyTouchpoints(graph, journeyId)[0];
     if (!touchpoint) return undefined;
     const color = touchpointColor(touchpoint, touchpoints);
     return {
@@ -231,14 +231,12 @@ function FlowCanvas({
           location={activeFrame?.key ?? null}
           touchpointOf={touchpointOf}
           filtered={(journeyId) =>
-            !matchesTouchpoints(document, journeyId, touchpointRefs)
+            !matchesTouchpoints(graph, journeyId, touchpointIds)
           }
           screenOf={(vertex) => {
-            const screen = getNodeScreens(
-              document,
-              screenshots,
-              vertex.id,
-            ).find((s) => s.source);
+            const screen = getNodeScreens(graph, screenshots, vertex.id).find(
+              (s) => s.source,
+            );
             return screen
               ? {
                   label: `Screen: ${vertex.label}`,
@@ -247,7 +245,7 @@ function FlowCanvas({
                       {
                         type: "openScreen",
                         target: vertex.target,
-                        surfaceId: screen.surface["@id"],
+                        surfaceId: screen.surface.id,
                       },
                       still,
                     ),

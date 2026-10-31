@@ -1,14 +1,15 @@
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import {
   getChildJourneys,
   getJourneyEntries,
   getNodesByType,
-} from "@journey-viewer/ujg-jsonld";
+} from "@journey-viewer/ujg-jsonld/ed";
 import type {
   JsonObject,
   UjgCompositeState,
   UjgDocument,
   UjgJourney,
-} from "@journey-viewer/ujg-jsonld";
+} from "@journey-viewer/ujg-jsonld/ed";
 
 // Compiled without emitting or executing these deliberately invalid writes.
 export function readonlyContract(
@@ -54,5 +55,23 @@ export function readonlyContract(
   if (extension) {
     // @ts-expect-error extension payloads are readonly JSON
     extension.changed = true;
+  }
+}
+
+// The derived graph is readonly too: nothing edits it after the adapter returns it.
+export function readonlyGraph(graph: JourneyGraph): void {
+  // @ts-expect-error graph collections are readonly
+  graph.journeys.push(graph.journeys[0]!);
+  const journey = graph.journeys[0];
+  if (journey) {
+    // @ts-expect-error node fields are readonly
+    journey.label = "Changed";
+    // @ts-expect-error containment lists are readonly
+    journey.states.pop();
+  }
+  const state = graph.states[0];
+  if (state?.kind === "composite") {
+    // @ts-expect-error child lists are readonly
+    state.children.push(state.children[0]!);
   }
 }

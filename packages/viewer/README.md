@@ -1,29 +1,35 @@
 # Journey Viewer renderer
 
 `@journey-viewer/viewer` renders static and interactive hierarchies from a readonly
-canonical compact UJG document. React is a peer. The renderer uses the UJG query
-package and design-system components; parsing, linting, file access, themes, and
-asset path resolution belong to callers. Native image loading and modal effects
+`JourneyGraph`: the version-independent graph `@journey-viewer/ujg-jsonld` derives
+from a UJG document with `projectJourneyGraph`. React is a peer. The renderer reads
+only that graph and uses design-system components; it never sees the UJG source
+format or its version. Parsing, version detection, linting, projection, file access,
+themes, and asset path resolution belong to callers. Native image loading and modal effects
 are isolated in the viewer's named browser adapters.
 
 ```tsx
+import { projectJourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { JourneyHierarchy } from "@journey-viewer/viewer";
 import "@journey-viewer/design-system/styles.css";
 import "@journey-viewer/viewer/styles.css";
 
+// Once per document, after the caller's checks; keep the result.
+const graph = projectJourneyGraph(document);
+
 <main data-jv-theme="light">
-  <JourneyHierarchy document={document} level={2} />
+  <JourneyHierarchy graph={graph} level={2} />
 </main>
 ```
 
-`JourneyHierarchy` retains its static contract: only `document` and optional
+`JourneyHierarchy` retains its static contract: only `graph` and optional
 heading `level`. Its heading level defaults to 2; nesting increases it up to 6. No Tailwind processing
 or global reset is required. The design system exports an optional `reset.css`
 for hosts that need it.
 
 Journeys with no incoming child reference from a journey's explicit state members
-appear as roots, in document order. Every `stateRefs` and `subjourneyRefs`
-occurrence is rendered in its original order, including all children and repeated
+appear as roots, in document order. Every state and child-journey reference is
+rendered in the graph's order (the document's), including all children and repeated
 references at separate call sites. An unowned composite does not establish a
 parent. Entry indexes remain catalogues rather than implicit journey membership
 or root declarations.
@@ -34,8 +40,8 @@ Journeys unreachable from any root appear in a labeled “Journeys without a roo
 group, with each journey shown as its own starting point. This also exposes
 disconnected cycles without choosing an arbitrary root or assigning parents.
 
-Each journey displays its explicit entries/exits and `defaultEntryRef`. Unlabeled
-journeys and contracts use their full source IRI. State entry marks count the
+Each journey displays its explicit entries/exits and its default entry. Unlabeled
+journeys and contracts use their full id, which the graph gives them as label. State entry marks count the
 containing journey's entries that name the state; exit marks count that journey's
 listed exits reached by an explicit local transition from the state. No routes
 or transitive boundary associations are inferred. All explicitly assigned
@@ -45,12 +51,12 @@ individual marks also carry precise accessible explanations and tooltips.
 Journey wrappers are plain containers around their headings, without adding a
 region landmark for every nested journey.
 
-Unresolved and differently typed references follow the query package's omission
-behavior. Empty documents, journeys, composites, and contract lists have explicit
+Unresolved and differently typed references are left out of the graph by
+`ujg-jsonld`. Empty documents, journeys, composites, and contract lists have explicit
 empty messages. Rendering does not validate or produce findings.
 
 Graph rendering holds no hierarchy model, parent map, shared interaction store,
-DOM refs, or effects. Each render recomputes selections of original source nodes and uses
+DOM refs, or effects. Each render recomputes selections of the graph's nodes and uses
 readonly reference arrays solely to select roots and detect unreachable journeys.
 Reachability passes new values through pure reductions, without mutating a set
 or work queue. `StateSummary` renders labels, counts and nested content directly;
@@ -64,7 +70,7 @@ import "@journey-viewer/design-system/styles.css";
 import "@journey-viewer/viewer/styles.css";
 
 <main data-jv-theme="light">
-  <JourneyViewer document={document} />
+  <JourneyViewer graph={graph} />
 </main>
 ```
 
@@ -72,19 +78,18 @@ import "@journey-viewer/viewer/styles.css";
 “Composing a viewer” below: a `Viewer` with the explorer bar's pieces, Tree and
 Columns (`JourneyExplorer`) and a sticky `JourneyInspector`, following the original
 Solid-OIDC hierarchy layout. Its state is one local immutable `ViewerState`. Each instance is independent, even when instances receive the
-same frozen document. The state boundary retains the original document reference
-only to detect replacement. A new document object, including one with the same
-`@id` and node objects, resets selection, expansion, mode, search, filters, hover,
+same frozen graph. The state boundary retains the graph reference only to detect
+replacement. A new graph object, including one projected again from the same
+document, resets selection, expansion, mode, search, filters, hover,
 the hover preview and the lightbox before children render. No mutable store or
 identity registry is used; DOM effects live only in the named `browser/` adapters.
 Optional `headerStart` / `headerEnd` content replaces the default document summary
 at the start of the explorer bar or is appended at its end.
-Keep `document` referentially stable between actual replacements. Parsing or
-rebuilding it inline, such as `<JourneyViewer document={JSON.parse(source)} />`,
-resets the entire viewer snapshot on every parent render. Parse once when loading
-an input and retain that result in application state, or memoize parsing by the
-source input. Stage 10's local-file loader must keep the parsed object until the
-next file load.
+Keep `graph` referentially stable between actual replacements. Projecting it
+inline, such as `<JourneyViewer graph={projectJourneyGraph(JSON.parse(source))} />`,
+resets the entire viewer snapshot on every parent render. Parse and project once
+when loading an input and retain the graph in application state, or memoize by the
+source input. The application keeps the graph until the next file load.
 
 Initial selection uses the first root (or first rootless starting point), its
 explicit default entry's member state, then its first member state, then the
@@ -94,24 +99,27 @@ collapse may hide the selected row: the inspector continues to show that item,
 and no automatic reveal or selection clearing occurs. Selecting a descendant
 again reveals its ancestors.
 
-For externally owned state, `JourneyExplorer` takes `document`, `interaction`,
+For externally owned state, `JourneyExplorer` takes `graph`, `interaction`,
 `onSelect`, `onToggleChildren`, optional `onToggleContracts` and optional heading
-`level`. `JourneyInspector` takes `document`, `selection` and optional `level`.
-The controlled components hold no state; their caller owns document replacement
+`level`. `JourneyInspector` takes `graph`, `selection` and optional `level`.
+The controlled components hold no state; their caller owns graph replacement
 and snapshot reset.
 
-The public pure functions are `createViewerInteraction(document)`,
-`selectNode(document, current, selection)`,
-`toggleChildJourneys(document, current, journeyRef, stateRef)`,
-`toggleContracts(document, current, journeyRef)`,
-`expandAllJourneys(document, current)` and `collapseAllJourneys(current)`.
+The public pure functions are `createViewerInteraction(graph)`,
+`selectNode(graph, current, selection)`,
+`toggleChildJourneys(graph, current, journeyId, stateId)`,
+`toggleContracts(graph, current, journeyId)`,
+`expandAllJourneys(graph, current)` and `collapseAllJourneys(current)`.
 `ViewerInteraction` holds a readonly selection, an expanded-journey ID array and
 the `openContracts` journey IDs whose entry/exit lists are shown. Lists start
 closed behind a “1 entry · 2 exits” summary; selecting an entry or exit opens its
 journey's list.
-A selection is `{ kind, journeyRef, nodeRef }`, where kind is `journey`, `state`,
+A selection is `{ kind, journeyId, nodeId }`, where kind is `journey`, `state`,
 `entry` or `exit`. Wrong owner/type and unresolved selections are no-ops. Useful
 selection/expansion no-ops retain snapshot identity, and frozen inputs are supported.
+Every string identifier in the API is named `*Id` (`journeyId`, `nodeId`,
+`startJourneyId`, `touchpointIds`, `surfaceId`); `Ref` only ever names a React ref.
+The markup keeps its `data-*-ref` attributes.
 
 Expansion follows journey identity across repeated call sites within one viewer;
 collapsing a reused journey affects all its occurrences. A selected item is
@@ -209,10 +217,10 @@ the current occurrence, and bring the target into view. An absent or unresolved
 mapping produces no invented target. No journey acquires a preferred parent.
 
 The readonly `ViewerSnapshot` contains `interaction`, a `navigation` snapshot
-(`mode`, `lanes`, selected `occurrence`, `query`, `touchpointRefs` with at most one
+(`mode`, `lanes`, selected `occurrence`, `query`, `touchpointIds` with at most one
 ID, `hover`, `hoverOccurrence`) and a `lightbox` identity or null.
-`ViewerOccurrence` is `{ startJourneyRef, steps }`, with each step
-holding zero-based `stateIndex` and `childIndex` into the typed query results.
+`ViewerOccurrence` is `{ startJourneyId, steps }`, with each step
+holding zero-based `stateIndex` and `childIndex` into the graph's lists.
 These indices preserve repeated reference positions. Paths only address finite
 rendered occurrences: invalid indices, non-starting roots and recursion beyond
 the current ancestry are rejected. Paths belong to their input object and must
@@ -220,7 +228,7 @@ be reset when that input is replaced.
 
 Pure public operations are `createViewerSnapshot`, `navigateViewer`, `pickSearchResult`,
 `setViewMode`, `setSearchQuery`, `selectTouchpoint` and `hoverNode`. Queries include
-`getOccurrenceTrail` (original journey nodes), `getLanePath`, `searchViewer`,
+`getOccurrenceTrail` (the graph's journey nodes), `getLanePath`, `searchViewer`,
 `getNavigationItems`, `getViewerSummary`, `matchesTouchpoints`, `getRowHighlight`,
 `getRouteDescription` and `occurrenceLabel`; `getPreviewPosition` and
 `getPreviewWidth` place hover previews. Nothing retains derived results between
@@ -293,7 +301,7 @@ const touchpoints: TouchpointPresentation = {
   "urn:example:app": { shortLabel: "App", color: "var(--jv-color-category-orange)" },
 };
 
-<JourneyViewer document={document} screenshots={screenshots} touchpoints={touchpoints} />
+<JourneyViewer graph={graph} screenshots={screenshots} touchpoints={touchpoints} />
 ```
 
 `ScreenshotMap` is `Readonly<Record<string, string>>`. Exact surface IDs are
@@ -326,7 +334,7 @@ item. Ordinary graph navigation closes the modal.
 The dialog uses an independent level-2 heading; `JourneyViewer.level` controls
 the hierarchy and inspector headings.
 
-The lightbox derives its gallery anew from original source nodes: source journey
+The lightbox derives its gallery anew from the graph's nodes: source journey
 order, each finite call-site occurrence, then journey/state/entry/exit member
 order and explicit surface order. Reused journeys retain all distinct occurrence
 contexts; identical repeated member/surface references are shown once per context.
@@ -339,9 +347,9 @@ Traversal wraps and skips unmapped paths. Failed URLs stay navigable so they can
 recover after a caller update. The Solid-OIDC gallery matches the captured source
 order across all 37 screens. This derived list is never retained as a catalog.
 
-Replace `screenshots` with a new readonly map while keeping `document` stable.
+Replace `screenshots` with a new readonly map while keeping `graph` stable.
 Selection, expansion, focus, query and filters remain intact. An open lightbox
-retains only `{ surfaceRef, target }` and resolves its URL from the latest prop.
+retains only `{ surfaceId, target }` and resolves its URL from the latest prop.
 Removal clears the old image and displays Screenshot unavailable; adding/restoring
 the mapping or changing its URL can recover it. Clear-all disables stepping.
 Image error/loading state is local to the actual URL at the browser boundary,
@@ -354,17 +362,17 @@ a revised URL, query revision, or blob URL through the same map when needed.
 The viewer does not fetch/parse mappings, watch files or add cache busting. Native
 UJG object replacement still resets the full snapshot, including the lightbox.
 
-Pure operations are `getNodeScreens(document, screenshots, nodeRef)`,
-`getScreens(document, screenshots)`,
-`openScreenshot(document, screenshots, snapshot, target, surfaceRef)`,
+Pure operations are `getNodeScreens(graph, screenshots, nodeId)`,
+`getScreens(graph, screenshots)`,
+`openScreenshot(graph, screenshots, snapshot, target, surfaceId)`,
 `closeScreenshot(snapshot)` and
-`stepScreenshot(document, screenshots, snapshot, -1 | 1)`. Invalid or unchanged
-actions preserve snapshot identity. Node/surface query results reference original
-document nodes; none mutate the supplied graph, maps or snapshots.
+`stepScreenshot(graph, screenshots, snapshot, -1 | 1)`. Invalid or unchanged
+actions preserve snapshot identity. Node/surface query results reference the graph's
+nodes; none mutate the supplied graph, maps or snapshots.
 
-Controlled compositions can use `JourneyScreens` with a document, target, map and
-required `onOpen(target, surfaceRef)`. `JourneyExplorer.media` takes the complete
-`{ screenshots, onOpen }` contract plus an optional `onPreview(target, surfaceRef,
+Controlled compositions can use `JourneyScreens` with a graph, target, map and
+required `onOpen(target, surfaceId)`. `JourneyExplorer.media` takes the complete
+`{ screenshots, onOpen }` contract plus an optional `onPreview(target, surfaceId,
 anchor | null)`; `JourneyInspector.media` additionally requires `target` (or null)
 so thumbnail context and controls are supplied together.
 `JourneyNavigation.screenshots` supplies availability markers. `JourneyLightbox`
@@ -377,7 +385,7 @@ status), `BrowserLightbox` (native modal, keys, focus, backdrop), `BrowserScreen
 (measures its own rectangle), `BrowserScreenPreview` (placement and dismissal),
 `BrowserScreenPreload`, `BrowserColumns` (scrolls to new columns),
 `BrowserScrollPanel` (inspector scroll reset) and `BrowserViewerShell` (sticky
-offset, “/”, outside clicks and reveal). They receive no UJG document or viewer
+offset, “/”, outside clicks and reveal). They receive no graph or viewer
 snapshot and reach the page only through their own elements. Business transitions
 stay pure; no body locks, graph refs or shared state are added.
 
@@ -386,14 +394,14 @@ Stage 10D (hierarchy parity) replaced `focusJourney`/`showOverview` with
 with `getRowHighlight`; `ViewerNavigation.focus` became `mode` and `lanes`.
 `occurrenceLabel` remains for readable call-site captions, and the five screen
 functions and controlled screen components remain public. Prefer
-`createViewerSnapshot(document)` over hand-built snapshots to obtain all defaults.
+`createViewerSnapshot(graph)` over hand-built snapshots to obtain all defaults.
 The optional fourth `hoverNode` argument supplies call-site context and defaults to null.
 
 ## Build-time extensions
 
 Pass a readonly `ViewerExtensions` object through `JourneyViewer.extensions`.
 Descriptors are imported functions/components in the caller's build. Matching
-reads the current original document nodes; no registration, discovery, setup/
+reads the current graph's nodes; no registration, discovery, setup/
 dispose lifecycle, parser selection or shared runtime state is involved.
 
 ```tsx
@@ -424,7 +432,7 @@ const extensions = {
   }],
 } as const satisfies ViewerExtensions;
 
-<JourneyViewer document={document} extensions={extensions} />
+<JourneyViewer graph={graph} extensions={extensions} />
 ```
 
 All matching inspector panels append in array order after the built-in sections,
@@ -440,8 +448,10 @@ Descriptor IDs must be unique within each supplied array; they serve only as
 React keys. Uniqueness is the caller's responsibility and is not checked by the
 viewer. Duplicate IDs are unsupported input with undefined rendering behavior.
 
-`ViewerNodeContext` contains the original `document`, `journey` and `node`, the
-readonly `selection` identity, and an explicit `occurrence`. Repeated journeys
+`ViewerNodeContext` contains the `graph` with its `journey` and `node` (a journey,
+state, entry or exit, told apart by `kind`), the readonly `selection` identity, and
+an explicit `occurrence`. Extensions see the graph, never the UJG source; one that
+needs source data closes over the document its caller already holds. Repeated journeys
 receive each finite call-site occurrence independently. An informational inspector
 without navigation receives `occurrence: null`; invalid or absent selections
 evaluate no inspector descriptors. Panel props additionally include an optional
@@ -449,21 +459,21 @@ evaluate no inspector descriptors. Panel props additionally include an optional
 not change the inspector's selected-node extension context.
 
 The first matching `stateOverrides` descriptor wins; unmatched rows use the
-ordinary `StateRow`. `ViewerStateRenderProps` contains the original state context
+ordinary `StateRow`. `ViewerStateRenderProps` contains the state context
 and the complete design-system `row` contract: selection/filter state, relation
 tone and marks, child-journey description and touchpoint crossing,
 selection/hover/disclosure callbacks, screenshot actions, empty-child notices and
 nested content. Compose `<StateRow {...row} />` to preserve these
 behaviors. A replacement that omits controls or children takes responsibility for
 their presentation and accessibility; returning null deliberately hides that row's
-content. It does not alter canonical membership, queries or selection state.
+content. It does not alter the graph, queries or selection state.
 Annotations remain independent of the row override. Components follow normal
 React composition; predicates and rendering must leave caller inputs unchanged.
 Errors propagate to the host's error boundary.
 
 Replacing/removing `extensions` recomputes presentation and preserves the viewer
 snapshot, including selection, expansion, mode and columns, query, filters, hover and lightbox.
-Removing descriptors restores built-in content. Only replacing `document` resets
+Removing descriptors restores built-in content. Only replacing `graph` resets
 interaction. For externally controlled hosts, `JourneyExplorer.extensions` takes
 annotations/state overrides and `JourneyInspector.extensions` takes panels/
 annotations. `JourneyHierarchy` keeps its separate static contract.
@@ -490,8 +500,8 @@ viewer code.
 
 Colocated static, controlled, inspector and interactive stories cover Solid-OIDC,
 multiple roots and recursion, empty documents, independent instances, same-ID
-replacement, empty/unresolved composites and the compiled consumer. Native JSON parsing and
-frozen demonstration documents are shared only at the development boundary in
+replacement, empty/unresolved composites and the compiled consumer. Native JSON parsing, projection
+and frozen demonstration documents are shared only at the development boundary in
 `.storybook/documents.ts`. Story controls receive the heading level; document
 editing is excluded from controls. Navigation stories include bounded search,
 no matches, a selected touchpoint, equal-label touchpoints, capped results and
@@ -555,7 +565,7 @@ import {
 import { FlowKey } from "@journey-viewer/design-system";
 
 <Viewer
-  document={document}
+  graph={graph}
   screenshots={screenshots}
   touchpoints={touchpoints}
   views={[treeView, columnsView, flowView()]}
@@ -584,7 +594,7 @@ import { FlowKey } from "@journey-viewer/design-system";
 
 - **`Viewer`** is the state boundary. It holds one immutable `ViewerState` (the
   shared snapshot, the node the flow's path leads to, the active view, search, reveal
-  and the hover preview) and resets it when `document` changes identity. Around its
+  and the hover preview) and resets it when `graph` changes identity. Around its
   children it adds the screen preview, the lightbox and the browser shell (sticky-bar
   offset, “/” for search, reveal scrolling). `initialView` and `initialCommands` set
   what it opens with, and what Reset returns to. The initial commands are ordinary
@@ -608,7 +618,7 @@ import { FlowKey } from "@journey-viewer/design-system";
 ### Writing a control
 
 Any component inside a `Viewer` can be a control. `useViewer()` returns the inputs
-(`document`, `views`, `screenshots`, `touchpoints`, `level`, `extensions`), the current
+(`graph`, `views`, `screenshots`, `touchpoints`, `level`, `extensions`), the current
 `state` and `dispatch`:
 
 ```tsx
@@ -631,8 +641,8 @@ its own provider instead of extending `ViewerState`.
 
 ### Flow internals
 
-- `src/flow/`: the projection of UJG plus the shared expansion into a scene with plain ids
-  (`scene.ts`, the only flow module that reads the document), the bottom-up composer over
+- `src/flow/`: the projection of the graph plus the shared expansion into a scene with
+  plain ids (`scene.ts`, the only flow module that reads the graph), the bottom-up composer over
   `@journey-viewer/flow-layout` (`compose.ts`, `geometry.ts`), text sizing (`text.ts`), the
   highlight and active-route geometry (`highlight.ts`, `strokes.ts`) and block rects.
 - `src/disclosure.ts`: `disclose`, the reducer behind every navigation, screen and

@@ -1,48 +1,38 @@
-import {
-  getChildJourneys,
-  getJourneyStates,
-  getNodesByType,
-} from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument, UjgNode } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { getOccurrenceTrail } from "@/occurrence";
 import type { OccurrenceCrumb, ViewerOccurrence } from "@/occurrence";
-import { getJourneyStarts } from "@/journey-starts";
 
 type LabeledCrumb = OccurrenceCrumb &
   Readonly<{ label: string; viaLabel?: string }>;
-
-const label = (node: UjgNode) =>
-  typeof node.label === "string" ? node.label : node["@id"];
+type Named = Readonly<{ id: string; label: string }>;
 
 /** Internal presentation only: positions are ordinal counts of the same reference. */
-export function referenceLabel(
-  nodes: readonly UjgNode[],
+export function referenceLabel<Node extends Named>(
+  nodes: readonly Node[],
   index: number,
-  labelFor: (node: UjgNode) => string = label,
+  labelFor: (node: Node) => string = (node) => node.label,
 ): string {
   const node = nodes[index];
   if (!node) return "";
   const title = labelFor(node);
   const distinguishIdentity = nodes.some(
-    (other) => other["@id"] !== node["@id"] && labelFor(other) === title,
+    (other) => other.id !== node.id && labelFor(other) === title,
   );
-  const name = distinguishIdentity ? `${title} (${node["@id"]})` : title;
-  const repeated = nodes.filter((other) => other["@id"] === node["@id"]).length;
+  const name = distinguishIdentity ? `${title} (${node.id})` : title;
+  const repeated = nodes.filter((other) => other.id === node.id).length;
   const ordinal = nodes
     .slice(0, index + 1)
-    .filter((other) => other["@id"] === node["@id"]).length;
+    .filter((other) => other.id === node.id).length;
   return repeated > 1 ? `${name} (reference ${ordinal} of ${repeated})` : name;
 }
 
-/** Ephemeral wording for a finite path; query-result indices remain internal identities. */
+/** Ephemeral wording for a finite path; list indices remain internal identities. */
 export function getOccurrenceLabels(
-  document: UjgDocument,
+  graph: JourneyGraph,
   occurrence: ViewerOccurrence,
 ): readonly LabeledCrumb[] {
-  const trail = getOccurrenceTrail(document, occurrence);
-  const { roots, rootless } = getJourneyStarts(document);
-  const starts = [...roots, ...rootless];
-  const composites = getNodesByType(document, "CompositeState");
+  const trail = getOccurrenceTrail(graph, occurrence);
+  const starts = [...graph.roots, ...graph.rootless];
   return trail.map<LabeledCrumb>((crumb, index) => {
     const parent = trail[index - 1];
     const step = occurrence.steps[index - 1];
@@ -51,14 +41,12 @@ export function getOccurrenceLabels(
         ...crumb,
         label: referenceLabel(starts, starts.indexOf(crumb.journey)),
       };
-    const states = getJourneyStates(document, parent.journey);
-    const composite = composites.find(
-      (node) => node === states[step.stateIndex],
-    )!;
+    const states = parent.journey.states;
+    const state = states[step.stateIndex];
     return {
       ...crumb,
       label: referenceLabel(
-        getChildJourneys(document, composite),
+        state?.kind === "composite" ? state.children : [],
         step.childIndex,
       ),
       viaLabel: referenceLabel(states, step.stateIndex),

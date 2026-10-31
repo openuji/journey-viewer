@@ -1,5 +1,5 @@
 import { ExplorerBar, SegmentedControl } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import type { ReactNode } from "react";
 import type { ViewerMode, ViewerSnapshot, ViewerTarget } from "@/navigation";
 import type { ScreenshotMap } from "@/screens";
@@ -11,13 +11,13 @@ import { ControlledGraphSearch } from "@/components/GraphSearch/GraphSearch";
 import { ControlledResetView } from "@/components/ResetView/ResetView";
 
 export interface JourneyNavigationProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly snapshot: ViewerSnapshot;
   readonly onMode: (mode: ViewerMode) => void;
   readonly onExpandAll: () => void;
   readonly onCollapseAll: () => void;
   /** Null shows every journey. */
-  readonly onTouchpoint: (ref: string | null) => void;
+  readonly onTouchpoint: (id: string | null) => void;
   readonly onQuery: (query: string) => void;
   /** Search picking clears the query after the target resolves. */
   readonly onSearchPick: (target: ViewerTarget) => void;
@@ -43,7 +43,7 @@ const modes = [
  * arranges the same controlled parts as the `Viewer` pieces, for callers that own the snapshot.
  */
 export function JourneyNavigation({
-  document,
+  graph,
   snapshot,
   onMode,
   onExpandAll,
@@ -64,9 +64,9 @@ export function JourneyNavigation({
     <ExplorerBar>
       {start ?? (
         <ControlledDocumentSummary
-          document={document}
+          graph={graph}
           screenshots={screenshots}
-          touchpointIds={navigation.touchpointRefs}
+          touchpointIds={navigation.touchpointIds}
         />
       )}
       <SegmentedControl
@@ -82,17 +82,17 @@ export function JourneyNavigation({
         />
       )}
       <ControlledTouchpointFilter
-        document={document}
+        graph={graph}
         touchpoints={touchpoints}
-        selected={navigation.touchpointRefs}
+        selected={navigation.touchpointIds}
         onSelect={onTouchpoint}
       />
       <ControlledGraphSearch
-        document={document}
+        graph={graph}
         screenshots={screenshots}
         touchpoints={touchpoints}
         query={navigation.query}
-        touchpointIds={navigation.touchpointRefs}
+        touchpointIds={navigation.touchpointIds}
         open={searchOpen}
         onQuery={onQuery}
         onPick={onSearchPick}

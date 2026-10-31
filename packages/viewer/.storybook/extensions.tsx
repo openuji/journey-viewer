@@ -12,7 +12,7 @@ function SourceNote({ node, selection }: ViewerInspectorPanelProps) {
     <Text as="p">
       This {selection.kind} is read directly from{" "}
       <Text as="code" variant="code">
-        {node["@id"]}
+        {node.id}
       </Text>
       .
     </Text>
@@ -37,15 +37,14 @@ export const exampleExtensions: ViewerExtensions = Object.freeze({
     Object.freeze({
       id: "boundary-review",
       matches: ({ selection }: ViewerNodeContext) =>
-        selection.nodeRef === "urn:test:compose",
+        selection.nodeId === "urn:test:compose",
       Component: () => <Badge>Review nested boundary</Badge>,
     }),
   ]),
   stateOverrides: Object.freeze([
     Object.freeze({
       id: "boundary-row",
-      matches: ({ node }: ViewerStateContext) =>
-        node["@id"] === "urn:test:compose",
+      matches: ({ node }: ViewerStateContext) => node.id === "urn:test:compose",
       Component: BoundaryRow,
     }),
   ]),

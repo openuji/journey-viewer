@@ -1,22 +1,19 @@
-import {
-  getChildJourneys,
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneyStates,
-  getNodesByType,
-} from "@journey-viewer/ujg-jsonld";
 import type {
-  UjgDocument,
-  UjgJourney,
-  UjgNode,
+  Entry,
+  Exit,
+  Journey,
+  JourneyGraph,
+  State,
 } from "@journey-viewer/ujg-jsonld";
-import { getJourneyStarts } from "@/journey-starts";
 
 export interface ViewerSelection {
   readonly kind: "journey" | "state" | "entry" | "exit";
-  readonly journeyRef: string;
-  readonly nodeRef: string;
+  readonly journeyId: string;
+  readonly nodeId: string;
 }
+
+/** What a selection can name: a journey or one of its states, entries or exits. */
+export type SelectedNode = Journey | State | Entry | Exit;
 
 export interface ViewerInteraction {
   readonly selection: ViewerSelection | null;
@@ -25,25 +22,25 @@ export interface ViewerInteraction {
   readonly openContracts: readonly string[];
 }
 
-/** Resolves only the selected journey's explicit, correctly typed members. */
+/** Resolves only the selected journey's own members of the selected kind. */
 export function resolveSelection(
-  document: UjgDocument,
+  graph: JourneyGraph,
   selection: ViewerSelection,
-): Readonly<{ journey: UjgJourney; node: UjgNode }> | undefined {
-  const journey = getNodesByType(document, "Journey").find(
-    (node) => node["@id"] === selection.journeyRef,
+): Readonly<{ journey: Journey; node: SelectedNode }> | undefined {
+  const journey = graph.journeys.find(
+    (node) => node.id === selection.journeyId,
   );
   if (!journey) return undefined;
-  const candidates =
+  const candidates: readonly SelectedNode[] =
     selection.kind === "journey"
       ? [journey]
       : selection.kind === "state"
-        ? getJourneyStates(document, journey)
+        ? journey.states
         : selection.kind === "entry"
-          ? getJourneyEntries(document, journey)
-          : getJourneyExits(document, journey);
+          ? journey.entries
+          : journey.exits;
   const node = candidates.find(
-    (candidate) => candidate["@id"] === selection.nodeRef,
+    (candidate) => candidate.id === selection.nodeId,
   );
   return node ? { journey, node } : undefined;
 }
@@ -57,72 +54,64 @@ export function sameSelection(
     (left !== null &&
       right !== null &&
       left.kind === right.kind &&
-      left.journeyRef === right.journeyRef &&
-      left.nodeRef === right.nodeRef)
+      left.journeyId === right.journeyId &&
+      left.nodeId === right.nodeId)
   );
 }
 
-const mergeRefs = (
+const mergeIds = (
   existing: readonly string[],
   additions: readonly string[],
 ): readonly string[] =>
   additions.reduce<readonly string[]>(
-    (refs, ref) => (refs.includes(ref) ? refs : [...refs, ref]),
+    (ids, id) => (ids.includes(id) ? ids : [...ids, id]),
     existing,
   );
 
-function childJourneys(
-  document: UjgDocument,
-  journey: UjgJourney,
-  stateRef: string,
-) {
-  const composite = getNodesByType(document, "CompositeState").find(
-    (state) =>
-      state["@id"] === stateRef && journey.stateRefs.includes(stateRef),
+/** The child journeys of the journey's own composite with this id. */
+function childJourneys(journey: Journey, stateId: string) {
+  const state = journey.states.find(
+    (node) => node.id === stateId && node.kind === "composite",
   );
-  return composite ? getChildJourneys(document, composite) : [];
+  return state?.kind === "composite" ? state.children : [];
 }
 
-function ancestorRefs(
-  document: UjgDocument,
-  ref: string,
+function ancestorIds(
+  graph: JourneyGraph,
+  id: string,
   path: readonly string[] = [],
 ): readonly string[] {
-  if (path.includes(ref)) return [];
-  const parents = getNodesByType(document, "Journey").filter((journey) =>
-    getJourneyStates(document, journey).some((state) =>
-      childJourneys(document, journey, state["@id"]).some(
-        (child) => child["@id"] === ref,
-      ),
+  if (path.includes(id)) return [];
+  const parents = graph.journeys.filter((journey) =>
+    journey.states.some(
+      (state) =>
+        state.kind === "composite" &&
+        state.children.some((child) => child.id === id),
     ),
   );
   return [
-    ref,
+    id,
     ...parents.flatMap((parent) =>
-      ancestorRefs(document, parent["@id"], [...path, ref]),
+      ancestorIds(graph, parent.id, [...path, id]),
     ),
   ];
 }
 
 export function createViewerInteraction(
-  document: UjgDocument,
+  graph: JourneyGraph,
 ): ViewerInteraction {
-  const { roots, rootless } = getJourneyStarts(document);
-  const journey = roots[0] ?? rootless[0];
-  const states = journey ? getJourneyStates(document, journey) : [];
-  const entry = journey
-    ? getJourneyEntries(document, journey).find(
-        (node) => node["@id"] === journey.defaultEntryRef,
-      )
-    : undefined;
-  const state =
-    states.find((node) => node["@id"] === entry?.stateRef) ?? states[0];
+  const journey = graph.roots[0] ?? graph.rootless[0];
+  const states = journey?.states ?? [];
+  const entry = journey?.entries.find(
+    (node) => node.id === journey.defaultEntry,
+  );
+  const state = states.find((node) => node.id === entry?.target) ?? states[0];
   return {
     selection: journey
       ? {
           kind: state ? "state" : "journey",
-          journeyRef: journey["@id"],
-          nodeRef: state?.["@id"] ?? journey["@id"],
+          journeyId: journey.id,
+          nodeId: state?.id ?? journey.id,
         }
       : null,
     expandedJourneys: [],
@@ -132,26 +121,24 @@ export function createViewerInteraction(
 
 /** Selection reveals every explicit ancestry and all children of a selected composite. */
 function select(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
   selection: ViewerSelection,
   openChildren: boolean,
 ): ViewerInteraction {
-  const resolved = resolveSelection(document, selection);
+  const resolved = resolveSelection(graph, selection);
   if (!resolved) return current;
   const children =
     selection.kind === "state" && openChildren
-      ? childJourneys(document, resolved.journey, selection.nodeRef).map(
-          (node) => node["@id"],
-        )
+      ? childJourneys(resolved.journey, selection.nodeId).map((node) => node.id)
       : [];
-  const expandedJourneys = mergeRefs(current.expandedJourneys, [
-    ...ancestorRefs(document, selection.journeyRef),
+  const expandedJourneys = mergeIds(current.expandedJourneys, [
+    ...ancestorIds(graph, selection.journeyId),
     ...children,
   ]);
   const openContracts =
     selection.kind === "entry" || selection.kind === "exit"
-      ? mergeRefs(current.openContracts, [selection.journeyRef])
+      ? mergeIds(current.openContracts, [selection.journeyId])
       : current.openContracts;
   return sameSelection(current.selection, selection) &&
     expandedJourneys === current.expandedJourneys &&
@@ -161,53 +148,51 @@ function select(
 }
 
 export function selectNode(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
   selection: ViewerSelection,
 ): ViewerInteraction {
-  return select(document, current, selection, true);
+  return select(graph, current, selection, true);
 }
 
 /** Private screen-selection operation; preserves child disclosure state. */
 export function selectScreenNode(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
   selection: ViewerSelection,
 ): ViewerInteraction {
-  return select(document, current, selection, false);
+  return select(graph, current, selection, false);
 }
 
 /** A composite's complete child group is expanded or collapsed as one explicit action. */
 export function toggleChildJourneys(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
-  journeyRef: string,
-  stateRef: string,
+  journeyId: string,
+  stateId: string,
 ): ViewerInteraction {
-  const journey = getNodesByType(document, "Journey").find(
-    (node) => node["@id"] === journeyRef,
-  );
-  const refs = journey
-    ? childJourneys(document, journey, stateRef).map((node) => node["@id"])
+  const journey = graph.journeys.find((node) => node.id === journeyId);
+  const ids = journey
+    ? childJourneys(journey, stateId).map((node) => node.id)
     : [];
-  if (refs.length === 0) return current;
+  if (ids.length === 0) return current;
   return {
     ...current,
-    expandedJourneys: refs.some((ref) => current.expandedJourneys.includes(ref))
-      ? current.expandedJourneys.filter((ref) => !refs.includes(ref))
-      : mergeRefs(current.expandedJourneys, refs),
+    expandedJourneys: ids.some((id) => current.expandedJourneys.includes(id))
+      ? current.expandedJourneys.filter((id) => !ids.includes(id))
+      : mergeIds(current.expandedJourneys, ids),
   };
 }
 
 export function expandAllJourneys(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
 ): ViewerInteraction {
-  const refs = getNodesByType(document, "Journey").map((node) => node["@id"]);
-  return refs.length === current.expandedJourneys.length &&
-    refs.every((ref) => current.expandedJourneys.includes(ref))
+  const ids = graph.journeys.map((node) => node.id);
+  return ids.length === current.expandedJourneys.length &&
+    ids.every((id) => current.expandedJourneys.includes(id))
     ? current
-    : { ...current, expandedJourneys: refs };
+    : { ...current, expandedJourneys: ids };
 }
 
 export function collapseAllJourneys(
@@ -220,20 +205,15 @@ export function collapseAllJourneys(
 
 /** Shows or hides one journey's entry/exit list. Unknown journeys are no-ops. */
 export function toggleContracts(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerInteraction,
-  journeyRef: string,
+  journeyId: string,
 ): ViewerInteraction {
-  if (
-    !getNodesByType(document, "Journey").some(
-      (node) => node["@id"] === journeyRef,
-    )
-  )
-    return current;
+  if (!graph.journeys.some((node) => node.id === journeyId)) return current;
   return {
     ...current,
-    openContracts: current.openContracts.includes(journeyRef)
-      ? current.openContracts.filter((ref) => ref !== journeyRef)
-      : [...current.openContracts, journeyRef],
+    openContracts: current.openContracts.includes(journeyId)
+      ? current.openContracts.filter((id) => id !== journeyId)
+      : [...current.openContracts, journeyId],
   };
 }

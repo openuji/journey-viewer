@@ -1,8 +1,8 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type { HeadingLevel } from "@journey-viewer/design-system";
-import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { resolveSelection } from "@/interaction";
 import { getNodeScreens, getScreens } from "@/screens";
 import type { ScreenshotMap } from "@/screens";
@@ -26,7 +26,7 @@ import styles from "@/components/Viewer/Viewer.module.css";
 
 export interface ViewerProps {
   /** Keep this reference stable between actual replacements; every new object resets the viewer. */
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   /** The views the stage can show, in the view switch's order. */
   readonly views: readonly ViewerView[];
   readonly level?: HeadingLevel;
@@ -48,7 +48,7 @@ export interface ViewerProps {
 
 /** What every piece inside a `Viewer` reads, and the one way to change it. */
 export interface ViewerContextValue {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly views: readonly ViewerView[];
   readonly level: HeadingLevel;
   readonly screenshots: ScreenshotMap;
@@ -59,7 +59,7 @@ export interface ViewerContextValue {
 }
 
 interface DocumentState {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly state: ViewerState;
 }
 
@@ -78,7 +78,7 @@ export function useViewer(): ViewerContextValue {
  * preview, the lightbox and the browser shell around them.
  */
 export function Viewer({
-  document,
+  graph,
   views,
   level = 2,
   screenshots = {},
@@ -89,55 +89,53 @@ export function Viewer({
   children,
 }: ViewerProps) {
   const inputs: ViewerInputs = {
-    document,
+    graph,
     screenshots,
     views,
     initialView,
     initialCommands,
   };
   const [current, setCurrent] = useState<DocumentState>(() => ({
-    document,
+    graph,
     state: createViewerState(inputs),
   }));
-  if (current.document !== document) {
+  if (current.graph !== graph) {
     // Reset by input object identity, including replacements with the same @id.
     // React retries this component before rendering its children; no stale selection is committed.
-    setCurrent({ document, state: createViewerState(inputs) });
+    setCurrent({ graph, state: createViewerState(inputs) });
     return null;
   }
   const dispatch = (command: ViewerCommand) =>
     setCurrent((latest) => {
-      if (latest.document !== document) return latest;
+      if (latest.graph !== graph) return latest;
       const state = reduceViewer(inputs, latest.state, command);
-      return state === latest.state ? latest : { document, state };
+      return state === latest.state ? latest : { graph, state };
     });
   const { state } = current;
   const { snapshot } = state.disclosure;
   const preview = state.preview;
   const previewNode = preview
-    ? resolveSelection(document, preview.target.selection)
+    ? resolveSelection(graph, preview.target.selection)
     : undefined;
   const previewSource = preview
-    ? getNodeScreens(
-        document,
-        screenshots,
-        preview.target.selection.nodeRef,
-      ).find((screen) => screen.surface["@id"] === preview.surfaceId)?.source
+    ? getNodeScreens(graph, screenshots, preview.target.selection.nodeId).find(
+        (screen) => screen.surface.id === preview.surfaceId,
+      )?.source
     : undefined;
   const previewTouchpoint = preview
-    ? getJourneyTouchpoints(document, preview.target.selection.journeyRef)[0]
+    ? journeyTouchpoints(graph, preview.target.selection.journeyId)[0]
     : undefined;
   const previewTitle =
     previewNode && typeof previewNode.node.label === "string"
       ? previewNode.node.label
-      : (preview?.target.selection.nodeRef ?? "");
-  const sources = getScreens(document, screenshots)
+      : (preview?.target.selection.nodeId ?? "");
+  const sources = getScreens(graph, screenshots)
     .flatMap((screen) => (screen.source ? [screen.source] : []))
     .filter((source, index, all) => all.indexOf(source) === index);
   return (
     <ViewerContext
       value={{
-        document,
+        graph,
         views,
         level,
         screenshots,
@@ -161,8 +159,8 @@ export function Viewer({
             title={previewTitle}
             context={[
               previewNode
-                ? (previewNode.journey.label ?? previewNode.journey["@id"])
-                : preview.target.selection.journeyRef,
+                ? previewNode.journey.label
+                : preview.target.selection.journeyId,
               ...(previewTouchpoint
                 ? [touchpointLabel(previewTouchpoint, touchpoints)]
                 : []),
@@ -171,9 +169,9 @@ export function Viewer({
               ? {
                   touchpoint: {
                     label: touchpointLabel(previewTouchpoint, touchpoints),
-                    ...(touchpoints[previewTouchpoint["@id"]]?.color
+                    ...(touchpoints[previewTouchpoint.id]?.color
                       ? {
-                          color: touchpoints[previewTouchpoint["@id"]]!.color!,
+                          color: touchpoints[previewTouchpoint.id]!.color!,
                         }
                       : {}),
                   },
@@ -187,7 +185,7 @@ export function Viewer({
         <BrowserScreenPreload sources={sources} />
         {snapshot.lightbox && (
           <JourneyLightbox
-            document={document}
+            graph={graph}
             screenshots={screenshots}
             lightbox={snapshot.lightbox}
             touchpoints={touchpoints}

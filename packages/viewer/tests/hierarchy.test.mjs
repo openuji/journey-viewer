@@ -4,14 +4,8 @@ import test from "node:test";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JourneyHierarchy } from "@journey-viewer/viewer";
+import { edContext, freeze, graphOf } from "~/tests/graphs.mjs";
 
-const freeze = (value) => {
-  if (value && typeof value === "object") {
-    Object.values(value).forEach(freeze);
-    Object.freeze(value);
-  }
-  return value;
-};
 const readDocument = async (url) =>
   freeze(JSON.parse(await readFile(url, "utf8")));
 const oidc = await readDocument(
@@ -24,7 +18,9 @@ const fixture = await readDocument(
   new URL("fixtures/hierarchy.ujg.jsonld", import.meta.url),
 );
 const render = (document, props = {}) =>
-  renderToStaticMarkup(h(JourneyHierarchy, { document, ...props }));
+  renderToStaticMarkup(
+    h(JourneyHierarchy, { graph: graphOf(document), ...props }),
+  );
 const refs = (html, name) =>
   [...html.matchAll(new RegExp(`data-${name}-ref="([^"]+)"`, "g"))].map(
     (match) => match[1],
@@ -125,7 +121,7 @@ test("empty documents, empty composites, unresolved targets, and unlabeled nodes
   assert.match(
     render(
       freeze({
-        "@context": "urn:context",
+        "@context": edContext,
         "@id": "urn:empty",
         "@type": "UJGDocument",
       }),
@@ -133,7 +129,7 @@ test("empty documents, empty composites, unresolved targets, and unlabeled nodes
     /No journeys\./,
   );
   const document = freeze({
-    "@context": "urn:context",
+    "@context": edContext,
     "@id": "urn:minimal",
     "@type": "UJGDocument",
     nodes: [
@@ -163,14 +159,14 @@ test("empty documents, empty composites, unresolved targets, and unlabeled nodes
   assert.doesNotMatch(html, /\(default\)/);
 });
 
-test("frozen documents and props stay unchanged across instances and replacements", () => {
-  const props = freeze({ document: fixture, level: 5 });
-  const before = JSON.stringify(props);
+test("frozen graphs and props stay unchanged across instances and replacements", () => {
+  const props = freeze({ graph: graphOf(fixture), level: 5 });
   const first = renderToStaticMarkup(h(JourneyHierarchy, props));
   assert.match(first, /<h5/);
   assert.match(first, /<h6/);
   assert.doesNotMatch(first, /<h7/);
   render(oidc);
   assert.equal(renderToStaticMarkup(h(JourneyHierarchy, props)), first);
-  assert.equal(JSON.stringify(props), before);
+  assert.equal(props.graph, graphOf(fixture));
+  assert.ok(Object.isFrozen(props.graph.journeys[0]));
 });

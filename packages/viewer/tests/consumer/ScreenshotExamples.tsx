@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Button, Heading } from "@journey-viewer/design-system";
 import { JourneyViewer } from "@journey-viewer/viewer";
-import { oidcDocument } from "~/.storybook/documents";
+import { oidcGraph } from "~/.storybook/documents";
 import { oidcScreenshots, oidcTouchpoints } from "~/.storybook/screenshots";
 import { ScreenshotInputs } from "~/.storybook/ScreenshotInputs";
 
 export function ScreenshotExamples() {
-  const [document, setDocument] = useState(oidcDocument);
+  const [graph, setGraph] = useState(oidcGraph);
   return (
     <>
       <Heading level={2}>Independent screenshot documents</Heading>
       <Button
-        onClick={() => setDocument((current) => Object.freeze({ ...current }))}
+        onClick={() => setGraph((current) => Object.freeze({ ...current }))}
       >
         Replace screenshot viewer document
       </Button>
@@ -19,7 +19,7 @@ export function ScreenshotExamples() {
         {(screenshots) => (
           <div data-testid="screens-first">
             <JourneyViewer
-              document={document}
+              graph={graph}
               screenshots={screenshots}
               touchpoints={oidcTouchpoints}
               level={3}
@@ -30,7 +30,7 @@ export function ScreenshotExamples() {
       <Heading level={2}>Independent screenshot viewer</Heading>
       <div data-testid="screens-second">
         <JourneyViewer
-          document={oidcDocument}
+          graph={oidcGraph}
           screenshots={oidcScreenshots}
           touchpoints={oidcTouchpoints}
           level={3}

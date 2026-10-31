@@ -8,8 +8,8 @@ const paths: ScreenshotMap = JSON.parse(screenshotSource);
 const assetBase = new URL("/solid-oidc/", globalThis.location.href);
 export const oidcScreenshots: ScreenshotMap = Object.freeze(
   Object.fromEntries(
-    Object.entries(paths).map(([surfaceRef, path]) => [
-      surfaceRef,
+    Object.entries(paths).map(([surfaceId, path]) => [
+      surfaceId,
       new URL(path, assetBase).href,
     ]),
   ),

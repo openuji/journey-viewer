@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SearchField, SearchResult } from "@journey-viewer/design-system";
-import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { sameSelection } from "@/interaction";
 import { getOccurrenceTrail, sameOccurrence } from "@/occurrence";
 import { searchViewer } from "@/navigation";
@@ -14,7 +14,7 @@ import { useViewer } from "@/components/Viewer/Viewer";
 import styles from "@/components/GraphSearch/GraphSearch.module.css";
 
 export interface ControlledGraphSearchProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   readonly touchpoints: TouchpointPresentation;
   readonly query: string;
@@ -32,7 +32,7 @@ export interface ControlledGraphSearchProps {
 
 /** The search field and its results; Enter picks the first. */
 export function ControlledGraphSearch({
-  document,
+  graph,
   screenshots,
   touchpoints: presentation,
   query,
@@ -43,7 +43,7 @@ export function ControlledGraphSearch({
   onFocus,
   children,
 }: ControlledGraphSearchProps) {
-  const results = searchViewer(document, query, touchpointIds);
+  const results = searchViewer(graph, query, touchpointIds);
   return (
     <div className={styles.search}>
       <SearchField
@@ -68,7 +68,7 @@ export function ControlledGraphSearch({
       >
         {results.length > 0 &&
           results.map((result, index) => {
-            const journey = getOccurrenceTrail(document, result.occurrence).at(
+            const journey = getOccurrenceTrail(graph, result.occurrence).at(
               -1,
             )?.journey;
             const repeated = results.some(
@@ -77,9 +77,9 @@ export function ControlledGraphSearch({
                 sameSelection(other.selection, result.selection) &&
                 !sameOccurrence(other.occurrence, result.occurrence),
             );
-            const touchpoint = getJourneyTouchpoints(
-              document,
-              result.selection.journeyRef,
+            const touchpoint = journeyTouchpoints(
+              graph,
+              result.selection.journeyId,
             )[0];
             const color = touchpoint
               ? touchpointColor(touchpoint, presentation)
@@ -94,7 +94,7 @@ export function ControlledGraphSearch({
               ? result.context
               : result.selection.kind === "journey"
                 ? "Journey"
-                : `${journey?.label ?? result.selection.journeyRef}${kind}`;
+                : `${journey?.label ?? result.selection.journeyId}${kind}`;
             return (
               <SearchResult
                 key={index}
@@ -110,9 +110,9 @@ export function ControlledGraphSearch({
                     }
                   : {})}
                 screen={getNodeScreens(
-                  document,
+                  graph,
                   screenshots,
-                  result.selection.nodeRef,
+                  result.selection.nodeId,
                 ).some((screen) => screen.source)}
               />
             );
@@ -125,15 +125,15 @@ export function ControlledGraphSearch({
 
 /** Search over the viewer's graph; a pick selects its result and brings it into view. */
 export function GraphSearch({ children }: Readonly<{ children?: ReactNode }>) {
-  const { document, screenshots, touchpoints, state, dispatch } = useViewer();
+  const { graph, screenshots, touchpoints, state, dispatch } = useViewer();
   const { navigation } = state.disclosure.snapshot;
   return (
     <ControlledGraphSearch
-      document={document}
+      graph={graph}
       screenshots={screenshots}
       touchpoints={touchpoints}
       query={navigation.query}
-      touchpointIds={navigation.touchpointRefs}
+      touchpointIds={navigation.touchpointIds}
       open={state.searchOpen}
       onQuery={(query) => dispatch({ type: "query", query })}
       onPick={(target) => dispatch({ type: "pick", target })}

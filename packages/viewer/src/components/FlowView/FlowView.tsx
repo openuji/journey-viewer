@@ -25,7 +25,7 @@ interface FlowStageState {
 const still: FlowView = { anchor: null, reveal: null };
 
 function FlowStage({ pathEnd }: FlowViewOptions) {
-  const { document, screenshots, touchpoints, state, dispatch } = useViewer();
+  const { graph, screenshots, touchpoints, state, dispatch } = useViewer();
   const settings = useFlowSettingsValue();
   const [stage, setStage] = useState<FlowStageState>(() => ({
     view: still,
@@ -58,14 +58,14 @@ function FlowStage({ pathEnd }: FlowViewOptions) {
   return (
     <JourneyFlow
       className={styles.stage}
-      document={document}
+      graph={graph}
       interaction={snapshot.interaction}
       location={disclosure.location}
       placement={settings.placement}
       zoom={settings.zoom}
       screenshots={screenshots}
       touchpoints={touchpoints}
-      touchpointRefs={snapshot.navigation.touchpointRefs}
+      touchpointIds={snapshot.navigation.touchpointIds}
       active={stage.active}
       view={stage.view}
       {...(pathEnd !== undefined ? { pathEnd } : {})}

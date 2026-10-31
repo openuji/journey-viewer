@@ -22,14 +22,8 @@ import {
   getNavigationItems,
   getRowHighlight,
 } from "@journey-viewer/viewer";
+import { edContext, freeze, graphOf } from "~/tests/graphs.mjs";
 
-const freeze = (value) => {
-  if (value && typeof value === "object") {
-    Object.values(value).forEach(freeze);
-    Object.freeze(value);
-  }
-  return value;
-};
 const fixture = freeze(
   JSON.parse(
     await readFile(
@@ -59,8 +53,10 @@ const oidc = freeze(
 );
 const prefix = "urn:ujg:solid-oidc:";
 const pick = (document, ref) =>
-  searchViewer(document, ref).find((item) => item.selection.nodeRef === ref);
-const initial = freeze(createViewerSnapshot(fixture));
+  searchViewer(graphOf(document), ref).find(
+    (item) => item.selection.nodeId === ref,
+  );
+const initial = freeze(createViewerSnapshot(graphOf(fixture)));
 const fail = () => assert.fail("rendering must not invoke callbacks");
 const bar = {
   onMode: fail,
@@ -75,24 +71,28 @@ const bar = {
 test("navigation snapshots are independent and reset to the tree, blank search and all touchpoints", () => {
   const before = JSON.stringify({ fixture, initial });
   const changed = freeze(
-    selectTouchpoint(fixture, setSearchQuery(initial, "test"), "urn:test:web"),
+    selectTouchpoint(
+      graphOf(fixture),
+      setSearchQuery(initial, "test"),
+      "urn:test:web",
+    ),
   );
   assert.equal(initial.navigation.query, "");
-  assert.deepEqual(initial.navigation.touchpointRefs, []);
+  assert.deepEqual(initial.navigation.touchpointIds, []);
   assert.equal(initial.navigation.mode, "tree");
   assert.deepEqual(initial.navigation.lanes, [
-    { startJourneyRef: "urn:test:first", steps: [] },
+    { startJourneyId: "urn:test:first", steps: [] },
   ]);
   assert.equal(initial.navigation.hover, null);
-  assert.deepEqual(createViewerSnapshot(fixture), initial);
-  assert.notEqual(createViewerSnapshot(fixture), initial);
+  assert.deepEqual(createViewerSnapshot(graphOf(fixture)), initial);
+  assert.notEqual(createViewerSnapshot(graphOf(fixture)), initial);
   assert.equal(changed.navigation.query, "test");
   assert.equal(JSON.stringify({ fixture, initial }), before);
 });
 
 test("search preserves display occurrences, finds labels/IDs/contracts/tags and caps results at 18", () => {
-  assert.deepEqual(searchViewer(oidc, " \t\n"), []);
-  const sms = searchViewer(oidc, "sMs");
+  assert.deepEqual(searchViewer(graphOf(oidc), " \t\n"), []);
+  const sms = searchViewer(graphOf(oidc), "sMs");
   assert.ok(
     sms.some(
       (item) => item.selection.kind === "journey" && item.label.includes("SMS"),
@@ -103,7 +103,7 @@ test("search preserves display occurrences, finds labels/IDs/contracts/tags and 
       (item) => item.selection.kind === "state" && item.label.includes("SMS"),
     ),
   );
-  assert.equal(searchViewer(fixture, "urn:test:").length, 18);
+  assert.equal(searchViewer(graphOf(fixture), "urn:test:").length, 18);
   assert.equal(pick(fixture, "urn:test:entry").selection.kind, "entry");
   assert.equal(pick(fixture, "urn:test:exit").selection.kind, "exit");
   const tagged = freeze({
@@ -115,41 +115,41 @@ test("search preserves display occurrences, finds labels/IDs/contracts/tags and 
     ),
   });
   assert.equal(
-    searchViewer(tagged, "distinct-tag")[0].selection.nodeRef,
+    searchViewer(graphOf(tagged), "distinct-tag")[0].selection.nodeId,
     "urn:test:terminal",
   );
-  assert.deepEqual(searchViewer(fixture, "no such item"), []);
+  assert.deepEqual(searchViewer(graphOf(fixture), "no such item"), []);
 });
 
 test("repeated child indices and multiple roots retain distinct, source-backed breadcrumb contexts", () => {
-  const results = freeze(searchViewer(fixture, "urn:test:shared"));
+  const results = freeze(searchViewer(graphOf(fixture), "urn:test:shared"));
   assert.equal(results.length, 3);
   assert.deepEqual(
     results.map((item) => item.occurrence),
     [
       {
-        startJourneyRef: "urn:test:first",
+        startJourneyId: "urn:test:first",
         steps: [{ stateIndex: 0, childIndex: 0 }],
       },
       {
-        startJourneyRef: "urn:test:first",
+        startJourneyId: "urn:test:first",
         steps: [{ stateIndex: 0, childIndex: 2 }],
       },
       {
-        startJourneyRef: "urn:test:second",
+        startJourneyId: "urn:test:second",
         steps: [{ stateIndex: 0, childIndex: 0 }],
       },
     ],
   );
   for (const item of results) {
-    const trail = getOccurrenceTrail(fixture, item.occurrence);
+    const trail = getOccurrenceTrail(graphOf(fixture), item.occurrence);
     assert.equal(
       trail.at(-1).journey,
-      fixture.nodes.find((node) => node["@id"] === "urn:test:shared"),
+      graphOf(fixture).journeys.find((node) => node.id === "urn:test:shared"),
     );
     assert.equal(
-      trail.at(-1).viaStateRef,
-      item.occurrence.startJourneyRef === "urn:test:first"
+      trail.at(-1).viaStateId,
+      item.occurrence.startJourneyId === "urn:test:first"
         ? "urn:test:compose"
         : "urn:test:compose-again",
     );
@@ -158,19 +158,19 @@ test("repeated child indices and multiple roots retain distinct, source-backed b
 });
 
 test("invalid and recursive occurrence targets are no-ops; rootless cycles remain finite and addressable", () => {
-  const target = freeze(searchViewer(fixture, "urn:test:shared")[0]);
+  const target = freeze(searchViewer(graphOf(fixture), "urn:test:shared")[0]);
   for (const occurrence of [
-    { startJourneyRef: "urn:test:shared", steps: [] },
+    { startJourneyId: "urn:test:shared", steps: [] },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: -1, childIndex: 0 }],
     },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: 0.5, childIndex: 0 }],
     },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: 0, childIndex: 30 }],
     },
     {
@@ -178,13 +178,20 @@ test("invalid and recursive occurrence targets are no-ops; rootless cycles remai
       steps: [...target.occurrence.steps, { stateIndex: 0, childIndex: 0 }],
     },
   ]) {
-    assert.deepEqual(getOccurrenceTrail(fixture, freeze(occurrence)), []);
+    assert.deepEqual(
+      getOccurrenceTrail(graphOf(fixture), freeze(occurrence)),
+      [],
+    );
     assert.equal(
-      navigateViewer(fixture, initial, freeze({ ...target, occurrence })),
+      navigateViewer(
+        graphOf(fixture),
+        initial,
+        freeze({ ...target, occurrence }),
+      ),
       initial,
     );
     assert.deepEqual(
-      getLanePath(fixture, freeze(occurrence), target.selection, true),
+      getLanePath(graphOf(fixture), freeze(occurrence), target.selection, true),
       [],
     );
   }
@@ -192,27 +199,33 @@ test("invalid and recursive occurrence targets are no-ops; rootless cycles remai
     ...target,
     selection: {
       kind: "state",
-      journeyRef: "urn:test:first",
-      nodeRef: "urn:test:terminal",
+      journeyId: "urn:test:first",
+      nodeId: "urn:test:terminal",
     },
   });
-  assert.equal(navigateViewer(fixture, initial, wrongOwner), initial);
-  const cycle = searchViewer(fixture, "Cycle B");
+  assert.equal(navigateViewer(graphOf(fixture), initial, wrongOwner), initial);
+  const cycle = searchViewer(graphOf(fixture), "Cycle B");
   assert.equal(
     cycle.length,
     2,
     "both explicit rootless starting points are preserved",
   );
   assert.deepEqual(
-    cycle.map((item) => getOccurrenceTrail(fixture, item.occurrence).length),
+    cycle.map(
+      (item) => getOccurrenceTrail(graphOf(fixture), item.occurrence).length,
+    ),
     [2, 1],
   );
 });
 
 test("columns follow the explicit call path, open a selected composite's children and leave tree expansion intact", () => {
-  const target = freeze(searchViewer(fixture, "urn:test:shared")[1]);
+  const target = freeze(searchViewer(graphOf(fixture), "urn:test:shared")[1]);
   const selected = freeze(
-    navigateViewer(fixture, setSearchQuery(initial, "Repeated child"), target),
+    navigateViewer(
+      graphOf(fixture),
+      setSearchQuery(initial, "Repeated child"),
+      target,
+    ),
   );
   assert.equal(selected.navigation.query, "Repeated child");
   assert.deepEqual(selected.navigation.occurrence, target.occurrence);
@@ -222,45 +235,45 @@ test("columns follow the explicit call path, open a selected composite's childre
     initial.navigation.lanes,
     "tree navigation keeps the previous columns",
   );
-  const columns = freeze(setViewMode(fixture, selected, "columns"));
-  assert.equal(setViewMode(fixture, columns, "columns"), columns);
-  assert.equal(setViewMode(fixture, columns, "other"), columns);
+  const columns = freeze(setViewMode(graphOf(fixture), selected, "columns"));
+  assert.equal(setViewMode(graphOf(fixture), columns, "columns"), columns);
+  assert.equal(setViewMode(graphOf(fixture), columns, "other"), columns);
   assert.deepEqual(
     columns.navigation.lanes,
-    getOccurrenceTrail(fixture, target.occurrence).map(
+    getOccurrenceTrail(graphOf(fixture), target.occurrence).map(
       (crumb) => crumb.occurrence,
     ),
   );
   assert.equal(columns.interaction, selected.interaction);
   const compose = freeze(pick(fixture, "urn:test:compose"));
-  const opened = freeze(navigateViewer(fixture, columns, compose));
+  const opened = freeze(navigateViewer(graphOf(fixture), columns, compose));
   assert.deepEqual(opened.navigation.lanes, [
-    { startJourneyRef: "urn:test:first", steps: [] },
+    { startJourneyId: "urn:test:first", steps: [] },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: 0, childIndex: 0 }],
     },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: 0, childIndex: 1 }],
     },
     {
-      startJourneyRef: "urn:test:first",
+      startJourneyId: "urn:test:first",
       steps: [{ stateIndex: 0, childIndex: 2 }],
     },
   ]);
   const secondRoot = freeze(pick(fixture, "urn:test:second"));
-  const moved = freeze(navigateViewer(fixture, opened, secondRoot));
+  const moved = freeze(navigateViewer(graphOf(fixture), opened, secondRoot));
   assert.deepEqual(
     moved.navigation.lanes,
     [secondRoot.occurrence],
     "selecting elsewhere trims the columns",
   );
-  const tree = freeze(setViewMode(fixture, moved, "tree"));
+  const tree = freeze(setViewMode(graphOf(fixture), moved, "tree"));
   assert.equal(tree.navigation.mode, "tree");
   assert.equal(tree.interaction, moved.interaction);
   assert.equal(tree.navigation.occurrence, moved.navigation.occurrence);
-  assert.equal(setViewMode(fixture, tree, "tree"), tree);
+  assert.equal(setViewMode(graphOf(fixture), tree, "tree"), tree);
 });
 
 test("the touchpoint filter selects one explicit identity, retains topology and handles equal labels without inheritance", () => {
@@ -272,53 +285,64 @@ test("the touchpoint filter selects one explicit identity, retains topology and 
         : node,
     ),
   });
-  const web = freeze(selectTouchpoint(document, initial, "urn:test:web"));
-  assert.deepEqual(web.navigation.touchpointRefs, ["urn:test:web"]);
+  const web = freeze(
+    selectTouchpoint(graphOf(document), initial, "urn:test:web"),
+  );
+  assert.deepEqual(web.navigation.touchpointIds, ["urn:test:web"]);
   assert.equal(
     matchesTouchpoints(
-      document,
+      graphOf(document),
       "urn:test:first",
-      web.navigation.touchpointRefs,
+      web.navigation.touchpointIds,
     ),
     true,
   );
   assert.equal(
     matchesTouchpoints(
-      document,
+      graphOf(document),
       "urn:test:second",
-      web.navigation.touchpointRefs,
+      web.navigation.touchpointIds,
     ),
     false,
   );
   assert.equal(
     matchesTouchpoints(
-      document,
+      graphOf(document),
       "urn:test:shared",
-      web.navigation.touchpointRefs,
+      web.navigation.touchpointIds,
     ),
     false,
   );
-  const phone = freeze(selectTouchpoint(document, web, "urn:test:phone"));
+  const phone = freeze(
+    selectTouchpoint(graphOf(document), web, "urn:test:phone"),
+  );
   assert.deepEqual(
-    phone.navigation.touchpointRefs,
+    phone.navigation.touchpointIds,
     ["urn:test:phone"],
     "selecting another touchpoint replaces the filter",
   );
   assert.equal(
-    getViewerSummary(document, phone.navigation.touchpointRefs)
+    getViewerSummary(graphOf(document), phone.navigation.touchpointIds)
       .matchingJourneys,
     1,
   );
   assert.deepEqual(
-    searchViewer(document, "Repeated child", phone.navigation.touchpointRefs),
+    searchViewer(
+      graphOf(document),
+      "Repeated child",
+      phone.navigation.touchpointIds,
+    ),
     [],
   );
-  assert.equal(selectTouchpoint(document, initial, "missing"), initial);
-  assert.equal(selectTouchpoint(document, web, "urn:test:web"), web);
-  assert.equal(selectTouchpoint(document, initial, null), initial);
-  assert.deepEqual(selectTouchpoint(document, web, null), initial);
+  assert.equal(
+    selectTouchpoint(graphOf(document), initial, "missing"),
+    initial,
+  );
+  assert.equal(selectTouchpoint(graphOf(document), web, "urn:test:web"), web);
+  assert.equal(selectTouchpoint(graphOf(document), initial, null), initial);
+  assert.deepEqual(selectTouchpoint(graphOf(document), web, null), initial);
   assert.equal(web.interaction, initial.interaction);
-  assert.deepEqual(getViewerSummary(oidc), {
+  assert.deepEqual(getViewerSummary(graphOf(oidc)), {
     journeys: 10,
     states: 47,
     entries: 20,
@@ -335,19 +359,23 @@ test("the touchpoint filter selects one explicit identity, retains topology and 
     ),
   });
   assert.equal(
-    getViewerSummary(overlappingTypes).states,
-    getViewerSummary(fixture).states,
+    getViewerSummary(graphOf(overlappingTypes)).states,
+    getViewerSummary(graphOf(fixture)).states,
     "a source node with both types counts once",
   );
 });
 
 test("hover overrides selection for row highlights relative to the active state; repeated hover preserves identity", () => {
   const selected = freeze(
-    navigateViewer(fixture, initial, pick(fixture, "urn:test:terminal")),
+    navigateViewer(
+      graphOf(fixture),
+      initial,
+      pick(fixture, "urn:test:terminal"),
+    ),
   );
   assert.deepEqual(
     getRowHighlight(
-      fixture,
+      graphOf(fixture),
       selected.interaction,
       selected.navigation,
       "urn:test:first",
@@ -357,7 +385,7 @@ test("hover overrides selection for row highlights relative to the active state;
   );
   assert.deepEqual(
     getRowHighlight(
-      fixture,
+      graphOf(fixture),
       selected.interaction,
       selected.navigation,
       "urn:test:first",
@@ -367,7 +395,7 @@ test("hover overrides selection for row highlights relative to the active state;
   );
   assert.equal(
     getRowHighlight(
-      fixture,
+      graphOf(fixture),
       selected.interaction,
       selected.navigation,
       "urn:test:second",
@@ -377,14 +405,17 @@ test("hover overrides selection for row highlights relative to the active state;
   );
   const exit = freeze({
     kind: "exit",
-    journeyRef: "urn:test:first",
-    nodeRef: "urn:test:exit",
+    journeyId: "urn:test:first",
+    nodeId: "urn:test:exit",
   });
-  const hovered = freeze(hoverNode(fixture, selected, exit));
-  assert.equal(hoverNode(fixture, hovered, freeze({ ...exit })), hovered);
+  const hovered = freeze(hoverNode(graphOf(fixture), selected, exit));
+  assert.equal(
+    hoverNode(graphOf(fixture), hovered, freeze({ ...exit })),
+    hovered,
+  );
   assert.equal(
     getRowHighlight(
-      fixture,
+      graphOf(fixture),
       hovered.interaction,
       hovered.navigation,
       "urn:test:first",
@@ -394,10 +425,10 @@ test("hover overrides selection for row highlights relative to the active state;
     "only states are active for row highlights",
   );
   assert.equal(
-    hoverNode(fixture, hovered, { ...exit, nodeRef: "missing" }),
+    hoverNode(graphOf(fixture), hovered, { ...exit, nodeId: "missing" }),
     hovered,
   );
-  assert.deepEqual(hoverNode(fixture, hovered, null), selected);
+  assert.deepEqual(hoverNode(graphOf(fixture), hovered, null), selected);
   const bidirectional = freeze({
     ...fixture,
     nodes: [
@@ -435,7 +466,7 @@ test("hover overrides selection for row highlights relative to the active state;
   });
   assert.deepEqual(
     getRowHighlight(
-      bidirectional,
+      graphOf(bidirectional),
       selected.interaction,
       selected.navigation,
       "urn:test:first",
@@ -444,15 +475,15 @@ test("hover overrides selection for row highlights relative to the active state;
     { tone: "both", incoming: 1, outgoing: 2 },
   );
   const composeHover = freeze(
-    hoverNode(bidirectional, selected, {
+    hoverNode(graphOf(bidirectional), selected, {
       kind: "state",
-      journeyRef: "urn:test:first",
-      nodeRef: "urn:test:compose",
+      journeyId: "urn:test:first",
+      nodeId: "urn:test:compose",
     }),
   );
   assert.deepEqual(
     getRowHighlight(
-      bidirectional,
+      graphOf(bidirectional),
       composeHover.interaction,
       composeHover.navigation,
       "urn:test:first",
@@ -464,49 +495,61 @@ test("hover overrides selection for row highlights relative to the active state;
 
 test("entry, exit and transition navigation preserves explicit OIDC boundary mappings", () => {
   const state = pick(oidc, `${prefix}idp-auth-flow`);
-  const items = getNavigationItems(oidc, state.selection, state.occurrence);
+  const items = getNavigationItems(
+    graphOf(oidc),
+    state.selection,
+    state.occurrence,
+  );
   const entry = items.find(
-    (item) => item.selection.nodeRef === `${prefix}idp-login-entry`,
+    (item) => item.selection.nodeId === `${prefix}idp-login-entry`,
   );
   const exit = items.find(
-    (item) => item.selection.nodeRef === `${prefix}idp-auth-failed`,
+    (item) => item.selection.nodeId === `${prefix}idp-auth-failed`,
   );
   assert.ok(entry);
   assert.ok(exit);
   assert.equal(entry.selection.kind, "entry");
   assert.equal(exit.selection.kind, "exit");
   assert.equal(
-    getOccurrenceTrail(oidc, entry.occurrence).at(-1).journey["@id"],
+    getOccurrenceTrail(graphOf(oidc), entry.occurrence).at(-1).journey.id,
     `${prefix}idp-auth-journey`,
   );
-  const starts = getNavigationItems(oidc, entry.selection, entry.occurrence);
+  const starts = getNavigationItems(
+    graphOf(oidc),
+    entry.selection,
+    entry.occurrence,
+  );
   assert.ok(
     starts.some(
       (item) =>
         item.label.startsWith("Starts at:") &&
-        item.selection.nodeRef === `${prefix}idp-login`,
+        item.selection.nodeId === `${prefix}idp-login`,
     ),
   );
   assert.ok(
     starts.some(
       (item) =>
         item.label.startsWith("Call site") &&
-        item.selection.nodeRef === `${prefix}app-sign-in-required`,
+        item.selection.nodeId === `${prefix}app-sign-in-required`,
     ),
   );
-  const handlers = getNavigationItems(oidc, exit.selection, exit.occurrence);
+  const handlers = getNavigationItems(
+    graphOf(oidc),
+    exit.selection,
+    exit.occurrence,
+  );
   assert.ok(
     handlers.some(
       (item) =>
         item.label.startsWith("Parent continuation") &&
-        item.selection.nodeRef === `${prefix}app-login-error` &&
-        item.selection.journeyRef === `${prefix}app-auth-journey`,
+        item.selection.nodeId === `${prefix}app-login-error` &&
+        item.selection.journeyId === `${prefix}app-auth-journey`,
     ),
   );
   for (const target of [...items, ...starts, ...handlers]) {
     const next = navigateViewer(
-      oidc,
-      freeze(createViewerSnapshot(oidc)),
+      graphOf(oidc),
+      freeze(createViewerSnapshot(graphOf(oidc))),
       freeze(target),
     );
     assert.deepEqual(next.interaction.selection, target.selection);
@@ -549,7 +592,11 @@ test("shared boundary navigation exposes every caller and omits non-composite an
     ),
   });
   const entry = pick(document, "urn:test:child-entry");
-  const items = getNavigationItems(document, entry.selection, entry.occurrence);
+  const items = getNavigationItems(
+    graphOf(document),
+    entry.selection,
+    entry.occurrence,
+  );
   assert.equal(
     items.filter((item) => item.label.startsWith("Call site")).length,
     2,
@@ -557,7 +604,7 @@ test("shared boundary navigation exposes every caller and omits non-composite an
   assert.deepEqual(
     items
       .filter((item) => item.label.startsWith("Call site"))
-      .map((item) => item.occurrence.startJourneyRef),
+      .map((item) => item.occurrence.startJourneyId),
     ["urn:test:first", "urn:test:second"],
   );
   assert.equal(
@@ -566,7 +613,7 @@ test("shared boundary navigation exposes every caller and omits non-composite an
   );
   const state = pick(document, "urn:test:terminal");
   const boundaries = getNavigationItems(
-    document,
+    graphOf(document),
     state.selection,
     state.occurrence,
   ).filter((item) => item.label.startsWith("Enter child"));
@@ -577,14 +624,18 @@ test("shared boundary navigation exposes every caller and omits non-composite an
 });
 
 test("controlled columns, search and inspector rendering remain pure with frozen inputs", () => {
-  const target = freeze(searchViewer(fixture, "urn:test:shared")[1]);
+  const target = freeze(searchViewer(graphOf(fixture), "urn:test:shared")[1]);
   const snapshot = freeze(
-    setViewMode(fixture, navigateViewer(fixture, initial, target), "columns"),
+    setViewMode(
+      graphOf(fixture),
+      navigateViewer(graphOf(fixture), initial, target),
+      "columns",
+    ),
   );
   const before = JSON.stringify({ fixture, snapshot });
   const explorer = renderToStaticMarkup(
     h(JourneyExplorer, {
-      document: fixture,
+      graph: graphOf(fixture),
       ...snapshot,
       onSelect: fail,
       onToggleChildren: fail,
@@ -602,7 +653,7 @@ test("controlled columns, search and inspector rendering remain pure with frozen
   );
   const navigation = renderToStaticMarkup(
     h(JourneyNavigation, {
-      document: fixture,
+      graph: graphOf(fixture),
       snapshot: freeze(setSearchQuery(snapshot, "Repeated child")),
       ...bar,
     }),
@@ -617,7 +668,7 @@ test("controlled columns, search and inspector rendering remain pure with frozen
   );
   const inspector = renderToStaticMarkup(
     h(JourneyInspector, {
-      document: fixture,
+      graph: graphOf(fixture),
       selection: snapshot.interaction.selection,
       navigation: { occurrence: target.occurrence, onNavigate: fail },
     }),
@@ -631,21 +682,21 @@ test("controlled columns, search and inspector rendering remain pure with frozen
 test("empty navigation remains explicit without fabricating a scope", () => {
   const document = freeze({
     "@id": "urn:empty",
-    "@context": "urn:c",
+    "@context": edContext,
     "@type": "UJGDocument",
   });
-  const snapshot = freeze(createViewerSnapshot(document));
+  const snapshot = freeze(createViewerSnapshot(graphOf(document)));
   assert.equal(snapshot.navigation.occurrence, null);
   assert.deepEqual(snapshot.navigation.lanes, []);
   assert.equal(snapshot.interaction.selection, null);
   assert.equal(
-    setViewMode(document, snapshot, "columns").navigation.lanes,
+    setViewMode(graphOf(document), snapshot, "columns").navigation.lanes,
     snapshot.navigation.lanes,
   );
-  assert.deepEqual(searchViewer(document, "anything"), []);
-  assert.deepEqual(getNavigationItems(document, null, null), []);
+  assert.deepEqual(searchViewer(graphOf(document), "anything"), []);
+  assert.deepEqual(getNavigationItems(graphOf(document), null, null), []);
   const html = renderToStaticMarkup(
-    h(JourneyNavigation, { document, snapshot, ...bar }),
+    h(JourneyNavigation, { graph: graphOf(document), snapshot, ...bar }),
   );
   assert.match(html, /aria-pressed="true"[^>]*>Tree</);
   assert.match(html, /0 journeys · 0 states · 0 transitions/);
@@ -654,27 +705,33 @@ test("empty navigation remains explicit without fabricating a scope", () => {
 
 test("ordinary navigation preserves a query; only valid search picks clear it, including selection no-ops", () => {
   const searching = freeze(setSearchQuery(initial, "Repeated child"));
-  const target = freeze(searchViewer(fixture, "urn:test:shared")[1]);
+  const target = freeze(searchViewer(graphOf(fixture), "urn:test:shared")[1]);
   const before = JSON.stringify({ searching, target });
-  const moved = freeze(navigateViewer(fixture, searching, target));
+  const moved = freeze(navigateViewer(graphOf(fixture), searching, target));
   assert.equal(moved.navigation.query, "Repeated child");
-  assert.equal(navigateViewer(fixture, moved, target), moved);
-  const picked = freeze(pickSearchResult(fixture, moved, target));
+  assert.equal(navigateViewer(graphOf(fixture), moved, target), moved);
+  const picked = freeze(pickSearchResult(graphOf(fixture), moved, target));
   assert.equal(picked.navigation.query, "");
   assert.equal(picked.interaction, moved.interaction);
-  assert.equal(pickSearchResult(fixture, picked, target), picked);
-  assert.deepEqual(pickSearchResult(fixture, searching, target), picked);
+  assert.equal(pickSearchResult(graphOf(fixture), picked, target), picked);
+  assert.deepEqual(
+    pickSearchResult(graphOf(fixture), searching, target),
+    picked,
+  );
   const invalid = freeze({
     ...target,
-    occurrence: { startJourneyRef: "missing", steps: [] },
+    occurrence: { startJourneyId: "missing", steps: [] },
   });
-  assert.equal(pickSearchResult(fixture, searching, invalid), searching);
+  assert.equal(
+    pickSearchResult(graphOf(fixture), searching, invalid),
+    searching,
+  );
   assert.equal(JSON.stringify({ searching, target }), before);
 });
 
 test("occurrence wording uses labels and disambiguates repeated references independently of unresolved positions", () => {
   const before = JSON.stringify(review);
-  const matches = searchViewer(review, "urn:test:shared");
+  const matches = searchViewer(graphOf(review), "urn:test:shared");
   assert.equal(
     matches[0].context,
     "First root / via Several child journeys / Repeated child (reference 1 of 2)",
@@ -701,7 +758,7 @@ test("occurrence wording uses labels and disambiguates repeated references indep
     ),
   });
   assert.ok(
-    searchViewer(repeatedState, "urn:test:shared").some((result) =>
+    searchViewer(graphOf(repeatedState), "urn:test:shared").some((result) =>
       result.context.includes("via Several child journeys (reference 2 of 2)"),
     ),
   );
@@ -726,11 +783,11 @@ test("occurrence wording uses labels and disambiguates repeated references indep
     ),
   });
   assert.match(
-    searchViewer(equalRootLabels, "urn:test:shared")[0].context,
+    searchViewer(graphOf(equalRootLabels), "urn:test:shared")[0].context,
     /^First root \(urn:test:first\)/,
   );
   assert.match(
-    searchViewer(equalRootLabels, "urn:test:shared")[2].context,
+    searchViewer(graphOf(equalRootLabels), "urn:test:shared")[2].context,
     /^First root \(urn:test:second\)/,
   );
   assert.doesNotMatch(
@@ -742,10 +799,10 @@ test("occurrence wording uses labels and disambiguates repeated references indep
 
 test("navigation presents equal-label touchpoint IDs and explicitly labels its first 18 matches", () => {
   const snapshot = freeze(
-    setSearchQuery(createViewerSnapshot(review), "urn:test:"),
+    setSearchQuery(createViewerSnapshot(graphOf(review)), "urn:test:"),
   );
   const html = renderToStaticMarkup(
-    h(JourneyNavigation, { document: review, snapshot, ...bar }),
+    h(JourneyNavigation, { graph: graphOf(review), snapshot, ...bar }),
   );
   assert.match(html, />Web \(urn:test:web\)<\/button>/);
   assert.match(html, />Web \(urn:test:phone\)<\/button>/);

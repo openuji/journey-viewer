@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { HeadingLevel } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import type { ScreenshotMap } from "@/screens";
 import type { TouchpointPresentation } from "@/presentation";
 import type { ViewerExtensions } from "@/extensions";
@@ -18,7 +18,7 @@ import { columnsView, treeView } from "@/components/ExplorerView/ExplorerView";
 
 export interface JourneyViewerProps {
   /** Keep this reference stable between actual replacements; every new object resets interaction. */
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly level?: HeadingLevel;
   /** Independent replaceable map; updates never reset document interaction. */
   readonly screenshots?: ScreenshotMap;
@@ -35,7 +35,7 @@ const views = [treeView, columnsView];
 
 /** The default arrangement: the original hierarchy's explorer bar, Tree and Columns, and the inspector. */
 export function JourneyViewer({
-  document,
+  graph,
   level = 2,
   screenshots = {},
   touchpoints = {},
@@ -45,7 +45,7 @@ export function JourneyViewer({
 }: JourneyViewerProps) {
   return (
     <Viewer
-      document={document}
+      graph={graph}
       views={views}
       level={level}
       screenshots={screenshots}

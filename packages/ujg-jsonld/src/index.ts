@@ -1,34 +1,16 @@
 export type {
-  JsonObject,
-  JsonValue,
-  UjgCommand,
-  UjgCompositeState,
-  UjgDocument,
-  UjgJourney,
-  UjgJourneyEntry,
-  UjgJourneyEntryIndex,
-  UjgJourneyExit,
-  UjgNode,
-  UjgNodeTypes,
-  UjgOutgoingTransition,
-  UjgOutgoingTransitionGroup,
-  UjgPersona,
-  UjgState,
-  UjgSurface,
-  UjgSurfaceInstance,
-  UjgTouchpoint,
-  UjgTransition,
-} from "@/types";
-
-export {
-  getChildJourneys,
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneysContaining,
-  getJourneyStates,
-  getJourneyTouchpoints,
-  getJourneyTransitions,
-  getNode,
-  getNodesByType,
-  getNodeSurfaces,
-} from "@/queries";
+  CompositeState,
+  Entry,
+  Exit,
+  Journey,
+  JourneyGraph,
+  PlainState,
+  State,
+  Surface,
+  Touchpoint,
+  Transition,
+} from "@/graph";
+export { entryInto, exitFrom, journeyTouchpoints, nodeSurfaces } from "@/graph";
+export { projectJourneyGraph } from "@/project";
+export { detectUjgVersion } from "@/version";
+export type { UjgVersion, UjgVersionCheck } from "@/version";

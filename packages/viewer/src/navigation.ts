@@ -1,18 +1,12 @@
 import {
-  getChildJourneys,
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneyStates,
-  getJourneyTouchpoints,
-  getJourneyTransitions,
-  getNode,
-  getNodesByType,
+  entryInto,
+  exitFrom,
+  journeyTouchpoints,
 } from "@journey-viewer/ujg-jsonld";
 import type {
-  UjgDocument,
-  UjgJourney,
-  UjgNode,
-  UjgTransition,
+  Journey,
+  JourneyGraph,
+  Transition,
 } from "@journey-viewer/ujg-jsonld";
 import {
   createViewerInteraction,
@@ -20,7 +14,11 @@ import {
   sameSelection,
   selectNode,
 } from "@/interaction";
-import type { ViewerInteraction, ViewerSelection } from "@/interaction";
+import type {
+  SelectedNode,
+  ViewerInteraction,
+  ViewerSelection,
+} from "@/interaction";
 import {
   childOccurrence,
   getOccurrenceTrail,
@@ -43,7 +41,7 @@ export interface ViewerNavigation {
   readonly occurrence: ViewerOccurrence | null;
   readonly query: string;
   /** At most one touchpoint; empty matches every journey. */
-  readonly touchpointRefs: readonly string[];
+  readonly touchpointIds: readonly string[];
   readonly hover: ViewerSelection | null;
   readonly hoverOccurrence: ViewerOccurrence | null;
 }
@@ -74,16 +72,14 @@ export interface ViewerRowHighlight {
   readonly outgoing: number;
 }
 
-const label = (node: UjgNode) =>
-  typeof node.label === "string" ? node.label : node["@id"];
 const selectionFor = (
-  journey: UjgJourney,
-  node: UjgNode,
+  journey: Journey,
+  node: SelectedNode,
   kind: ViewerSelection["kind"],
 ): ViewerSelection => ({
   kind,
-  journeyRef: journey["@id"],
-  nodeRef: node["@id"],
+  journeyId: journey.id,
+  nodeId: node.id,
 });
 const sameLanes = (
   left: readonly ViewerOccurrence[],
@@ -94,54 +90,50 @@ const sameLanes = (
 
 /** The occurrence's explicit call path, plus every resolvable child of a selected composite when opened. */
 export function getLanePath(
-  document: UjgDocument,
+  graph: JourneyGraph,
   occurrence: ViewerOccurrence,
   selection: ViewerSelection | null,
   openComposite: boolean,
 ): readonly ViewerOccurrence[] {
-  const trail = getOccurrenceTrail(document, occurrence);
+  const trail = getOccurrenceTrail(graph, occurrence);
   const journey = trail.at(-1)?.journey;
   const lanes = trail.map((crumb) => crumb.occurrence);
   if (
     !openComposite ||
     !journey ||
     selection?.kind !== "state" ||
-    selection.journeyRef !== journey["@id"]
+    selection.journeyId !== journey.id
   )
     return lanes;
-  const states = getJourneyStates(document, journey);
-  const composites = getNodesByType(document, "CompositeState");
-  const stateIndex = states.findIndex(
-    (state) =>
-      state["@id"] === selection.nodeRef &&
-      composites.some((node) => node === state),
+  const stateIndex = journey.states.findIndex(
+    (state) => state.id === selection.nodeId && state.kind === "composite",
   );
-  const composite = composites.find((node) => node === states[stateIndex]);
-  if (!composite) return lanes;
+  const composite = journey.states[stateIndex];
+  if (composite?.kind !== "composite") return lanes;
   return [
     ...lanes,
-    ...getChildJourneys(document, composite)
+    ...composite.children
       .map((_, childIndex) =>
         childOccurrence(occurrence, stateIndex, childIndex),
       )
-      .filter((path) => getOccurrenceTrail(document, path).length > 0),
+      .filter((path) => getOccurrenceTrail(graph, path).length > 0),
   ];
 }
 
-export function createViewerSnapshot(document: UjgDocument): ViewerSnapshot {
-  const interaction = createViewerInteraction(document);
-  const start = journeyOccurrences(document).next().value;
+export function createViewerSnapshot(graph: JourneyGraph): ViewerSnapshot {
+  const interaction = createViewerInteraction(graph);
+  const start = journeyOccurrences(graph).next().value;
   const occurrence = start?.occurrence ?? null;
   return {
     interaction,
     navigation: {
       mode: "tree",
       lanes: occurrence
-        ? getLanePath(document, occurrence, interaction.selection, false)
+        ? getLanePath(graph, occurrence, interaction.selection, false)
         : [],
       occurrence,
       query: "",
-      touchpointRefs: [],
+      touchpointIds: [],
       hover: null,
       hoverOccurrence: null,
     },
@@ -150,28 +142,22 @@ export function createViewerSnapshot(document: UjgDocument): ViewerSnapshot {
 }
 
 function navigate(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
   target: ViewerTarget,
   query: string,
 ): ViewerSnapshot {
-  const journey = getOccurrenceTrail(document, target.occurrence).at(
-    -1,
-  )?.journey;
+  const journey = getOccurrenceTrail(graph, target.occurrence).at(-1)?.journey;
   if (
-    journey?.["@id"] !== target.selection.journeyRef ||
-    !resolveSelection(document, target.selection)
+    journey?.id !== target.selection.journeyId ||
+    !resolveSelection(graph, target.selection)
   )
     return current;
-  const interaction = selectNode(
-    document,
-    current.interaction,
-    target.selection,
-  );
+  const interaction = selectNode(graph, current.interaction, target.selection);
   const navigation = current.navigation;
   const lanes =
     navigation.mode === "columns"
-      ? getLanePath(document, target.occurrence, target.selection, true)
+      ? getLanePath(graph, target.occurrence, target.selection, true)
       : navigation.lanes;
   const unchangedLanes = sameLanes(lanes, navigation.lanes);
   if (
@@ -200,25 +186,25 @@ function navigate(
 
 /** Selection and occurrence update together; ordinary navigation preserves search text. */
 export function navigateViewer(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
   target: ViewerTarget,
 ): ViewerSnapshot {
-  return navigate(document, current, target, current.navigation.query);
+  return navigate(graph, current, target, current.navigation.query);
 }
 
 /** A search pick clears the query only after the target and its occurrence resolve. */
 export function pickSearchResult(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
   target: ViewerTarget,
 ): ViewerSnapshot {
-  return navigate(document, current, target, "");
+  return navigate(graph, current, target, "");
 }
 
 /** Switching to columns derives lanes from the current selection and occurrence; tree keeps expansion. */
 export function setViewMode(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
   mode: ViewerMode,
 ): ViewerSnapshot {
@@ -227,7 +213,7 @@ export function setViewMode(
   const lanes =
     mode === "columns" && navigation.occurrence
       ? getLanePath(
-          document,
+          graph,
           navigation.occurrence,
           current.interaction.selection,
           true,
@@ -258,39 +244,36 @@ export function setSearchQuery(
 
 /** Single-select touchpoint filter; null shows every journey. Assignments are explicit and never inherited. */
 export function selectTouchpoint(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
-  ref: string | null,
+  id: string | null,
 ): ViewerSnapshot {
-  if (
-    ref !== null &&
-    !getNodesByType(document, "Touchpoint").some((node) => node["@id"] === ref)
-  )
+  if (id !== null && !graph.touchpoints.some((node) => node.id === id))
     return current;
-  const refs = current.navigation.touchpointRefs;
-  if (ref === null ? refs.length === 0 : refs.length === 1 && refs[0] === ref)
+  const ids = current.navigation.touchpointIds;
+  if (id === null ? ids.length === 0 : ids.length === 1 && ids[0] === id)
     return current;
   return {
     ...current,
     navigation: {
       ...current.navigation,
-      touchpointRefs: ref === null ? [] : [ref],
+      touchpointIds: id === null ? [] : [id],
     },
   };
 }
 
 export function hoverNode(
-  document: UjgDocument,
+  graph: JourneyGraph,
   current: ViewerSnapshot,
   hover: ViewerSelection | null,
   occurrence: ViewerOccurrence | null = null,
 ): ViewerSnapshot {
   if (
     hover &&
-    (!resolveSelection(document, hover) ||
+    (!resolveSelection(graph, hover) ||
       (occurrence &&
-        getOccurrenceTrail(document, occurrence).at(-1)?.journey["@id"] !==
-          hover.journeyRef))
+        getOccurrenceTrail(graph, occurrence).at(-1)?.journey.id !==
+          hover.journeyId))
   )
     return current;
   const hoverOccurrence = hover ? occurrence : null;
@@ -311,25 +294,24 @@ export function hoverNode(
 
 /** Only local, explicitly listed transitions produce row highlights. Hover takes precedence over selection. */
 export function getRowHighlight(
-  document: UjgDocument,
+  graph: JourneyGraph,
   interaction: ViewerInteraction,
   navigation: ViewerNavigation | undefined,
-  journeyRef: string,
-  stateRef: string,
+  journeyId: string,
+  stateId: string,
 ): ViewerRowHighlight | undefined {
   const active = navigation?.hover ?? interaction.selection;
-  if (!active || active.kind !== "state" || active.journeyRef !== journeyRef)
+  if (!active || active.kind !== "state" || active.journeyId !== journeyId)
     return undefined;
-  const journey = resolveSelection(document, active)?.journey;
+  const journey = resolveSelection(graph, active)?.journey;
   if (!journey) return undefined;
-  if (active.nodeRef === stateRef)
+  if (active.nodeId === stateId)
     return { tone: "active", incoming: 0, outgoing: 0 };
-  const transitions = getJourneyTransitions(document, journey);
-  const incoming = transitions.filter(
-    (edge) => edge.from === stateRef && edge.to === active.nodeRef,
+  const incoming = journey.transitions.filter(
+    (edge) => edge.from === stateId && edge.to === active.nodeId,
   ).length;
-  const outgoing = transitions.filter(
-    (edge) => edge.from === active.nodeRef && edge.to === stateRef,
+  const outgoing = journey.transitions.filter(
+    (edge) => edge.from === active.nodeId && edge.to === stateId,
   ).length;
   return {
     tone:
@@ -347,79 +329,70 @@ export function getRowHighlight(
 
 /** Plain-text explanation of the routes behind a row's marks, relative to the active state. */
 export function getRouteDescription(
-  document: UjgDocument,
+  graph: JourneyGraph,
   navigation: ViewerNavigation | undefined,
   interaction: ViewerInteraction,
-  journeyRef: string,
-  stateRef: string,
+  journeyId: string,
+  stateId: string,
 ): string {
   const active = navigation?.hover ?? interaction.selection;
   const journey =
-    active?.kind === "state" && active.journeyRef === journeyRef
-      ? resolveSelection(document, active)?.journey
+    active?.kind === "state" && active.journeyId === journeyId
+      ? resolveSelection(graph, active)?.journey
       : undefined;
   if (!active || !journey) return "";
-  const nodeLabel = (ref: string) => {
-    const node = getNode(document, ref);
-    return node ? label(node) : ref;
-  };
-  const describe = (heading: string, edges: readonly UjgTransition[]) =>
-    edges.length ? [heading, ...edges.map((edge) => `• ${label(edge)}`)] : [];
-  const transitions = getJourneyTransitions(document, journey);
+  const nodeLabel = (id: string) =>
+    graph.states.find((node) => node.id === id)?.label ?? id;
+  const describe = (heading: string, edges: readonly Transition[]) =>
+    edges.length ? [heading, ...edges.map((edge) => `• ${edge.label}`)] : [];
   return [
     ...describe(
-      `${nodeLabel(stateRef)} → ${nodeLabel(active.nodeRef)}:`,
-      transitions.filter(
-        (edge) => edge.from === stateRef && edge.to === active.nodeRef,
+      `${nodeLabel(stateId)} → ${nodeLabel(active.nodeId)}:`,
+      journey.transitions.filter(
+        (edge) => edge.from === stateId && edge.to === active.nodeId,
       ),
     ),
     ...describe(
-      `${nodeLabel(active.nodeRef)} → ${nodeLabel(stateRef)}:`,
-      transitions.filter(
-        (edge) => edge.from === active.nodeRef && edge.to === stateRef,
+      `${nodeLabel(active.nodeId)} → ${nodeLabel(stateId)}:`,
+      journey.transitions.filter(
+        (edge) => edge.from === active.nodeId && edge.to === stateId,
       ),
     ),
   ].join("\n");
 }
 
 export function matchesTouchpoints(
-  document: UjgDocument,
-  journeyRef: string,
-  refs: readonly string[],
+  graph: JourneyGraph,
+  journeyId: string,
+  ids: readonly string[],
 ): boolean {
   return (
-    refs.length === 0 ||
-    getJourneyTouchpoints(document, journeyRef).some((node) =>
-      refs.includes(node["@id"]),
-    )
+    ids.length === 0 ||
+    journeyTouchpoints(graph, journeyId).some((node) => ids.includes(node.id))
   );
 }
 
 export function getViewerSummary(
-  document: UjgDocument,
-  refs: readonly string[] = [],
+  graph: JourneyGraph,
+  ids: readonly string[] = [],
 ) {
-  const journeys = getNodesByType(document, "Journey");
   return {
-    journeys: journeys.length,
-    states: new Set([
-      ...getNodesByType(document, "State"),
-      ...getNodesByType(document, "CompositeState"),
-    ]).size,
-    entries: getNodesByType(document, "JourneyEntry").length,
-    exits: getNodesByType(document, "JourneyExit").length,
-    transitions: getNodesByType(document, "Transition").length,
-    matchingJourneys: journeys.filter((journey) =>
-      matchesTouchpoints(document, journey["@id"], refs),
+    journeys: graph.journeys.length,
+    states: graph.states.length,
+    entries: graph.entries.length,
+    exits: graph.exits.length,
+    transitions: graph.transitions.length,
+    matchingJourneys: graph.journeys.filter((journey) =>
+      matchesTouchpoints(graph, journey.id, ids),
     ).length,
   } as const;
 }
 
 export function occurrenceLabel(
-  document: UjgDocument,
+  graph: JourneyGraph,
   occurrence: ViewerOccurrence,
 ): string {
-  return getOccurrenceLabels(document, occurrence)
+  return getOccurrenceLabels(graph, occurrence)
     .map((crumb) =>
       crumb.viaLabel ? `via ${crumb.viaLabel} / ${crumb.label}` : crumb.label,
     )
@@ -428,34 +401,24 @@ export function occurrenceLabel(
 
 /** Bounded results, computed in display order; no results for a blank query. */
 export function searchViewer(
-  document: UjgDocument,
+  graph: JourneyGraph,
   query: string,
-  touchpointRefs: readonly string[] = [],
+  touchpointIds: readonly string[] = [],
 ): readonly ViewerNavigationItem[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
   const results: ViewerNavigationItem[] = [];
-  for (const { journey, occurrence } of journeyOccurrences(document)) {
-    if (!matchesTouchpoints(document, journey["@id"], touchpointRefs)) continue;
+  for (const { journey, occurrence } of journeyOccurrences(graph)) {
+    if (!matchesTouchpoints(graph, journey.id, touchpointIds)) continue;
     const candidates = [
       { node: journey, kind: "journey" },
-      ...getJourneyStates(document, journey).map(
-        (node) => ({ node, kind: "state" }) as const,
-      ),
-      ...getJourneyEntries(document, journey).map(
-        (node) => ({ node, kind: "entry" }) as const,
-      ),
-      ...getJourneyExits(document, journey).map(
-        (node) => ({ node, kind: "exit" }) as const,
-      ),
+      ...journey.states.map((node) => ({ node, kind: "state" }) as const),
+      ...journey.entries.map((node) => ({ node, kind: "entry" }) as const),
+      ...journey.exits.map((node) => ({ node, kind: "exit" }) as const),
     ] as const;
     for (const { node, kind } of candidates) {
       if (
-        ![
-          label(node),
-          node["@id"],
-          ...(Array.isArray(node.tags) ? node.tags : []),
-        ]
+        ![node.label, node.id, ...node.tags]
           .join(" ")
           .toLowerCase()
           .includes(needle)
@@ -464,8 +427,8 @@ export function searchViewer(
       results.push({
         selection: selectionFor(journey, node, kind),
         occurrence,
-        label: label(node),
-        context: occurrenceLabel(document, occurrence),
+        label: node.label,
+        context: occurrenceLabel(graph, occurrence),
       });
       if (results.length === 18) return results;
     }
@@ -475,37 +438,26 @@ export function searchViewer(
 
 /** Navigation follows explicit local targets and explicit boundary mappings only. */
 export function getNavigationItems(
-  document: UjgDocument,
+  graph: JourneyGraph,
   selection: ViewerSelection | null,
   occurrence: ViewerOccurrence | null,
 ): readonly ViewerNavigationItem[] {
   if (!selection || !occurrence) return [];
-  const journey = getOccurrenceTrail(document, occurrence).at(-1)?.journey;
+  const journey = getOccurrenceTrail(graph, occurrence).at(-1)?.journey;
   if (
-    journey?.["@id"] !== selection.journeyRef ||
-    !resolveSelection(document, selection)
+    journey?.id !== selection.journeyId ||
+    !resolveSelection(graph, selection)
   )
     return [];
-  const states = getJourneyStates(document, journey);
-  const entries = getJourneyEntries(document, journey);
-  const exits = getJourneyExits(document, journey);
-  const transitions = getJourneyTransitions(document, journey);
-  const composites = getNodesByType(document, "CompositeState");
   const target = (
-    owner: UjgJourney,
+    owner: Journey,
     path: ViewerOccurrence,
-    ref: string,
+    id: string,
     prefix: string,
   ): readonly ViewerNavigationItem[] => {
-    const state = getJourneyStates(document, owner).find(
-      (node) => node["@id"] === ref,
-    );
-    const entry = getJourneyEntries(document, owner).find(
-      (node) => node["@id"] === ref,
-    );
-    const exit = getJourneyExits(document, owner).find(
-      (node) => node["@id"] === ref,
-    );
+    const state = owner.states.find((node) => node.id === id);
+    const entry = owner.entries.find((node) => node.id === id);
+    const exit = owner.exits.find((node) => node.id === id);
     const node = state ?? entry ?? exit;
     return node
       ? [
@@ -516,143 +468,117 @@ export function getNavigationItems(
               state ? "state" : entry ? "entry" : "exit",
             ),
             occurrence: path,
-            label: `${prefix}: ${label(node)}`,
-            context: occurrenceLabel(document, path),
+            label: `${prefix}: ${node.label}`,
+            context: occurrenceLabel(graph, path),
           },
         ]
       : [];
   };
-  const boundaryTargets = (
-    stateRef: string,
-    contractRef: string,
-    direction: "entry" | "exit",
-  ) =>
-    states.flatMap((state, stateIndex) => {
-      const composite = composites.find(
-        (node) => node === state && node["@id"] === stateRef,
-      );
-      return composite
-        ? getChildJourneys(document, composite).flatMap((child, childIndex) => {
+  // The child contract an explicit mapping names, at every occurrence of the composite's children.
+  const boundaryTargets = (edge: Transition, direction: "entry" | "exit") =>
+    journey.states.flatMap((state, stateIndex) =>
+      state.kind === "composite" &&
+      state.id === (direction === "entry" ? edge.to : edge.from)
+        ? state.children.flatMap((child, childIndex) => {
             const path = childOccurrence(occurrence, stateIndex, childIndex);
-            if (getOccurrenceTrail(document, path).length === 0) return [];
-            const contracts =
+            if (getOccurrenceTrail(graph, path).length === 0) return [];
+            const contract =
               direction === "entry"
-                ? getJourneyEntries(document, child)
-                : getJourneyExits(document, child);
-            return contracts.some((node) => node["@id"] === contractRef)
+                ? entryInto(edge, child)
+                : exitFrom(edge, child);
+            return contract
               ? target(
                   child,
                   path,
-                  contractRef,
+                  contract.id,
                   direction === "entry" ? "Enter child" : "Child exit",
                 )
               : [];
           })
-        : [];
-    });
+        : [],
+    );
   if (selection.kind === "journey")
     return [
-      ...states.flatMap((node) =>
-        target(journey, occurrence, node["@id"], "State"),
+      ...journey.states.flatMap((node) =>
+        target(journey, occurrence, node.id, "State"),
       ),
-      ...entries.flatMap((node) =>
-        target(journey, occurrence, node["@id"], "Entry"),
+      ...journey.entries.flatMap((node) =>
+        target(journey, occurrence, node.id, "Entry"),
       ),
-      ...exits.flatMap((node) =>
-        target(journey, occurrence, node["@id"], "Exit"),
+      ...journey.exits.flatMap((node) =>
+        target(journey, occurrence, node.id, "Exit"),
       ),
     ];
   const local = [
     ...(selection.kind === "entry"
-      ? entries
-          .filter((entry) => entry["@id"] === selection.nodeRef)
+      ? journey.entries
+          .filter((entry) => entry.id === selection.nodeId)
           .flatMap((entry) =>
-            target(journey, occurrence, entry.stateRef, "Starts at"),
+            target(journey, occurrence, entry.target, "Starts at"),
           )
       : []),
-    ...transitions.flatMap((edge) => [
-      ...(edge.to === selection.nodeRef
+    ...journey.transitions.flatMap((edge) => [
+      ...(edge.to === selection.nodeId
         ? [
             ...target(
               journey,
               occurrence,
               edge.from,
-              `Incoming · ${label(edge)}`,
+              `Incoming · ${edge.label}`,
             ),
-            ...(edge.fromExitRef
-              ? boundaryTargets(edge.from, edge.fromExitRef, "exit")
-              : []),
-            ...(edge.toEntryRef
-              ? boundaryTargets(edge.to, edge.toEntryRef, "entry")
-              : []),
+            ...(edge.fromExit ? boundaryTargets(edge, "exit") : []),
+            ...(edge.toEntry ? boundaryTargets(edge, "entry") : []),
           ]
         : []),
-      ...(edge.from === selection.nodeRef
+      ...(edge.from === selection.nodeId
         ? [
-            ...target(
-              journey,
-              occurrence,
-              edge.to,
-              `Outgoing · ${label(edge)}`,
-            ),
-            ...(edge.toEntryRef
-              ? boundaryTargets(edge.to, edge.toEntryRef, "entry")
-              : []),
-            ...(edge.fromExitRef
-              ? boundaryTargets(edge.from, edge.fromExitRef, "exit")
-              : []),
+            ...target(journey, occurrence, edge.to, `Outgoing · ${edge.label}`),
+            ...(edge.toEntry ? boundaryTargets(edge, "entry") : []),
+            ...(edge.fromExit ? boundaryTargets(edge, "exit") : []),
           ]
         : []),
     ]),
     ...(selection.kind === "state"
-      ? states.flatMap((state, stateIndex) => {
-          const composite = composites.find(
-            (node) => node === state && node["@id"] === selection.nodeRef,
-          );
-          return composite
-            ? getChildJourneys(document, composite).flatMap(
-                (child, childIndex) => {
-                  const path = childOccurrence(
-                    occurrence,
-                    stateIndex,
-                    childIndex,
-                  );
-                  return getOccurrenceTrail(document, path).length
-                    ? [
-                        {
-                          selection: selectionFor(child, child, "journey"),
-                          occurrence: path,
-                          label: `Nested journey: ${label(child)}`,
-                          context: occurrenceLabel(document, path),
-                        },
-                      ]
-                    : [];
-                },
-              )
-            : [];
-        })
+      ? journey.states.flatMap((state, stateIndex) =>
+          state.kind === "composite" && state.id === selection.nodeId
+            ? state.children.flatMap((child, childIndex) => {
+                const path = childOccurrence(
+                  occurrence,
+                  stateIndex,
+                  childIndex,
+                );
+                return getOccurrenceTrail(graph, path).length
+                  ? [
+                      {
+                        selection: selectionFor(child, child, "journey"),
+                        occurrence: path,
+                        label: `Nested journey: ${child.label}`,
+                        context: occurrenceLabel(graph, path),
+                      },
+                    ]
+                  : [];
+              })
+            : [],
+        )
       : []),
   ];
   if (selection.kind !== "entry" && selection.kind !== "exit") return local;
   // Enumerate every caller occurrence. Shared journeys never acquire a preferred parent.
   const callers: ViewerNavigationItem[] = [];
   for (const { journey: parent, occurrence: parentPath } of journeyOccurrences(
-    document,
+    graph,
   )) {
-    for (const edge of getJourneyTransitions(document, parent)) {
-      const stateRef = selection.kind === "entry" ? edge.to : edge.from;
-      const contractRef =
-        selection.kind === "entry" ? edge.toEntryRef : edge.fromExitRef;
-      const composite = composites.find(
-        (state) =>
-          state["@id"] === stateRef && parent.stateRefs.includes(stateRef),
+    for (const edge of parent.transitions) {
+      const stateId = selection.kind === "entry" ? edge.to : edge.from;
+      const contractId =
+        selection.kind === "entry" ? edge.toEntry : edge.fromExit;
+      const composite = parent.states.find(
+        (state) => state.id === stateId && state.kind === "composite",
       );
       if (
-        contractRef !== selection.nodeRef ||
-        !composite ||
-        !getChildJourneys(document, composite).some(
-          (child) => child["@id"] === journey["@id"],
-        )
+        contractId !== selection.nodeId ||
+        composite?.kind !== "composite" ||
+        !composite.children.some((child) => child.id === journey.id)
       )
         continue;
       callers.push(
@@ -660,7 +586,7 @@ export function getNavigationItems(
           parent,
           parentPath,
           selection.kind === "entry" ? edge.from : edge.to,
-          `${selection.kind === "entry" ? "Call site" : "Parent continuation"} · ${label(edge)}`,
+          `${selection.kind === "entry" ? "Call site" : "Parent continuation"} · ${edge.label}`,
         ),
       );
     }

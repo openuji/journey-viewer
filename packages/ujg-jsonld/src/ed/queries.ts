@@ -11,7 +11,7 @@ import type {
   UjgSurface,
   UjgTouchpoint,
   UjgTransition,
-} from "@/types";
+} from "@/ed/types";
 
 const hasType = (node: UjgNode, type: string): boolean =>
   typeof node["@type"] === "string"

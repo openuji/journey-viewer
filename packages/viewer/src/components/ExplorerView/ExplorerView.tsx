@@ -8,7 +8,7 @@ import styles from "@/components/ExplorerView/ExplorerView.module.css";
 /** The tree or columns over the viewer's snapshot; row tones follow the selection only. */
 function ExplorerView({ mode }: Readonly<{ mode: ViewerMode }>) {
   const {
-    document,
+    graph,
     level,
     screenshots,
     touchpoints,
@@ -20,7 +20,7 @@ function ExplorerView({ mode }: Readonly<{ mode: ViewerMode }>) {
   return (
     <div className={mode === "tree" ? styles.tree : styles.columns}>
       <JourneyExplorer
-        document={document}
+        graph={graph}
         interaction={snapshot.interaction}
         navigation={snapshot.navigation}
         level={level}
@@ -56,7 +56,7 @@ export const treeView: ViewerView = {
   id: "tree",
   label: "Tree",
   render: () => <ExplorerView mode="tree" />,
-  enter: (document, snapshot) => setViewMode(document, snapshot, "tree"),
+  enter: (graph, snapshot) => setViewMode(graph, snapshot, "tree"),
 };
 
 /** One column per journey along the selection's call path. */
@@ -64,5 +64,5 @@ export const columnsView: ViewerView = {
   id: "columns",
   label: "Columns",
   render: () => <ExplorerView mode="columns" />,
-  enter: (document, snapshot) => setViewMode(document, snapshot, "columns"),
+  enter: (graph, snapshot) => setViewMode(graph, snapshot, "columns"),
 };

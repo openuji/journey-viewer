@@ -53,12 +53,14 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
   local brand tokens/primitives and native Astro Storybook on port 6008. Its `/app/`
   routes mount the built `@journey-viewer/app` with the site's brand and example
   (Stage 17), linking the app, design-system and viewer packages.
-- `packages/ujg-jsonld`: readonly source document types and pure data queries.
+- `packages/ujg-jsonld`: reads UJG: version detection, the readonly Editor's Draft
+  types and queries (`/ed`) and the projection to `JourneyGraph`, the
+  version-independent graph every view renders.
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
   readonly presentation contracts, independent fixture checks, and Storybook.
-- `packages/viewer`: static/controlled hierarchy rendering directly over UJG
-  queries, immutable interaction/navigation, derived inspection/highlights,
+- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree,
+  Columns and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
   explicit occurrence paths and an instance-local React boundary with document-replacement reset.
 - `packages/flow-layout`: dependency-free layered layout of one flow-chart level
   (positions and orthogonal metro-style routes for sized nodes and fixed-port

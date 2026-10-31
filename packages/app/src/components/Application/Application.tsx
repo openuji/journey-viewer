@@ -4,7 +4,7 @@ import type {
   ScreenshotMap,
   TouchpointPresentation,
 } from "@journey-viewer/viewer";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { checkDocument } from "@/document-policy";
 import { readSource } from "@/read-source";
 import type { DocumentSource, SourceInput } from "@/read-source";
@@ -29,7 +29,7 @@ type ReadRequest = Readonly<
 >;
 interface LoadedDocument {
   readonly name: string;
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   readonly touchpoints: TouchpointPresentation;
 }
@@ -94,10 +94,10 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
       const checked = checkDocument(value);
       setReport({ kind: "checked", name, findings: checked.findings });
       if (checked.kind === "ready") {
-        // Retain the exact parsed object until the next successful load.
+        // Retain the derived graph until the next successful load; a new one resets the viewer.
         setLoaded({
           name,
-          document: checked.document,
+          graph: checked.graph,
           screenshots: input.screenshots,
           touchpoints: input.touchpoints,
         });
@@ -119,16 +119,14 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
         report={report}
         onOpenFile={picker.open}
         document={
-          loaded
-            ? { title: loaded.name, identity: loaded.document["@id"] }
-            : null
+          loaded ? { title: loaded.name, identity: loaded.graph.id } : null
         }
       />
       <main id="application" tabIndex={-1} className={styles.main}>
         {loaded ? (
           <div className={styles.loaded} data-application-viewer="">
             <ApplicationViewer
-              document={loaded.document}
+              graph={loaded.graph}
               screenshots={loaded.screenshots}
               touchpoints={loaded.touchpoints}
             />

@@ -1,11 +1,5 @@
-import {
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneyStates,
-  getNodeSurfaces,
-  getNodesByType,
-} from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument, UjgSurface } from "@journey-viewer/ujg-jsonld";
+import { nodeSurfaces } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph, Surface } from "@journey-viewer/ujg-jsonld";
 import {
   resolveSelection,
   sameSelection,
@@ -20,11 +14,11 @@ import {
 import { getLanePath } from "@/navigation";
 import type { ViewerSnapshot, ViewerTarget } from "@/navigation";
 
-/** Independent JSON input: exact UJG Surface IDs to caller-resolved image URLs. */
+/** Independent JSON input: exact surface IDs to caller-resolved image URLs. */
 export type ScreenshotMap = Readonly<Record<string, string>>;
 
 export interface NodeScreen {
-  readonly surface: UjgSurface;
+  readonly surface: Surface;
   readonly source: string | undefined;
 }
 
@@ -35,18 +29,18 @@ export interface ViewerScreen extends NodeScreen {
 
 /** Only identity/context is retained. The current map supplies the URL on every render. */
 export interface ViewerLightbox {
-  readonly surfaceRef: string;
+  readonly surfaceId: string;
   readonly target: ViewerTarget;
 }
 
 export function getNodeScreens(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
-  nodeRef: string,
+  nodeId: string,
 ): readonly NodeScreen[] {
-  return getNodeSurfaces(document, nodeRef).map((surface) => {
-    const source = Object.hasOwn(screenshots, surface["@id"])
-      ? screenshots[surface["@id"]]
+  return nodeSurfaces(graph, nodeId).map((surface) => {
+    const source = Object.hasOwn(screenshots, surface.id)
+      ? screenshots[surface.id]
       : undefined;
     return {
       surface,
@@ -57,23 +51,17 @@ export function getNodeScreens(
 
 /** Source journey/member/surface order, with every finite call-site context explicit. No retained catalog. */
 export function getScreens(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
 ): readonly ViewerScreen[] {
-  const occurrences = [...journeyOccurrences(document)];
+  const occurrences = [...journeyOccurrences(graph)];
   const screens: ViewerScreen[] = [];
-  for (const journey of getNodesByType(document, "Journey")) {
+  for (const journey of graph.journeys) {
     const members = [
       { node: journey, kind: "journey" },
-      ...getJourneyStates(document, journey).map(
-        (node) => ({ node, kind: "state" }) as const,
-      ),
-      ...getJourneyEntries(document, journey).map(
-        (node) => ({ node, kind: "entry" }) as const,
-      ),
-      ...getJourneyExits(document, journey).map(
-        (node) => ({ node, kind: "exit" }) as const,
-      ),
+      ...journey.states.map((node) => ({ node, kind: "state" }) as const),
+      ...journey.entries.map((node) => ({ node, kind: "entry" }) as const),
+      ...journey.exits.map((node) => ({ node, kind: "exit" }) as const),
     ] as const;
     for (const { occurrence } of occurrences.filter(
       (item) => item.journey === journey,
@@ -81,14 +69,10 @@ export function getScreens(
       for (const { node, kind } of members) {
         const selection: ViewerSelection = {
           kind,
-          journeyRef: journey["@id"],
-          nodeRef: node["@id"],
+          journeyId: journey.id,
+          nodeId: node.id,
         };
-        for (const screen of getNodeScreens(
-          document,
-          screenshots,
-          node["@id"],
-        )) {
+        for (const screen of getNodeScreens(graph, screenshots, node.id)) {
           if (
             screens.some(
               (existing) =>
@@ -101,7 +85,7 @@ export function getScreens(
           screens.push({
             ...screen,
             target: { selection, occurrence },
-            label: typeof node.label === "string" ? node.label : node["@id"],
+            label: node.label,
           });
         }
       }
@@ -111,26 +95,24 @@ export function getScreens(
 }
 
 export function openScreenshot(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
   current: ViewerSnapshot,
   target: ViewerTarget,
-  surfaceRef: string,
+  surfaceId: string,
 ): ViewerSnapshot {
-  const journey = getOccurrenceTrail(document, target.occurrence).at(
-    -1,
-  )?.journey;
+  const journey = getOccurrenceTrail(graph, target.occurrence).at(-1)?.journey;
   if (
-    journey?.["@id"] !== target.selection.journeyRef ||
-    !resolveSelection(document, target.selection) ||
-    !getNodeScreens(document, screenshots, target.selection.nodeRef).some(
-      (screen) => screen.surface["@id"] === surfaceRef && screen.source,
+    journey?.id !== target.selection.journeyId ||
+    !resolveSelection(graph, target.selection) ||
+    !getNodeScreens(graph, screenshots, target.selection.nodeId).some(
+      (screen) => screen.surface.id === surfaceId && screen.source,
     )
   )
     return current;
   // Reveals ancestors but never expands a composite's children as a side effect of opening its image.
   const interaction = selectScreenNode(
-    document,
+    graph,
     current.interaction,
     target.selection,
   );
@@ -138,7 +120,7 @@ export function openScreenshot(
   // Columns follow the screen's call path without opening a composite's children.
   const lanes =
     navigation.mode === "columns"
-      ? getLanePath(document, target.occurrence, target.selection, false)
+      ? getLanePath(graph, target.occurrence, target.selection, false)
       : navigation.lanes;
   const unchangedLanes =
     lanes.length === navigation.lanes.length &&
@@ -152,7 +134,7 @@ export function openScreenshot(
   if (
     interaction === current.interaction &&
     unchangedContext &&
-    current.lightbox?.surfaceRef === surfaceRef &&
+    current.lightbox?.surfaceId === surfaceId &&
     sameSelection(current.lightbox.target.selection, target.selection) &&
     sameOccurrence(current.lightbox.target.occurrence, target.occurrence)
   )
@@ -170,7 +152,7 @@ export function openScreenshot(
           hoverOccurrence: null,
         },
     lightbox: {
-      surfaceRef,
+      surfaceId,
       target: {
         selection: { ...target.selection },
         occurrence: target.occurrence,
@@ -185,17 +167,17 @@ export function closeScreenshot(current: ViewerSnapshot): ViewerSnapshot {
 
 /** Wraps in source display order, skipping absent mappings but keeping failed URLs navigable. */
 export function stepScreenshot(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
   current: ViewerSnapshot,
   direction: -1 | 1,
 ): ViewerSnapshot {
   if (!current.lightbox || (direction !== -1 && direction !== 1))
     return current;
-  const screens = getScreens(document, screenshots);
+  const screens = getScreens(graph, screenshots);
   const index = screens.findIndex(
     (screen) =>
-      screen.surface["@id"] === current.lightbox?.surfaceRef &&
+      screen.surface.id === current.lightbox?.surfaceId &&
       sameSelection(
         screen.target.selection,
         current.lightbox.target.selection,
@@ -215,11 +197,11 @@ export function stepScreenshot(
       ];
     if (next?.source)
       return openScreenshot(
-        document,
+        graph,
         screenshots,
         current,
         next.target,
-        next.surface["@id"],
+        next.surface.id,
       );
   }
   return current;
@@ -227,12 +209,12 @@ export function stepScreenshot(
 
 /** Distinct mapped surfaces reachable from rendered graph nodes. */
 export function countMappedScreens(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
 ): number {
   return new Set(
-    getScreens(document, screenshots)
+    getScreens(graph, screenshots)
       .filter((screen) => screen.source)
-      .map((screen) => screen.surface["@id"]),
+      .map((screen) => screen.surface.id),
   ).size;
 }

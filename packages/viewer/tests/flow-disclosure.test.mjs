@@ -14,7 +14,7 @@ import { disclose } from "@/disclosure";
 import {
   hierarchyFixture,
   id,
-  oidcDocument,
+  oidcGraph,
   scopes,
   screensFixture,
 } from "~/tests/flow-scopes.mjs";
@@ -27,8 +27,8 @@ const PUSH = id("mfa-push-approval");
 const CHOICE = id("mfa-method-choice");
 const SIGN_IN = id("app-sign-in-required");
 
-const sceneOf = (document, state) =>
-  buildFlowScene(document, state.snapshot.interaction);
+const sceneOf = (graph, state) =>
+  buildFlowScene(graph, state.snapshot.interaction);
 /** Every frame, outermost first, as the layout lists them. */
 const framesOf = (scene) => {
   const visit = (frame) => [
@@ -43,43 +43,37 @@ const framesOf = (scene) => {
   return scene.frames.flatMap(visit);
 };
 /** The journey path as the scenarios read it: the frames showing the location. */
-const pathOf = (document, state) => {
-  const frames = framesOf(sceneOf(document, state));
+const pathOf = (graph, state) => {
+  const frames = framesOf(sceneOf(graph, state));
   const shown = state.location
     ? frames.filter((frame) => frameShows(frame, state.location))
     : [];
   return shown.length > 0 ? shown : frames.slice(0, 1);
 };
-const namesOf = (document, state) =>
-  pathOf(document, state).map((frame) => frame.card.id);
+const namesOf = (graph, state) =>
+  pathOf(graph, state).map((frame) => frame.card.id);
 /** The paper frames: the active journey's and those inside it. */
-const paperOf = (document, state) => {
-  const active = pathOf(document, state).at(-1);
-  return framesOf(sceneOf(document, state))
+const paperOf = (graph, state) => {
+  const active = pathOf(graph, state).at(-1);
+  return framesOf(sceneOf(graph, state))
     .filter((frame) => frameShows(active, frame.card.target))
     .map((frame) => frame.card.id);
 };
 
 /** Applies `actions` through the reducer, as the scenarios do. */
-const run = (document, state, ...actions) =>
+const run = (graph, state, ...actions) =>
   actions.reduce(
-    (current, action) => disclose(document, {}, current, action),
+    (current, action) => disclose(graph, {}, current, action),
     state,
   );
-const startingWith = (document, interaction) => ({
-  snapshot: { ...createViewerSnapshot(document), interaction },
+const startingWith = (graph, interaction) => ({
+  snapshot: { ...createViewerSnapshot(graph), interaction },
   location: null,
 });
-const collapsed = (document) =>
-  startingWith(
-    document,
-    collapseAllJourneys(createViewerInteraction(document)),
-  );
-const expanded = (document) =>
-  startingWith(
-    document,
-    expandAllJourneys(document, createViewerInteraction(document)),
-  );
+const collapsed = (graph) =>
+  startingWith(graph, collapseAllJourneys(createViewerInteraction(graph)));
+const expanded = (graph) =>
+  startingWith(graph, expandAllJourneys(graph, createViewerInteraction(graph)));
 
 const verticesOf = (scene) =>
   framesOf(scene).flatMap((f) =>
@@ -105,31 +99,31 @@ const chevron = (card) => ({
 const click = (card) => ({ type: "navigate", target: card.target });
 
 test("until the user acts, the path is the first root", () => {
-  assert.deepEqual(namesOf(oidcDocument, collapsed(oidcDocument)), [APP]);
-  const open = expanded(oidcDocument);
-  assert.deepEqual(namesOf(oidcDocument, open), [APP]);
+  assert.deepEqual(namesOf(oidcGraph, collapsed(oidcGraph)), [APP]);
+  const open = expanded(oidcGraph);
+  assert.deepEqual(namesOf(oidcGraph, open), [APP]);
 });
 
 test("a chevron marks its composite: opening enters it, closing leaves the path at its journey", () => {
-  let state = collapsed(oidcDocument);
+  let state = collapsed(oidcGraph);
   const toggle = (stateId) =>
     (state = run(
-      oidcDocument,
+      oidcGraph,
       state,
-      chevron(cardOf(sceneOf(oidcDocument, state), stateId)),
+      chevron(cardOf(sceneOf(oidcGraph, state), stateId)),
     ));
   toggle(IDP);
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP]);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP]);
   toggle(MFA);
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA]);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA]);
   toggle(MFA);
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP], "MFA closed");
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP], "MFA closed");
   toggle(MFA);
-  state = run(oidcDocument, state, { type: "collapseAll" });
-  assert.deepEqual(namesOf(oidcDocument, state), [APP], "nothing open");
-  state = run(oidcDocument, state, { type: "expandAll" });
+  state = run(oidcGraph, state, { type: "collapseAll" });
+  assert.deepEqual(namesOf(oidcGraph, state), [APP], "nothing open");
+  state = run(oidcGraph, state, { type: "expandAll" });
   assert.deepEqual(
-    namesOf(oidcDocument, state),
+    namesOf(oidcGraph, state),
     [APP, IDP, MFA],
     "the location was kept",
   );
@@ -137,12 +131,12 @@ test("a chevron marks its composite: opening enters it, closing leaves the path 
 
 test("the tree's toggle names no occurrence and leaves the location", () => {
   const state = run(
-    oidcDocument,
-    collapsed(oidcDocument),
-    chevron(cardOf(sceneOf(oidcDocument, collapsed(oidcDocument)), IDP)),
+    oidcGraph,
+    collapsed(oidcGraph),
+    chevron(cardOf(sceneOf(oidcGraph, collapsed(oidcGraph)), IDP)),
   );
-  const mfa = cardOf(sceneOf(oidcDocument, state), MFA);
-  const toggled = run(oidcDocument, state, {
+  const mfa = cardOf(sceneOf(oidcGraph, state), MFA);
+  const toggled = run(oidcGraph, state, {
     type: "toggle",
     journeyId: mfa.journeyId,
     stateId: MFA,
@@ -152,9 +146,9 @@ test("the tree's toggle names no occurrence and leaves the location", () => {
     toggled.snapshot.interaction.expandedJourneys,
     state.snapshot.interaction.expandedJourneys,
   );
-  assert.deepEqual(namesOf(oidcDocument, toggled), [APP, IDP]);
+  assert.deepEqual(namesOf(oidcGraph, toggled), [APP, IDP]);
   assert.equal(
-    run(oidcDocument, state, { type: "collapseAll" }, { type: "collapseAll" })
+    run(oidcGraph, state, { type: "collapseAll" }, { type: "collapseAll" })
       .location,
     state.location,
   );
@@ -162,13 +156,13 @@ test("the tree's toggle names no occurrence and leaves the location", () => {
 
 test("a card click marks the composite it opens, as its chevron does", () => {
   let opened = 0;
-  for (const document of [oidcDocument, screensFixture, hierarchyFixture])
-    for (const [name, interaction] of scopes(document)) {
-      const state = startingWith(document, interaction);
-      for (const v of verticesOf(sceneOf(document, state))) {
+  for (const graph of [oidcGraph, screensFixture, hierarchyFixture])
+    for (const [name, interaction] of scopes(graph)) {
+      const state = startingWith(graph, interaction);
+      for (const v of verticesOf(sceneOf(graph, state))) {
         if (v.kind !== "composite" || v.card.toggle !== "expand") continue;
-        const clicked = pathOf(document, run(document, state, click(v.card)));
-        const toggled = pathOf(document, run(document, state, chevron(v.card)));
+        const clicked = pathOf(graph, run(graph, state, click(v.card)));
+        const toggled = pathOf(graph, run(graph, state, chevron(v.card)));
         assert.deepEqual(
           clicked.map((f) => f.key),
           toggled.map((f) => f.key),
@@ -182,44 +176,36 @@ test("a card click marks the composite it opens, as its chevron does", () => {
 });
 
 test("a click on a state marks it: the path ends at its journey", () => {
-  let state = collapsed(oidcDocument);
-  state = run(
-    oidcDocument,
-    state,
-    click(cardOf(sceneOf(oidcDocument, state), IDP)),
-  );
-  state = run(
-    oidcDocument,
-    state,
-    click(cardOf(sceneOf(oidcDocument, state), MFA)),
-  );
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA]);
-  const signIn = vertexOf(sceneOf(oidcDocument, state), SIGN_IN);
-  state = run(oidcDocument, state, { type: "navigate", target: signIn.target });
-  assert.equal(state.snapshot.interaction.selection?.nodeRef, SIGN_IN);
-  assert.deepEqual(namesOf(oidcDocument, state), [APP]);
+  let state = collapsed(oidcGraph);
+  state = run(oidcGraph, state, click(cardOf(sceneOf(oidcGraph, state), IDP)));
+  state = run(oidcGraph, state, click(cardOf(sceneOf(oidcGraph, state), MFA)));
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA]);
+  const signIn = vertexOf(sceneOf(oidcGraph, state), SIGN_IN);
+  state = run(oidcGraph, state, { type: "navigate", target: signIn.target });
+  assert.equal(state.snapshot.interaction.selection?.nodeId, SIGN_IN);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP]);
 });
 
 test("a search result marks its target like a click and clears the query", () => {
-  const open = expanded(oidcDocument);
-  const choice = vertexOf(sceneOf(oidcDocument, open), CHOICE);
+  const open = expanded(oidcGraph);
+  const choice = vertexOf(sceneOf(oidcGraph, open), CHOICE);
   const searching = {
-    ...collapsed(oidcDocument),
-    snapshot: setSearchQuery(collapsed(oidcDocument).snapshot, "method"),
+    ...collapsed(oidcGraph),
+    snapshot: setSearchQuery(collapsed(oidcGraph).snapshot, "method"),
   };
-  const picked = run(oidcDocument, searching, {
+  const picked = run(oidcGraph, searching, {
     type: "pick",
     target: choice.target,
   });
   assert.equal(picked.snapshot.navigation.query, "");
   assert.equal(picked.location, choice.target);
-  assert.deepEqual(namesOf(oidcDocument, picked), [APP, IDP, MFA]);
-  const linked = run(oidcDocument, searching, {
+  assert.deepEqual(namesOf(oidcGraph, picked), [APP, IDP, MFA]);
+  const linked = run(oidcGraph, searching, {
     type: "navigate",
     target: choice.target,
   });
   assert.equal(linked.snapshot.navigation.query, "method");
-  assert.deepEqual(namesOf(oidcDocument, linked), [APP, IDP, MFA]);
+  assert.deepEqual(namesOf(oidcGraph, linked), [APP, IDP, MFA]);
 });
 
 test("a screen marks the node its lightbox shows, and stepping moves the mark", async () => {
@@ -229,102 +215,98 @@ test("a screen marks the node its lightbox shows, and stepping moves the mark", 
       "utf8",
     ),
   );
-  const open = expanded(oidcDocument);
-  const state = verticesOf(sceneOf(oidcDocument, open)).find(
+  const open = expanded(oidcGraph);
+  const state = verticesOf(sceneOf(oidcGraph, open)).find(
     (v) =>
       v.kind === "state" &&
-      getNodeScreens(oidcDocument, screenshots, v.id).some((s) => s.source),
+      getNodeScreens(oidcGraph, screenshots, v.id).some((s) => s.source),
   );
-  const [screen] = getNodeScreens(oidcDocument, screenshots, state.id);
-  const opened = disclose(oidcDocument, screenshots, open, {
+  const [screen] = getNodeScreens(oidcGraph, screenshots, state.id);
+  const opened = disclose(oidcGraph, screenshots, open, {
     type: "openScreen",
     target: state.target,
-    surfaceId: screen.surface["@id"],
+    surfaceId: screen.surface.id,
   });
   assert.ok(opened.snapshot.lightbox);
   assert.equal(opened.location, opened.snapshot.lightbox.target);
-  assert.equal(opened.location.selection.nodeRef, state.id);
-  const stepped = disclose(oidcDocument, screenshots, opened, {
+  assert.equal(opened.location.selection.nodeId, state.id);
+  const stepped = disclose(oidcGraph, screenshots, opened, {
     type: "stepScreen",
     direction: 1,
   });
   assert.equal(stepped.location, stepped.snapshot.lightbox.target);
-  assert.notEqual(stepped.location.selection.nodeRef, state.id);
+  assert.notEqual(stepped.location.selection.nodeId, state.id);
 });
 
 test("a link into closed journeys opens them; the path ends at the journey that shows its target", () => {
-  const open = expanded(oidcDocument);
-  const choice = vertexOf(sceneOf(oidcDocument, open), CHOICE);
-  const state = run(oidcDocument, collapsed(oidcDocument), {
+  const open = expanded(oidcGraph);
+  const choice = vertexOf(sceneOf(oidcGraph, open), CHOICE);
+  const state = run(oidcGraph, collapsed(oidcGraph), {
     type: "navigate",
     target: choice.target,
   });
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA]);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA]);
 });
 
 test("the active journey and the frames inside it are paper; the frames around and beside it are not", () => {
-  let state = collapsed(oidcDocument);
+  let state = collapsed(oidcGraph);
   for (const stateId of [IDP, MFA, SMS, PUSH])
     state = run(
-      oidcDocument,
+      oidcGraph,
       state,
-      click(cardOf(sceneOf(oidcDocument, state), stateId)),
+      click(cardOf(sceneOf(oidcGraph, state), stateId)),
     );
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA, PUSH]);
-  assert.deepEqual(paperOf(oidcDocument, state), [PUSH], "SMS is beside it");
-  state = run(
-    oidcDocument,
-    state,
-    click(cardOf(sceneOf(oidcDocument, state), MFA)),
-  );
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA]);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA, PUSH]);
+  assert.deepEqual(paperOf(oidcGraph, state), [PUSH], "SMS is beside it");
+  state = run(oidcGraph, state, click(cardOf(sceneOf(oidcGraph, state), MFA)));
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA]);
   assert.deepEqual(
-    paperOf(oidcDocument, state).sort(),
+    paperOf(oidcGraph, state).sort(),
     [MFA, PUSH, SMS].sort(),
     "an open heading's click marks it too",
   );
 });
 
 test("returning to a step closes what is open inside it and marks it", () => {
-  const open = expanded(oidcDocument);
+  const open = expanded(oidcGraph);
   const state = {
     ...open,
-    location: cardOf(sceneOf(oidcDocument, open), MFA).target,
+    location: cardOf(sceneOf(oidcGraph, open), MFA).target,
   };
-  const path = pathOf(oidcDocument, state);
-  assert.deepEqual(namesOf(oidcDocument, state), [APP, IDP, MFA]);
+  const path = pathOf(oidcGraph, state);
+  assert.deepEqual(namesOf(oidcGraph, state), [APP, IDP, MFA]);
   const idp = path[1];
   assert.ok(framesOf({ frames: [idp], issues: [] }).length > 2);
-  const returned = run(oidcDocument, state, { type: "return", frame: idp });
-  assert.deepEqual(namesOf(oidcDocument, returned), [APP, IDP]);
+  const returned = run(oidcGraph, state, { type: "return", frame: idp });
+  assert.deepEqual(namesOf(oidcGraph, returned), [APP, IDP]);
   assert.deepEqual(
-    paperOf(oidcDocument, returned),
+    paperOf(oidcGraph, returned),
     [IDP],
     "nothing stays open inside the frame",
   );
 });
 
 test("rows and recursion keep their frames when returning to them", () => {
-  for (const document of [screensFixture, hierarchyFixture]) {
-    const state = expanded(document);
-    for (const frame of framesOf(sceneOf(document, state))) {
-      const returned = run(document, state, { type: "return", frame });
-      const path = pathOf(document, returned);
+  for (const graph of [screensFixture, hierarchyFixture]) {
+    const state = expanded(graph);
+    for (const frame of framesOf(sceneOf(graph, state))) {
+      const returned = run(graph, state, { type: "return", frame });
+      const path = pathOf(graph, returned);
       assert.equal(
         path.at(-1)?.key,
         frame.key,
-        `${document["@id"]}: ${frame.key} stays open and active`,
+        `${graph.id}: ${frame.key} stays open and active`,
       );
       const inside = framesOf({ frames: [path.at(-1)], issues: [] });
       assert.ok(
         inside.every((f) => f === inside[0] || f.card.kind === "journey"),
-        `${document["@id"]}: only ${frame.key}'s own child journeys remain`,
+        `${graph.id}: only ${frame.key}'s own child journeys remain`,
       );
     }
   }
 });
 
 test("transitions that change nothing keep the disclosure", () => {
-  const state = collapsed(oidcDocument);
-  assert.equal(run(oidcDocument, state, { type: "collapseAll" }), state);
+  const state = collapsed(oidcGraph);
+  assert.equal(run(oidcGraph, state, { type: "collapseAll" }), state);
 });

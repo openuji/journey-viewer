@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { toggleContracts } from "@/interaction";
 import {
   createViewerSnapshot,
@@ -25,7 +25,7 @@ export interface ViewerView {
   readonly render: () => ReactNode;
   /** Applied to the snapshot when the view becomes active, such as the columns' lanes. */
   readonly enter?: (
-    document: UjgDocument,
+    graph: JourneyGraph,
     snapshot: ViewerSnapshot,
   ) => ViewerSnapshot;
   /** Where the inspector sits on phones; it comes first by default. */
@@ -34,7 +34,7 @@ export interface ViewerView {
 
 /** What the reducer reads besides the state; the viewer's props, unchanged. */
 export interface ViewerInputs {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   readonly views: readonly ViewerView[];
   /** The view the viewer opens with and returns to on reset; the first by default. */
@@ -60,7 +60,7 @@ export interface ViewerReveal {
   readonly kind: "top" | "journey" | "state" | "entry" | "exit";
   /** Occurrence key of the containing journey; empty for "top". */
   readonly occurrence: string;
-  readonly ref: string;
+  readonly id: string;
   /** Null for "top". */
   readonly target: ViewerTarget | null;
 }
@@ -110,7 +110,7 @@ const revealOf = (target: ViewerTarget, seq: number): ViewerReveal => ({
   seq,
   kind: target.selection.kind,
   occurrence: occurrenceKey(target.occurrence),
-  ref: target.selection.nodeRef,
+  id: target.selection.nodeId,
   target,
 });
 
@@ -122,12 +122,12 @@ const viewOf = (inputs: ViewerInputs, id: string | undefined) =>
  * a selection always comes with its occurrence, lanes and location.
  */
 export function createViewerState(inputs: ViewerInputs): ViewerState {
-  const { document, initialCommands = [] } = inputs;
-  const snapshot = createViewerSnapshot(document);
+  const { graph, initialCommands = [] } = inputs;
+  const snapshot = createViewerSnapshot(graph);
   const view = viewOf(inputs, inputs.initialView);
   const fresh: ViewerState = {
     disclosure: {
-      snapshot: view?.enter?.(document, snapshot) ?? snapshot,
+      snapshot: view?.enter?.(graph, snapshot) ?? snapshot,
       location: null,
     },
     view: view?.id ?? "",
@@ -151,7 +151,7 @@ export function reduceViewer(
   state: ViewerState,
   command: ViewerCommand,
 ): ViewerState {
-  const { document, screenshots } = inputs;
+  const { graph, screenshots } = inputs;
   const { snapshot } = state.disclosure;
   const withSnapshot = (next: ViewerSnapshot): ViewerState =>
     next === snapshot
@@ -164,7 +164,7 @@ export function reduceViewer(
   switch (command.type) {
     case "navigate": {
       const { target, reveal } = command;
-      const disclosure = disclose(document, screenshots, state.disclosure, {
+      const disclosure = disclose(graph, screenshots, state.disclosure, {
         type: "navigate",
         target,
       });
@@ -175,14 +175,14 @@ export function reduceViewer(
     case "pick":
       return {
         ...state,
-        disclosure: disclose(document, screenshots, state.disclosure, command),
+        disclosure: disclose(graph, screenshots, state.disclosure, command),
         searchOpen: false,
         reveal: nextReveal(command.target),
       };
     case "openScreen":
       return {
         ...withDisclosure(
-          disclose(document, screenshots, state.disclosure, command),
+          disclose(graph, screenshots, state.disclosure, command),
         ),
         preview: state.preview && { ...state.preview, visible: false },
       };
@@ -192,13 +192,13 @@ export function reduceViewer(
     case "collapseAll":
     case "return":
       return withDisclosure(
-        disclose(document, screenshots, state.disclosure, command),
+        disclose(graph, screenshots, state.disclosure, command),
       );
     case "view": {
       const view = inputs.views.find(({ id }) => id === command.id);
       if (!view || view.id === state.view) return state;
       return {
-        ...withSnapshot(view.enter?.(document, snapshot) ?? snapshot),
+        ...withSnapshot(view.enter?.(graph, snapshot) ?? snapshot),
         view: view.id,
       };
     }
@@ -213,10 +213,10 @@ export function reduceViewer(
     case "searchDismiss":
       return state.searchOpen ? { ...state, searchOpen: false } : state;
     case "touchpoint":
-      return withSnapshot(selectTouchpoint(document, snapshot, command.id));
+      return withSnapshot(selectTouchpoint(graph, snapshot, command.id));
     case "toggleContracts": {
       const interaction = toggleContracts(
-        document,
+        graph,
         snapshot.interaction,
         command.journeyId,
       );
@@ -244,7 +244,7 @@ export function reduceViewer(
           seq: (state.reveal?.seq ?? 0) + 1,
           kind: "top",
           occurrence: "",
-          ref: "",
+          id: "",
           target: null,
         },
       };

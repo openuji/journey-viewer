@@ -7,7 +7,7 @@ import {
   toggleChildJourneys,
   toggleContracts,
 } from "@/interaction";
-import { oidcDocument, topologyDocument } from "~/.storybook/documents";
+import { oidcGraph, topologyGraph } from "~/.storybook/documents";
 import {
   createViewerSnapshot,
   navigateViewer,
@@ -20,62 +20,56 @@ const meta = {
   title: "Viewer/JourneyExplorer",
   component: JourneyExplorer,
   args: {
-    document: oidcDocument,
-    interaction: createViewerInteraction(oidcDocument),
+    graph: oidcGraph,
+    interaction: createViewerInteraction(oidcGraph),
     onSelect: () => {},
     onToggleChildren: () => {},
   },
-  parameters: { controls: { exclude: ["document", "interaction"] } },
+  parameters: { controls: { exclude: ["graph", "interaction"] } },
 } satisfies Meta<typeof JourneyExplorer>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 function ControlledExample() {
   const [interaction, setInteraction] = useState(() =>
-    createViewerInteraction(oidcDocument),
+    createViewerInteraction(oidcGraph),
   );
   return (
     <JourneyExplorer
-      document={oidcDocument}
+      graph={oidcGraph}
       interaction={interaction}
       onSelect={(selection) =>
+        setInteraction((current) => selectNode(oidcGraph, current, selection))
+      }
+      onToggleContracts={(journeyId) =>
         setInteraction((current) =>
-          selectNode(oidcDocument, current, selection),
+          toggleContracts(oidcGraph, current, journeyId),
         )
       }
-      onToggleContracts={(journeyRef) =>
+      onToggleChildren={(journeyId, stateId) =>
         setInteraction((current) =>
-          toggleContracts(oidcDocument, current, journeyRef),
-        )
-      }
-      onToggleChildren={(journeyRef, stateRef) =>
-        setInteraction((current) =>
-          toggleChildJourneys(oidcDocument, current, journeyRef, stateRef),
+          toggleChildJourneys(oidcGraph, current, journeyId, stateId),
         )
       }
     />
   );
 }
 export const Controlled: Story = { render: () => <ControlledExample /> };
-const target = searchViewer(topologyDocument, "urn:test:shared")[1]!;
+const target = searchViewer(topologyGraph, "urn:test:shared")[1]!;
 const columns = setViewMode(
-  topologyDocument,
-  navigateViewer(
-    topologyDocument,
-    createViewerSnapshot(topologyDocument),
-    target,
-  ),
+  topologyGraph,
+  navigateViewer(topologyGraph, createViewerSnapshot(topologyGraph), target),
   "columns",
 );
 export const ColumnsAtSecondReference: Story = {
   args: {
-    document: topologyDocument,
+    graph: topologyGraph,
     interaction: columns.interaction,
     navigation: columns.navigation,
   },
 };
 const filtered = selectTouchpoint(
-  oidcDocument,
-  createViewerSnapshot(oidcDocument),
+  oidcGraph,
+  createViewerSnapshot(oidcGraph),
   "urn:ujg:solid-oidc:sms-channel",
 );
 export const TouchpointFilter: Story = {

@@ -5,7 +5,7 @@ import {
   createViewerInteraction,
   toggleChildJourneys,
 } from "@journey-viewer/viewer";
-import { id, oidcDocument, scopes } from "~/tests/flow-scopes.mjs";
+import { id, oidcGraph, scopes } from "~/tests/flow-scopes.mjs";
 import { composeFlow } from "@/flow/compose";
 import {
   flowGeometry,
@@ -17,23 +17,23 @@ import { activeStrokes } from "@/flow/strokes";
 import { estimate } from "@/flow/text";
 import { buildFlowScene } from "@/flow/scene";
 import { flowHighlight } from "@/flow/highlight";
-const closed = collapseAllJourneys(createViewerInteraction(oidcDocument));
+const closed = collapseAllJourneys(createViewerInteraction(oidcGraph));
 const idpOpen = toggleChildJourneys(
-  oidcDocument,
+  oidcGraph,
   closed,
   id("app-auth-journey"),
   id("idp-auth-flow"),
 );
 const layout = (interaction) =>
-  composeFlow(buildFlowScene(oidcDocument, interaction), flowLevel(), estimate);
+  composeFlow(buildFlowScene(oidcGraph, interaction), flowLevel(), estimate);
 test("an arrival and a return on one line split it, each with half an arrowhead", () => {
   const result = layout(closed);
   const ink = activeStrokes(
     result.connectors,
     flowHighlight(result, {
       kind: "state",
-      journeyRef: id("app-auth-journey"),
-      nodeRef: id("app-access-denied"),
+      journeyId: id("app-auth-journey"),
+      nodeId: id("app-access-denied"),
     }).routes,
   );
   const shared = ink.strokes.filter((s) => s.half);
@@ -68,8 +68,8 @@ test("a lone departure is centred on its exit glyph", () => {
     result.connectors,
     flowHighlight(result, {
       kind: "exit",
-      journeyRef: id("idp-auth-journey"),
-      nodeRef: id("idp-auth-denied"),
+      journeyId: id("idp-auth-journey"),
+      nodeId: id("idp-auth-denied"),
     }).routes,
   );
   const departing = ink.strokes.filter(
@@ -118,24 +118,24 @@ const activations = (result) => [
     s.key,
     {
       kind: "state",
-      journeyRef: s.vertex.journeyId,
-      nodeRef: s.vertex.id,
+      journeyId: s.vertex.journeyId,
+      nodeId: s.vertex.id,
     },
   ]),
   ...result.cards.map((c) => [
     c.key,
     {
       kind: "state",
-      journeyRef: c.card.journeyId,
-      nodeRef: c.card.id,
+      journeyId: c.card.journeyId,
+      nodeId: c.card.id,
     },
   ]),
   ...result.contracts.map((c) => [
     c.key,
     {
       kind: c.contract.kind,
-      journeyRef: c.contract.journeyId,
-      nodeRef: c.contract.id,
+      journeyId: c.contract.journeyId,
+      nodeId: c.contract.id,
     },
   ]),
 ];
@@ -177,7 +177,7 @@ test("arrivals and departures never share a half or cross along a line, and no l
   let activated = 0;
   let halves = 0;
   let junctionCrossings = 0;
-  for (const [name, interaction] of scopes(oidcDocument)) {
+  for (const [name, interaction] of scopes(oidcGraph)) {
     const result = layout(interaction);
     for (const [key, selection] of activations(result)) {
       activated++;
@@ -281,8 +281,8 @@ test("a two-way line keeps its halves apart through every corner", () => {
     result.connectors,
     flowHighlight(result, {
       kind: "state",
-      journeyRef: id("app-auth-journey"),
-      nodeRef: id("app-access-denied"),
+      journeyId: id("app-auth-journey"),
+      nodeId: id("app-access-denied"),
     }).routes,
   );
   const [incoming, outgoing] = ["incoming", "outgoing"].map((tone) =>

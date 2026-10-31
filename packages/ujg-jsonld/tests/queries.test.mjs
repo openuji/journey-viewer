@@ -12,7 +12,7 @@ import {
   getNode,
   getNodesByType,
   getNodeSurfaces,
-} from "@journey-viewer/ujg-jsonld";
+} from "@journey-viewer/ujg-jsonld/ed";
 
 const freeze = (value) => {
   if (value !== null && typeof value === "object") {

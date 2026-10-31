@@ -4,7 +4,7 @@ import type {
   ViewerInteraction,
   ViewerSelection,
 } from "@journey-viewer/viewer";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import type {
   JourneyNavigationProps,
   JourneyInspectorProps,
@@ -22,22 +22,22 @@ import type {
   ViewerInspectorPanelProps,
 } from "@journey-viewer/viewer";
 
-declare const document: UjgDocument;
-const props: JourneyHierarchyProps = { document, level: 2 };
+declare const graph: JourneyGraph;
+const props: JourneyHierarchyProps = { graph, level: 2 };
 // @ts-expect-error The input snapshot is readonly.
-props.document = document;
+props.graph = graph;
 // @ts-expect-error Heading presentation is readonly.
 props.level = 3;
-// @ts-expect-error Canonical source data remains readonly through the public contract.
-props.document.nodes?.push({ "@id": "urn:other" });
+// @ts-expect-error The derived graph remains readonly through the public contract.
+props.graph.journeys.push(props.graph.journeys[0]!);
 
 const selection: ViewerSelection = {
   kind: "state",
-  journeyRef: "urn:j",
-  nodeRef: "urn:s",
+  journeyId: "urn:j",
+  nodeId: "urn:s",
 };
 // @ts-expect-error Selection is an immutable identity snapshot.
-selection.nodeRef = "urn:other";
+selection.nodeId = "urn:other";
 const interaction: ViewerInteraction = {
   selection,
   expandedJourneys: ["urn:j"],
@@ -50,9 +50,9 @@ interaction.openContracts.push("urn:j");
 // @ts-expect-error Interaction snapshots cannot be patched in place.
 interaction.selection = null;
 // @ts-expect-error Controlled interaction requires explicit callbacks.
-const missingCallbacks: JourneyExplorerProps = { document, interaction };
+const missingCallbacks: JourneyExplorerProps = { graph, interaction };
 // @ts-expect-error The static contract has no interactive mode.
-const interactiveStatic: JourneyHierarchyProps = { document, interaction };
+const interactiveStatic: JourneyHierarchyProps = { graph, interaction };
 void [missingCallbacks, interactiveStatic];
 declare const snapshot: ViewerSnapshot;
 declare const occurrence: ViewerOccurrence;
@@ -63,7 +63,7 @@ snapshot.navigation.mode = "columns";
 // @ts-expect-error Column lanes are readonly occurrence lists.
 snapshot.navigation.lanes.push(occurrence);
 // @ts-expect-error Touchpoint identities cannot be patched in place.
-snapshot.navigation.touchpointRefs.push("urn:tp");
+snapshot.navigation.touchpointIds.push("urn:tp");
 // @ts-expect-error Occurrence paths are readonly.
 occurrence.steps.push({ stateIndex: 0, childIndex: 0 });
 // @ts-expect-error Occurrence segments cannot be patched in place.
@@ -85,7 +85,7 @@ touchpoints["urn:touchpoint"]!.color = "red";
 const missingOpen: JourneyScreenControls = { screenshots };
 void missingOpen;
 const missingMediaTarget: JourneyInspectorProps = {
-  document,
+  graph,
   selection,
   // @ts-expect-error Inspector media supplies its preview target and controls together.
   media: { screenshots, onOpen: () => {} },
@@ -93,7 +93,7 @@ const missingMediaTarget: JourneyInspectorProps = {
 void missingMediaTarget;
 if (snapshot.lightbox) {
   // @ts-expect-error An open screen is an immutable identity, never a cached URL.
-  snapshot.lightbox.surfaceRef = "other";
+  snapshot.lightbox.surfaceId = "other";
   // @ts-expect-error Resolved paths do not belong in interaction state.
   snapshot.lightbox.source = "./cached.png";
 }
@@ -109,13 +109,15 @@ extensions.register({});
 declare const stateRender: ViewerStateRenderProps;
 // @ts-expect-error Rendering props remain owned by the design system and readonly.
 stateRender.row.onSelect = () => {};
-// @ts-expect-error Original canonical state nodes stay readonly.
+// @ts-expect-error Graph state nodes stay readonly.
 stateRender.context.node.label = "Changed";
 // @ts-expect-error Call-site context cannot be patched in place.
 stateRender.context.occurrence.steps.push({ stateIndex: 0, childIndex: 0 });
 declare const panelProps: ViewerInspectorPanelProps;
-// @ts-expect-error Source extension payloads remain deeply readonly JSON.
-panelProps.node.extensions!["urn:custom"]!["note"] = "Changed";
+// @ts-expect-error The graph handed to extensions stays readonly.
+panelProps.graph.touchpoints.pop();
+// @ts-expect-error Its nodes' lists stay readonly too.
+panelProps.journey.states.push(panelProps.journey.states[0]!);
 // @ts-expect-error Static hierarchy keeps its separate, unextended contract.
-const extendedStatic: JourneyHierarchyProps = { document, extensions };
+const extendedStatic: JourneyHierarchyProps = { graph, extensions };
 void extendedStatic;

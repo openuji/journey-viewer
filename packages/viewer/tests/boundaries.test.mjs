@@ -70,7 +70,7 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
     if (browser)
       assert.doesNotMatch(
         source,
-        /UjgDocument|ViewerSnapshot|ViewerInteraction|ViewerSelection|ujg-jsonld|new Image|fetch\(/,
+        /JourneyGraph|ViewerSnapshot|ViewerInteraction|ViewerSelection|ujg-jsonld|new Image|fetch\(/,
         file,
       );
     const module = ts.createSourceFile(
@@ -98,5 +98,55 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
       ts.forEachChild(node, checkModuleScope);
     };
     checkModuleScope(module);
+  }
+});
+
+// ujg-jsonld reads UJG documents into a JourneyGraph; the viewer renders that graph and never sees
+// the version-specific source: no raw ED import, JSON-LD keyword or UJG source type.
+test("the viewer reads only the journey graph, in its source and in its published declarations", async () => {
+  const sources = new URL("../src/", import.meta.url);
+  for (const file of await readdir(sources, { recursive: true })) {
+    if (!/\.tsx?$/.test(file)) continue;
+    assert.doesNotMatch(
+      await readFile(new URL(file, sources), "utf8"),
+      /@journey-viewer\/ujg-jsonld\/ed|"@id"|"@type"|\bUjg[A-Z]/,
+      file,
+    );
+  }
+  const dist = new URL("../dist/", import.meta.url);
+  for (const file of await readdir(dist, { recursive: true })) {
+    if (!/\.(d\.ts|js)$/.test(file)) continue;
+    assert.doesNotMatch(
+      await readFile(new URL(file, dist), "utf8"),
+      /@journey-viewer\/ujg-jsonld\/ed|"@id"|"@type"|\bUjg[A-Z]/,
+      file,
+    );
+  }
+});
+
+// String ids are named *Id; Ref means only a React ref (or a data-*-ref attribute read
+// through dataset, which keeps the markup's names).
+test("viewer and app sources name ids *Id, keeping Ref for React refs", async () => {
+  for (const root of [
+    new URL("../src/", import.meta.url),
+    new URL("../../app/src/", import.meta.url),
+  ]) {
+    for (const file of await readdir(root, { recursive: true })) {
+      if (!/\.tsx?$/.test(file)) continue;
+      const source = await readFile(new URL(file, root), "utf8");
+      const reactRefs = new Set(
+        [...source.matchAll(/const (\w+) = useRef\b/g)].map(
+          (match) => match[1],
+        ),
+      );
+      const names = [
+        ...source.matchAll(/(?<!dataset\.)\b([a-zA-Z]\w*Refs?)\b/g),
+      ].map((match) => match[1]);
+      assert.deepEqual(
+        names.filter((name) => name !== "useRef" && !reactRefs.has(name)),
+        [],
+        file,
+      );
+    }
   }
 });

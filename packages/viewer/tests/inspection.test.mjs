@@ -12,13 +12,7 @@ import {
   selectNode,
   toggleChildJourneys,
 } from "@journey-viewer/viewer";
-const freeze = (value) => {
-  if (value && typeof value === "object") {
-    Object.values(value).forEach(freeze);
-    Object.freeze(value);
-  }
-  return value;
-};
+import { freeze, graphOf } from "~/tests/graphs.mjs";
 const oidc = freeze(
   JSON.parse(
     await readFile(
@@ -40,14 +34,17 @@ const fixture = freeze(
 );
 const inspect = (document, selection) =>
   renderToStaticMarkup(
-    h(JourneyInspector, { document, selection: freeze(selection) }),
+    h(JourneyInspector, {
+      graph: graphOf(document),
+      selection: freeze(selection),
+    }),
   );
 
 test("state inspection groups explicit local transitions and keeps boundary entry/exit annotations", () => {
   const html = inspect(oidc, {
     kind: "state",
-    journeyRef: "urn:ujg:solid-oidc:app-auth-journey",
-    nodeRef: "urn:ujg:solid-oidc:idp-auth-flow",
+    journeyId: "urn:ujg:solid-oidc:app-auth-journey",
+    nodeId: "urn:ujg:solid-oidc:idp-auth-flow",
   });
   assert.match(html, /Composite state/);
   assert.match(html, />Nested journey</);
@@ -69,11 +66,13 @@ test("state inspection groups explicit local transitions and keeps boundary entr
 
 test("entry call sites and exit handlers follow the explicit call site's parent", () => {
   const occurrenceOf = (ref) =>
-    searchViewer(oidc, ref).find((item) => item.selection.nodeRef === ref);
+    searchViewer(graphOf(oidc), ref).find(
+      (item) => item.selection.nodeId === ref,
+    );
   const login = occurrenceOf("urn:ujg:solid-oidc:idp-login-entry");
   const entry = renderToStaticMarkup(
     h(JourneyInspector, {
-      document: oidc,
+      graph: graphOf(oidc),
       selection: login.selection,
       navigation: {
         occurrence: login.occurrence,
@@ -89,7 +88,7 @@ test("entry call sites and exit handlers follow the explicit call site's parent"
   const failed = occurrenceOf("urn:ujg:solid-oidc:idp-auth-failed");
   const exit = renderToStaticMarkup(
     h(JourneyInspector, {
-      document: oidc,
+      graph: graphOf(oidc),
       selection: failed.selection,
       navigation: {
         occurrence: failed.occurrence,
@@ -150,26 +149,26 @@ test("shared child entries show the callers at each explicit call site, excludin
   const before = JSON.stringify(document);
   const selection = freeze({
     kind: "entry",
-    journeyRef: "urn:test:shared",
-    nodeRef: "urn:test:child-entry",
+    journeyId: "urn:test:shared",
+    nodeId: "urn:test:child-entry",
   });
   const at = (occurrence) =>
     renderToStaticMarkup(
       h(JourneyInspector, {
-        document,
+        graph: graphOf(document),
         selection,
         navigation: { occurrence, onNavigate: () => {} },
       }),
     );
   const first = at({
-    startJourneyRef: "urn:test:first",
+    startJourneyId: "urn:test:first",
     steps: [{ stateIndex: 0, childIndex: 0 }],
   });
   assert.match(first, /Invoked from First root/);
   assert.match(first, /First call/);
   assert.doesNotMatch(first, /Second call|Unrelated/);
   const second = at({
-    startJourneyRef: "urn:test:second",
+    startJourneyId: "urn:test:second",
     steps: [{ stateIndex: 0, childIndex: 0 }],
   });
   assert.match(second, /Invoked from Second root/);
@@ -181,8 +180,8 @@ test("shared child entries show the callers at each explicit call site, excludin
 test("journey inspection and empty/unresolved selections render from readonly presentation only", () => {
   const html = inspect(fixture, {
     kind: "journey",
-    journeyRef: "urn:test:first",
-    nodeRef: "urn:test:first",
+    journeyId: "urn:test:first",
+    nodeId: "urn:test:first",
   });
   assert.match(html, />Journey</);
   assert.match(html, /Entries/);
@@ -197,8 +196,8 @@ test("journey inspection and empty/unresolved selections render from readonly pr
   assert.match(
     inspect(fixture, {
       kind: "state",
-      journeyRef: "urn:test:missing",
-      nodeRef: "urn:test:terminal",
+      journeyId: "urn:test:missing",
+      nodeId: "urn:test:terminal",
     }),
     /Select a journey/,
   );
@@ -206,12 +205,12 @@ test("journey inspection and empty/unresolved selections render from readonly pr
 
 test("controlled hierarchy renders frozen snapshots without invoking callbacks or owning state", () => {
   const interaction = freeze(
-    collapseAllJourneys(freeze(createViewerInteraction(fixture))),
+    collapseAllJourneys(freeze(createViewerInteraction(graphOf(fixture)))),
   );
   const before = JSON.stringify(interaction);
   const html = renderToStaticMarkup(
     h(JourneyExplorer, {
-      document: fixture,
+      graph: graphOf(fixture),
       interaction,
       onSelect: () => assert.fail("render must not invoke selection callbacks"),
       onToggleChildren: () =>
@@ -226,23 +225,23 @@ test("controlled hierarchy renders frozen snapshots without invoking callbacks o
 
 test("selection reveals every repeated child occurrence even when its siblings remain collapsed", () => {
   const collapsed = freeze(
-    collapseAllJourneys(freeze(createViewerInteraction(fixture))),
+    collapseAllJourneys(freeze(createViewerInteraction(graphOf(fixture)))),
   );
   const selected = freeze(
     selectNode(
-      fixture,
+      graphOf(fixture),
       collapsed,
       freeze({
         kind: "state",
-        journeyRef: "urn:test:shared",
-        nodeRef: "urn:test:repeat",
+        journeyId: "urn:test:shared",
+        nodeId: "urn:test:repeat",
       }),
     ),
   );
   const render = (interaction) =>
     renderToStaticMarkup(
       h(JourneyExplorer, {
-        document: fixture,
+        graph: graphOf(fixture),
         interaction,
         onSelect: () => {},
         onToggleChildren: () => {},
@@ -257,7 +256,7 @@ test("selection reveals every repeated child occurrence even when its siblings r
   assert.match(html, /aria-label="Collapse Several child journeys"/);
   const closed = freeze(
     toggleChildJourneys(
-      fixture,
+      graphOf(fixture),
       selected,
       "urn:test:first",
       "urn:test:compose",
@@ -276,11 +275,11 @@ test("empty and unresolved composites keep notices inside selectable rows even w
     ),
   );
   const before = JSON.stringify(document);
-  const initial = freeze(createViewerInteraction(document));
+  const initial = freeze(createViewerInteraction(graphOf(document)));
   for (const interaction of [initial, freeze(collapseAllJourneys(initial))]) {
     const html = renderToStaticMarkup(
       h(JourneyExplorer, {
-        document,
+        graph: graphOf(document),
         interaction,
         onSelect: () => assert.fail("render must not select"),
         onToggleChildren: () => assert.fail("render must not toggle"),

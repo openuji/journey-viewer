@@ -1,12 +1,12 @@
 import { ExplorerBarTitle } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { getViewerSummary } from "@/navigation";
 import { countMappedScreens } from "@/screens";
 import type { ScreenshotMap } from "@/screens";
 import { useViewer } from "@/components/Viewer/Viewer";
 
 export interface ControlledDocumentSummaryProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   /** The touchpoint filter; the counts cover the journeys it shows. */
   readonly touchpointIds: readonly string[];
@@ -14,16 +14,15 @@ export interface ControlledDocumentSummaryProps {
 
 /** The document's label with its journey, state, transition and screen counts. */
 export function ControlledDocumentSummary({
-  document,
+  graph,
   screenshots,
   touchpointIds,
 }: ControlledDocumentSummaryProps) {
-  const summary = getViewerSummary(document, touchpointIds);
-  const screens = countMappedScreens(document, screenshots);
-  const { label } = document;
+  const summary = getViewerSummary(graph, touchpointIds);
+  const screens = countMappedScreens(graph, screenshots);
   return (
     <ExplorerBarTitle
-      title={typeof label === "string" ? label : "Journeys"}
+      title={graph.label ?? "Journeys"}
       subtitle={[
         `${summary.journeys} journeys`,
         `${summary.states} states`,
@@ -35,12 +34,12 @@ export function ControlledDocumentSummary({
 }
 
 export function DocumentSummary() {
-  const { document, screenshots, state } = useViewer();
+  const { graph, screenshots, state } = useViewer();
   return (
     <ControlledDocumentSummary
-      document={document}
+      graph={graph}
       screenshots={screenshots}
-      touchpointIds={state.disclosure.snapshot.navigation.touchpointRefs}
+      touchpointIds={state.disclosure.snapshot.navigation.touchpointIds}
     />
   );
 }

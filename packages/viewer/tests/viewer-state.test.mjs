@@ -13,7 +13,7 @@ import {
   setViewMode,
   treeView,
 } from "@journey-viewer/viewer";
-import { id, oidcDocument } from "~/tests/flow-scopes.mjs";
+import { id, oidcGraph } from "~/tests/flow-scopes.mjs";
 
 const freeze = (value) => {
   if (value && typeof value === "object") {
@@ -22,9 +22,9 @@ const freeze = (value) => {
   }
   return value;
 };
-const document = oidcDocument;
+const graph = oidcGraph;
 const views = freeze([treeView, columnsView, flowView()]);
-const inputs = freeze({ document, screenshots: {}, views });
+const inputs = freeze({ graph, screenshots: {}, views });
 const reduce = (state, ...commands) =>
   commands.reduce(
     (current, command) =>
@@ -34,13 +34,13 @@ const reduce = (state, ...commands) =>
 const start = freeze(createViewerState(inputs));
 /** The identity provider's login state at its call site in the app journey. */
 const login = freeze(
-  searchViewer(document, "Login", []).find(
-    (result) => result.selection.nodeRef === id("idp-login"),
+  searchViewer(graph, "Login", []).find(
+    (result) => result.selection.nodeId === id("idp-login"),
   ),
 );
 
 test("the initial state is the viewer snapshot in the first view, or the named view after its initial commands", () => {
-  assert.deepEqual(start.disclosure.snapshot, createViewerSnapshot(document));
+  assert.deepEqual(start.disclosure.snapshot, createViewerSnapshot(graph));
   assert.equal(start.view, "tree");
   assert.equal(start.disclosure.location, null);
   const prepared = createViewerState({
@@ -78,8 +78,8 @@ test("an initial selection keeps its occurrence, lanes and location, and reset r
   assert.deepEqual(
     snapshot,
     navigateViewer(
-      document,
-      setViewMode(document, createViewerSnapshot(document), "columns"),
+      graph,
+      setViewMode(graph, createViewerSnapshot(graph), "columns"),
       login,
     ),
   );
@@ -94,7 +94,7 @@ test("an initial selection keeps its occurrence, lanes and location, and reset r
   assert.equal(opened.reveal, null, "a plain navigate opens without a reveal");
   const elsewhere = reduceViewer(initial, opened, {
     type: "navigate",
-    target: searchViewer(document, "Access denied", [])[0],
+    target: searchViewer(graph, "Access denied", [])[0],
   });
   const reset = reduceViewer(initial, elsewhere, { type: "reset" });
   assert.deepEqual(reset.disclosure, opened.disclosure);
@@ -105,7 +105,7 @@ test("navigation matches the snapshot transitions; only inspector navigation and
   const clicked = reduce(start, { type: "navigate", target: login });
   assert.deepEqual(
     clicked.disclosure.snapshot,
-    navigateViewer(document, start.disclosure.snapshot, login),
+    navigateViewer(graph, start.disclosure.snapshot, login),
   );
   assert.equal(clicked.disclosure.location, login);
   assert.equal(clicked.reveal, null);
@@ -129,7 +129,7 @@ test("navigation matches the snapshot transitions; only inspector navigation and
   const picked = reduce(searched, { type: "pick", target: login });
   assert.deepEqual(
     picked.disclosure.snapshot,
-    pickSearchResult(document, searched.disclosure.snapshot, login),
+    pickSearchResult(graph, searched.disclosure.snapshot, login),
   );
   assert.equal(picked.disclosure.snapshot.navigation.query, "");
   assert.equal(picked.searchOpen, false);
@@ -146,7 +146,7 @@ test("views share selection and expansion; entering a view applies its own trans
   assert.equal(columns.view, "columns");
   assert.deepEqual(
     columns.disclosure.snapshot,
-    setViewMode(document, toggled.disclosure.snapshot, "columns"),
+    setViewMode(graph, toggled.disclosure.snapshot, "columns"),
   );
   assert.equal(
     columns.disclosure.snapshot.interaction,
@@ -173,7 +173,7 @@ test("search, filter, contracts, screens and the preview change only their part"
   assert.equal(reduce(dismissed, { type: "searchFocus" }).searchOpen, true);
 
   const filtered = reduce(start, { type: "touchpoint", id: id("idp") });
-  assert.deepEqual(filtered.disclosure.snapshot.navigation.touchpointRefs, [
+  assert.deepEqual(filtered.disclosure.snapshot.navigation.touchpointIds, [
     id("idp"),
   ]);
   const contracts = reduce(start, {
@@ -220,7 +220,7 @@ test("reset returns to the initial view, expansion and selection and scrolls to 
     seq: 2,
     kind: "top",
     occurrence: "",
-    ref: "",
+    id: "",
     target: null,
   });
 });

@@ -7,18 +7,18 @@ import {
   setViewMode,
 } from "@/navigation";
 import {
-  navigationReviewDocument,
-  oidcDocument,
-  topologyDocument,
+  navigationReviewGraph,
+  oidcGraph,
+  topologyGraph,
 } from "~/.storybook/documents";
 
-const initial = createViewerSnapshot(oidcDocument);
+const initial = createViewerSnapshot(oidcGraph);
 const meta = {
   title: "Viewer/JourneyNavigation",
   component: JourneyNavigation,
   tags: ["autodocs"],
   args: {
-    document: oidcDocument,
+    graph: oidcGraph,
     snapshot: initial,
     onMode: () => {},
     onExpandAll: () => {},
@@ -28,7 +28,7 @@ const meta = {
     onSearchPick: () => {},
     onReset: () => {},
   },
-  parameters: { controls: { exclude: ["document", "snapshot"] } },
+  parameters: { controls: { exclude: ["graph", "snapshot"] } },
   decorators: [
     (Story) => (
       <div style={{ minBlockSize: "24rem" }}>
@@ -41,7 +41,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Columns: Story = {
-  args: { snapshot: setViewMode(oidcDocument, initial, "columns") },
+  args: { snapshot: setViewMode(oidcGraph, initial, "columns") },
 };
 export const SearchResults: Story = {
   args: { snapshot: setSearchQuery(initial, "SMS") },
@@ -51,25 +51,25 @@ export const NoMatches: Story = {
 };
 export const SelectedTouchpoint: Story = {
   args: {
-    document: topologyDocument,
+    graph: topologyGraph,
     snapshot: selectTouchpoint(
-      topologyDocument,
-      createViewerSnapshot(topologyDocument),
+      topologyGraph,
+      createViewerSnapshot(topologyGraph),
       "urn:test:web",
     ),
   },
 };
 export const EqualLabelTouchpoints: Story = {
   args: {
-    document: navigationReviewDocument,
-    snapshot: createViewerSnapshot(navigationReviewDocument),
+    graph: navigationReviewGraph,
+    snapshot: createViewerSnapshot(navigationReviewGraph),
   },
 };
 export const LimitedResults: Story = {
   args: {
-    document: navigationReviewDocument,
+    graph: navigationReviewGraph,
     snapshot: setSearchQuery(
-      createViewerSnapshot(navigationReviewDocument),
+      createViewerSnapshot(navigationReviewGraph),
       "urn:test:",
     ),
   },

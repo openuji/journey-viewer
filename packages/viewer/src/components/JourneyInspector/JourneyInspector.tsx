@@ -8,7 +8,7 @@ import type {
   HeadingLevel,
   InspectorSection,
 } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { getInspectorModel } from "@/inspection";
 import type { ViewerSelection } from "@/interaction";
 import { resolveSelection } from "@/interaction";
@@ -22,7 +22,7 @@ import type { ViewerExtensions, ViewerNodeContext } from "@/extensions";
 import { JourneyAnnotations } from "@/components/JourneyAnnotations/JourneyAnnotations";
 
 export interface JourneyInspectorProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly selection: ViewerSelection | null;
   readonly level?: HeadingLevel;
   /** Complete controlled navigation contract; omitted by informational inspectors. */
@@ -42,7 +42,7 @@ export interface JourneyInspectorProps {
 }
 
 export function JourneyInspector({
-  document,
+  graph,
   selection,
   level = 2,
   navigation,
@@ -51,17 +51,17 @@ export function JourneyInspector({
   extensions,
 }: JourneyInspectorProps) {
   const model = getInspectorModel(
-    document,
+    graph,
     selection,
     navigation?.occurrence ?? null,
     touchpoints,
   );
   const resolved =
-    selection && extensions ? resolveSelection(document, selection) : undefined;
+    selection && extensions ? resolveSelection(graph, selection) : undefined;
   const context: ViewerNodeContext | null =
     selection && resolved
       ? {
-          document,
+          graph,
           selection,
           ...resolved,
           occurrence: navigation?.occurrence ?? null,
@@ -101,7 +101,7 @@ export function JourneyInspector({
       media={
         media?.target && (
           <JourneyScreens
-            document={document}
+            graph={graph}
             screenshots={media.screenshots}
             target={media.target}
             onOpen={media.onOpen}

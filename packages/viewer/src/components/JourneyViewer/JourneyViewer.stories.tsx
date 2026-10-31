@@ -3,11 +3,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@journey-viewer/design-system";
 import { JourneyViewer } from "@/components/JourneyViewer/JourneyViewer";
 import {
-  emptyCompositesDocument,
-  emptyDocument,
-  oidcDocument,
-  screensDocument,
-  topologyDocument,
+  emptyCompositesGraph,
+  emptyGraph,
+  oidcGraph,
+  screensGraph,
+  topologyGraph,
 } from "~/.storybook/documents";
 import {
   oidcScreenshots,
@@ -21,18 +21,18 @@ const meta = {
   title: "Viewer/JourneyViewer",
   component: JourneyViewer,
   tags: ["autodocs"],
-  args: { document: oidcDocument },
-  parameters: { controls: { exclude: ["document"] } },
+  args: { graph: oidcGraph },
+  parameters: { controls: { exclude: ["graph"] } },
 } satisfies Meta<typeof JourneyViewer>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Oidc: Story = { name: "Solid-OIDC" };
 export const MultipleRootsAndRecursion: Story = {
-  args: { document: topologyDocument },
+  args: { graph: topologyGraph },
 };
-export const Empty: Story = { args: { document: emptyDocument } };
+export const Empty: Story = { args: { graph: emptyGraph } };
 export const EmptyComposites: Story = {
-  args: { document: emptyCompositesDocument },
+  args: { graph: emptyCompositesGraph },
 };
 export const IndependentInstances: Story = {
   render: (args) => (
@@ -42,21 +42,21 @@ export const IndependentInstances: Story = {
     </div>
   ),
 };
-const replacement = Object.freeze({ ...oidcDocument });
+const replacement = Object.freeze({ ...oidcGraph });
 function ReplacementExample() {
-  const [document, setDocument] = useState(oidcDocument);
+  const [graph, setGraph] = useState(oidcGraph);
   return (
     <div className="story-stack">
       <Button
         onClick={() =>
-          setDocument((current) =>
-            current === oidcDocument ? replacement : oidcDocument,
+          setGraph((current) =>
+            current === oidcGraph ? replacement : oidcGraph,
           )
         }
       >
         Replace document with same ID
       </Button>
-      <JourneyViewer document={document} />
+      <JourneyViewer graph={graph} />
     </div>
   );
 }
@@ -74,7 +74,7 @@ export const LiveScreenshotMap: Story = {
     <ScreenshotInputs>
       {(screenshots) => (
         <JourneyViewer
-          document={oidcDocument}
+          graph={oidcGraph}
           screenshots={screenshots}
           touchpoints={oidcTouchpoints}
         />
@@ -84,7 +84,7 @@ export const LiveScreenshotMap: Story = {
 };
 export const SeveralSurfaces: Story = {
   args: {
-    document: screensDocument,
+    graph: screensGraph,
     screenshots: {
       "opaque:7":
         oidcScreenshots["urn:ujg:solid-oidc:app-sign-in-required-surface"]!,
@@ -97,7 +97,7 @@ export const SeveralSurfaces: Story = {
   },
 };
 export const BuildTimeExtensions: Story = {
-  args: { document: topologyDocument, extensions: exampleExtensions },
+  args: { graph: topologyGraph, extensions: exampleExtensions },
 };
 function ExtensionInputs() {
   const [enabled, setEnabled] = useState(true);
@@ -110,7 +110,7 @@ function ExtensionInputs() {
         Toggle example extensions
       </Button>
       <JourneyViewer
-        document={topologyDocument}
+        graph={topologyGraph}
         {...(enabled ? { extensions: exampleExtensions } : {})}
       />
     </div>

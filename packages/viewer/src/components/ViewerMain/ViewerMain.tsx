@@ -6,7 +6,7 @@ import styles from "@/components/ViewerMain/ViewerMain.module.css";
 /** The active view's stage beside the sticky selection inspector, as in the original hierarchy. */
 export function ViewerMain() {
   const {
-    document,
+    graph,
     views,
     level,
     screenshots,
@@ -34,12 +34,12 @@ export function ViewerMain() {
             .join(" ")}
           resetKey={
             selection
-              ? `${selection.kind} ${selection.journeyRef} ${selection.nodeRef}`
+              ? `${selection.kind} ${selection.journeyId} ${selection.nodeId}`
               : ""
           }
         >
           <JourneyInspector
-            document={document}
+            graph={graph}
             selection={selection}
             level={level}
             {...(extensions ? { extensions } : {})}

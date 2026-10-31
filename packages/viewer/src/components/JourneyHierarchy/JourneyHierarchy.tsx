@@ -4,12 +4,12 @@ import {
   Text,
 } from "@journey-viewer/design-system";
 import type { HeadingLevel } from "@journey-viewer/design-system";
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import { HierarchyTree } from "@/components/JourneyHierarchy/HierarchyTree";
 import styles from "@/components/JourneyHierarchy/JourneyHierarchy.module.css";
 
 export interface JourneyHierarchyProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly level?: HeadingLevel;
 }
 
@@ -37,7 +37,7 @@ export function JourneyHierarchy(props: JourneyHierarchyProps) {
           directExitCount={directExitCount}
         >
           {renderChildren?.({
-            visibleJourneyRefs: childJourneys.map((child) => child["@id"]),
+            visibleJourneyIds: childJourneys.map((child) => child.id),
           })}
         </StateSummary>
       )}

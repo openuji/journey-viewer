@@ -36,7 +36,7 @@ export function flowHighlight(
   const ports = new Set<string>();
   if (selection) {
     const matches = (id: string, journeyId: string) =>
-      id === selection.nodeRef && journeyId === selection.journeyRef;
+      id === selection.nodeId && journeyId === selection.journeyId;
     if (selection.kind === "state") {
       layout.states.forEach(
         (s) => matches(s.vertex.id, s.vertex.journeyId) && selected.add(s.key),
@@ -51,7 +51,7 @@ export function flowHighlight(
       layout.cards.forEach(
         (c) =>
           c.card.kind === "journey" &&
-          c.card.id === selection.nodeRef &&
+          c.card.id === selection.nodeId &&
           selected.add(c.key),
       );
     } else {

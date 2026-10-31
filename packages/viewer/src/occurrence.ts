@@ -1,14 +1,8 @@
-import {
-  getChildJourneys,
-  getJourneyStates,
-  getNodesByType,
-} from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument, UjgJourney } from "@journey-viewer/ujg-jsonld";
-import { getJourneyStarts } from "@/journey-starts";
+import type { Journey, JourneyGraph } from "@journey-viewer/ujg-jsonld";
 
-/** Indices address the query results, including repeated state/child references. */
+/** Indices address the graph's lists, including repeated state/child references. */
 export interface ViewerOccurrence {
-  readonly startJourneyRef: string;
+  readonly startJourneyId: string;
   readonly steps: readonly Readonly<{
     stateIndex: number;
     childIndex: number;
@@ -16,9 +10,9 @@ export interface ViewerOccurrence {
 }
 
 export interface OccurrenceCrumb {
-  readonly journey: UjgJourney;
+  readonly journey: Journey;
   readonly occurrence: ViewerOccurrence;
-  readonly viaStateRef?: string;
+  readonly viaStateId?: string;
 }
 
 export function childOccurrence(
@@ -27,7 +21,7 @@ export function childOccurrence(
   childIndex: number,
 ): ViewerOccurrence {
   return {
-    startJourneyRef: parent.startJourneyRef,
+    startJourneyId: parent.startJourneyId,
     steps: [...parent.steps, { stateIndex, childIndex }],
   };
 }
@@ -35,7 +29,7 @@ export function childOccurrence(
 /** Stable text identity of an occurrence, for DOM markers and React keys. */
 export function occurrenceKey(occurrence: ViewerOccurrence): string {
   return [
-    occurrence.startJourneyRef,
+    occurrence.startJourneyId,
     ...occurrence.steps.map((step) => `${step.stateIndex}.${step.childIndex}`),
   ].join(" ");
 }
@@ -48,7 +42,7 @@ export function sameOccurrence(
     left === right ||
     (left !== null &&
       right !== null &&
-      left.startJourneyRef === right.startJourneyRef &&
+      left.startJourneyId === right.startJourneyId &&
       left.steps.length === right.steps.length &&
       left.steps.every(
         (step, index) =>
@@ -60,19 +54,17 @@ export function sameOccurrence(
 
 /** Resolves a finite rendered occurrence, never choosing a parent for a shared journey. */
 export function getOccurrenceTrail(
-  document: UjgDocument,
+  graph: JourneyGraph,
   occurrence: ViewerOccurrence,
 ): readonly OccurrenceCrumb[] {
-  const { roots, rootless } = getJourneyStarts(document);
-  const start = [...roots, ...rootless].find(
-    (journey) => journey["@id"] === occurrence.startJourneyRef,
+  const start = [...graph.roots, ...graph.rootless].find(
+    (journey) => journey.id === occurrence.startJourneyId,
   );
   if (!start) return [];
-  const composites = getNodesByType(document, "CompositeState");
   let trail: readonly OccurrenceCrumb[] = [
     {
       journey: start,
-      occurrence: { startJourneyRef: start["@id"], steps: [] },
+      occurrence: { startJourneyId: start.id, steps: [] },
     },
   ];
   for (const step of occurrence.steps) {
@@ -84,12 +76,14 @@ export function getOccurrenceTrail(
     )
       return [];
     const parent = trail.at(-1)!;
-    const state = getJourneyStates(document, parent.journey)[step.stateIndex];
-    const composite = composites.find((node) => node === state);
-    const child = composite
-      ? getChildJourneys(document, composite)[step.childIndex]
-      : undefined;
-    if (!child || trail.some(({ journey }) => journey["@id"] === child["@id"]))
+    const state = parent.journey.states[step.stateIndex];
+    const child =
+      state?.kind === "composite" ? state.children[step.childIndex] : undefined;
+    if (
+      !state ||
+      !child ||
+      trail.some(({ journey }) => journey.id === child.id)
+    )
       return [];
     trail = [
       ...trail,
@@ -100,43 +94,36 @@ export function getOccurrenceTrail(
           step.stateIndex,
           step.childIndex,
         ),
-        viaStateRef: composite!["@id"],
+        viaStateId: state.id,
       },
     ];
   }
   return trail;
 }
 
-/** Ephemeral traversal of original nodes; recursion ends at the current ancestry. */
+/** Ephemeral traversal of the graph; recursion ends at the current ancestry. */
 export function* journeyOccurrences(
-  document: UjgDocument,
+  graph: JourneyGraph,
 ): Generator<OccurrenceCrumb> {
-  const { roots, rootless } = getJourneyStarts(document);
-  const composites = getNodesByType(document, "CompositeState");
   function* visit(
-    journey: UjgJourney,
+    journey: Journey,
     occurrence: ViewerOccurrence,
     ancestors: readonly string[],
   ): Generator<OccurrenceCrumb> {
-    if (ancestors.includes(journey["@id"])) return;
+    if (ancestors.includes(journey.id)) return;
     yield { journey, occurrence };
-    const states = getJourneyStates(document, journey);
-    for (const [stateIndex, state] of states.entries()) {
-      const composite = composites.find((node) => node === state);
-      if (!composite) continue;
-      for (const [childIndex, child] of getChildJourneys(
-        document,
-        composite,
-      ).entries()) {
+    for (const [stateIndex, state] of journey.states.entries()) {
+      if (state.kind !== "composite") continue;
+      for (const [childIndex, child] of state.children.entries()) {
         yield* visit(
           child,
           childOccurrence(occurrence, stateIndex, childIndex),
-          [...ancestors, journey["@id"]],
+          [...ancestors, journey.id],
         );
       }
     }
   }
-  for (const journey of [...roots, ...rootless]) {
-    yield* visit(journey, { startJourneyRef: journey["@id"], steps: [] }, []);
+  for (const journey of [...graph.roots, ...graph.rootless]) {
+    yield* visit(journey, { startJourneyId: journey.id, steps: [] }, []);
   }
 }

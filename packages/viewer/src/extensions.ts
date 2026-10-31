@@ -3,22 +3,16 @@ import type {
   HeadingLevel,
   StateRowProps,
 } from "@journey-viewer/design-system";
-import type {
-  UjgCompositeState,
-  UjgDocument,
-  UjgJourney,
-  UjgNode,
-  UjgState,
-} from "@journey-viewer/ujg-jsonld";
-import type { ViewerSelection } from "@/interaction";
+import type { Journey, JourneyGraph, State } from "@journey-viewer/ujg-jsonld";
+import type { SelectedNode, ViewerSelection } from "@/interaction";
 import type { ViewerTarget } from "@/navigation";
 import type { ViewerOccurrence } from "@/occurrence";
 
-/** Original canonical nodes and the current explicit call site; nothing is copied or retained. */
+/** The graph's nodes and the current explicit call site; nothing is retained. */
 export interface ViewerNodeContext {
-  readonly document: UjgDocument;
-  readonly journey: UjgJourney;
-  readonly node: UjgNode;
+  readonly graph: JourneyGraph;
+  readonly journey: Journey;
+  readonly node: SelectedNode;
   readonly selection: ViewerSelection;
   /** Null for an informational inspector without controlled navigation. */
   readonly occurrence: ViewerOccurrence | null;
@@ -45,7 +39,7 @@ export interface ViewerAnnotation {
 }
 
 export interface ViewerStateContext extends ViewerNodeContext {
-  readonly node: UjgState | UjgCompositeState;
+  readonly node: State;
   readonly occurrence: ViewerOccurrence;
 }
 

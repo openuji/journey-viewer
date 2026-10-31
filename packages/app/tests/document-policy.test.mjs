@@ -10,8 +10,10 @@ const freeze = (value) => {
   }
   return value;
 };
+const ed = (module) =>
+  `https://ujg.specs.openuji.org/ed/ns/${module}.context.jsonld`;
 const minimal = {
-  "@context": "https://ujg.specs.openuji.org/ed/context.jsonld",
+  "@context": [ed("core"), ed("graph")],
   "@id": "urn:local:document",
   "@type": "UJGDocument",
   nodes: [
@@ -30,7 +32,7 @@ const minimal = {
   ],
 };
 
-test("selected checks retain the exact canonical object and leave frozen OIDC unchanged", async () => {
+test("selected checks derive the graph and leave frozen OIDC unchanged", async () => {
   const document = freeze(
     JSON.parse(
       await readFile(
@@ -45,15 +47,16 @@ test("selected checks retain the exact canonical object and leave frozen OIDC un
   const before = JSON.stringify(document);
   const result = checkDocument(document);
   assert.equal(result.kind, "ready");
-  assert.equal(result.document, document);
+  assert.equal(result.graph.id, document["@id"]);
+  assert.equal(result.graph.journeys.length, 10);
   assert.deepEqual(result.findings, []);
   assert.equal(JSON.stringify(document), before);
   const empty = freeze({
-    "@context": "urn:context",
+    "@context": ed("core"),
     "@id": "urn:empty",
     "@type": "UJGDocument",
   });
-  assert.equal(checkDocument(empty).document, empty);
+  assert.deepEqual(checkDocument(empty).graph.journeys, []);
 });
 
 test("the app blocks structural findings and ambiguous IDs without changing source or independent rule order", () => {
@@ -70,7 +73,7 @@ test("the app blocks structural findings and ambiguous IDs without changing sour
     const result = checkDocument(value);
     assert.equal(result.kind, "blocked");
     assert.ok(result.findings.some(blocksOpening));
-    assert.equal("document" in result, false);
+    assert.equal("graph" in result, false);
     assert.equal(JSON.stringify(value), before);
   }
 });
@@ -83,8 +86,9 @@ test("unresolved references are nonblocking app warnings and never repair the do
   });
   const result = checkDocument(value);
   assert.equal(result.kind, "ready");
-  assert.equal(result.document, value);
-  assert.equal(result.document.nodes.length, 2);
+  assert.equal(value.nodes.length, 2);
+  // The unresolved state is left out of the graph, not invented.
+  assert.deepEqual(result.graph.journeys[0].states, []);
   assert.ok(result.findings.length > 0);
   assert.ok(
     result.findings.every(
@@ -92,6 +96,28 @@ test("unresolved references are nonblocking app warnings and never repair the do
         finding.ruleId === "ujg/reference-targets" && !blocksOpening(finding),
     ),
   );
+});
+
+test("unknown, mixed and missing UJG versions block opening before any other check", () => {
+  const dated =
+    "https://ujg.specs.openuji.org/2027-01-15/ns/core.context.jsonld";
+  for (const [context, named] of [
+    [dated, dated],
+    [[ed("core"), dated], dated],
+    ["https://example.test/ujg", "https://example.test/ujg"],
+    [undefined, "No UJG context"],
+  ]) {
+    const value = freeze({ ...minimal, "@context": context, nodes: "bad" });
+    const result = checkDocument(value);
+    assert.equal(result.kind, "blocked");
+    // Only the version finding: the Editor's Draft rules never judge another version.
+    assert.deepEqual(
+      result.findings.map((finding) => [finding.ruleId, finding.path]),
+      [["app/ujg-version", ["@context"]]],
+    );
+    assert.ok(blocksOpening(result.findings[0]));
+    assert.ok(result.findings[0].message.includes(named));
+  }
 });
 
 test("finding paths identify root, arrays and unusual property names without ambiguous dot notation", () => {

@@ -129,7 +129,11 @@ the site's own folder (`./`); the icon is also the page's favicon and ships insi
 
 The pieces are exported for compositions of their own: `ApplicationHeader`,
 `ApplicationEmpty`, `BrandLink`, `useFilePicker`, `readSource`, and the check policy
-`checkDocument`, `blocksOpening` and `findingPath`. The policy selects the
-document-shape, unique-ID and reference-target rules; shape errors and duplicate
-IDs block opening, and unresolved references are warnings. No findings is not a
+`checkDocument`, `blocksOpening` and `findingPath`. The policy first reads the UJG
+version from the document's contexts: a version the app cannot read (anything but the
+Editor's Draft, mixed versions, or no UJG context) blocks opening with one
+`app/ujg-version` finding, and the open document stays. For the Editor's Draft it
+selects the document-shape, unique-ID and reference-target rules; shape errors and
+duplicate IDs block opening, and unresolved references are warnings. A ready check
+carries the `graph` the viewer renders, derived once per load. No findings is not a
 claim of full UJG conformance.

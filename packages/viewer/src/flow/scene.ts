@@ -1,29 +1,21 @@
-import {
-  getChildJourneys,
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneyStates,
-  getJourneyTransitions,
-  getNodeSurfaces,
-} from "@journey-viewer/ujg-jsonld";
+import { entryInto, exitFrom, nodeSurfaces } from "@journey-viewer/ujg-jsonld";
 import type {
-  UjgCompositeState,
-  UjgDocument,
-  UjgJourney,
-  UjgJourneyEntry,
-  UjgState,
-  UjgTransition,
+  CompositeState,
+  Entry,
+  Exit,
+  Journey,
+  JourneyGraph,
+  Transition,
 } from "@journey-viewer/ujg-jsonld";
 import type { ViewerInteraction } from "@/interaction";
 import type { ViewerTarget } from "@/navigation";
 import { childOccurrence, occurrenceKey } from "@/occurrence";
 import type { ViewerOccurrence } from "@/occurrence";
-import { getJourneyStarts } from "@/journey-starts";
 
 /**
- * A display projection of canonical UJG for one expansion. It is the only flow module that reads
- * the document: everything after it works with plain ids, labels and explicit occurrences. It is
- * rebuilt whenever the document or the expansion changes and never retained.
+ * A display projection of the journey graph for one expansion. It is the only flow module that
+ * reads the graph: everything after it works with plain ids, labels and explicit occurrences. It is
+ * rebuilt whenever the graph or the expansion changes and never retained.
  */
 export interface FlowScene {
   readonly frames: readonly FlowFrame[];
@@ -169,7 +161,7 @@ export const terminalKey = (terminal: FlowTerminal): string =>
 
 /** `outer` is `inner` or a journey `inner` sits in. */
 const encloses = (outer: ViewerOccurrence, inner: ViewerOccurrence) =>
-  outer.startJourneyRef === inner.startJourneyRef &&
+  outer.startJourneyId === inner.startJourneyId &&
   outer.steps.length <= inner.steps.length &&
   outer.steps.every(
     (step, i) =>
@@ -191,186 +183,165 @@ export function frameShows(frame: FlowFrame, target: ViewerTarget): boolean {
         );
   return (
     (card.kind === "composite" &&
-      card.id === target.selection.nodeRef &&
+      card.id === target.selection.nodeId &&
       card.occurrence.steps.length === target.occurrence.steps.length &&
       encloses(card.occurrence, target.occurrence)) ||
     journeys.some((journey) => encloses(journey.occurrence, target.occurrence))
   );
 }
 
-const labelOf = (node: { readonly label?: unknown; readonly "@id": string }) =>
-  typeof node.label === "string" ? node.label : node["@id"];
-
-const isComposite = (node: UjgState | UjgCompositeState) =>
-  "subjourneyRefs" in node;
-
 /** A root journey's card, or a child journey's card inside an open composite. */
 const journeyCard = (
-  journey: UjgJourney,
+  journey: Journey,
   occurrence: ViewerOccurrence,
   key: string,
 ): FlowCard => ({
   key,
   kind: "journey",
-  id: journey["@id"],
-  label: labelOf(journey),
-  journeyId: journey["@id"],
+  id: journey.id,
+  label: journey.label,
+  journeyId: journey.id,
   occurrence,
   target: {
     selection: {
       kind: "journey",
-      journeyRef: journey["@id"],
-      nodeRef: journey["@id"],
+      journeyId: journey.id,
+      nodeId: journey.id,
     },
     occurrence,
   },
   children: [],
-  stateCount: journey.stateRefs.length,
-  touchpointJourneyId: journey["@id"],
+  stateCount: journey.states.length,
+  touchpointJourneyId: journey.id,
   toggle: null,
 });
 
 export function buildFlowScene(
-  document: UjgDocument,
+  graph: JourneyGraph,
   interaction: Pick<ViewerInteraction, "expandedJourneys">,
 ): FlowScene {
   const issues: string[] = [];
   const expanded = new Set(interaction.expandedJourneys);
 
   const compositeCard = (
-    journey: UjgJourney,
+    journey: Journey,
     occurrence: ViewerOccurrence,
-    node: UjgCompositeState,
+    node: CompositeState,
     key: string,
     ancestors: readonly string[],
   ): FlowCard => {
-    const children = getChildJourneys(document, node).map(
-      (child): FlowChild => ({
-        id: child["@id"],
-        label: labelOf(child),
-        recursive: ancestors.includes(child["@id"]),
-      }),
-    );
+    const children = node.children.map((child): FlowChild => ({
+      id: child.id,
+      label: child.label,
+      recursive: ancestors.includes(child.id),
+    }));
     const openable = children.some((child) => !child.recursive);
     const open = openable && children.some((child) => expanded.has(child.id));
     return {
       key,
       kind: "composite",
-      id: node["@id"],
-      label: labelOf(node),
-      journeyId: journey["@id"],
+      id: node.id,
+      label: node.label,
+      journeyId: journey.id,
       occurrence,
       target: {
         selection: {
           kind: "state",
-          journeyRef: journey["@id"],
-          nodeRef: node["@id"],
+          journeyId: journey.id,
+          nodeId: node.id,
         },
         occurrence,
       },
       children,
       stateCount: 0,
-      touchpointJourneyId: children[0]?.id ?? journey["@id"],
+      touchpointJourneyId: children[0]?.id ?? journey.id,
       toggle: openable ? (open ? "collapse" : "expand") : null,
     };
   };
 
   const buildJourney = (
-    journey: UjgJourney,
+    journey: Journey,
     occurrence: ViewerOccurrence,
     ancestors: readonly string[],
   ): FlowJourney => {
     const prefix = occurrenceKey(occurrence);
-    const lineage = [...ancestors, journey["@id"]];
+    const lineage = [...ancestors, journey.id];
     const contract = (
       kind: "entry" | "exit",
-      node: { readonly label?: unknown; readonly "@id": string },
+      node: Entry | Exit,
     ): FlowContract => ({
       kind,
-      key: `${prefix}|${kind}:${node["@id"]}`,
-      id: node["@id"],
-      label: labelOf(node),
-      journeyId: journey["@id"],
+      key: `${prefix}|${kind}:${node.id}`,
+      id: node.id,
+      label: node.label,
+      journeyId: journey.id,
       occurrence,
       target: {
         selection: {
           kind,
-          journeyRef: journey["@id"],
-          nodeRef: node["@id"],
+          journeyId: journey.id,
+          nodeId: node.id,
         },
         occurrence,
       },
-      isDefault: kind === "entry" && journey.defaultEntryRef === node["@id"],
+      isDefault: kind === "entry" && journey.defaultEntry === node.id,
     });
-    const entryNodes = getJourneyEntries(document, journey);
-    const entries = entryNodes.map((node) => contract("entry", node));
+    const entries = journey.entries.map((node) => contract("entry", node));
     // The child journeys each open composite draws, for its contracts and default entry.
-    const openChildren = new Map<string, readonly UjgJourney[]>();
-    const exits = getJourneyExits(document, journey).map((node) =>
-      contract("exit", node),
-    );
-    const vertices = getJourneyStates(document, journey).map(
-      (node, stateIndex): FlowVertex => {
-        const key = `${prefix}|${stateIndex}:${node["@id"]}`;
-        const base = {
-          key,
-          id: node["@id"],
-          label: labelOf(node),
-          journeyId: journey["@id"],
-          occurrence,
-          stateIndex,
-        };
-        if (!isComposite(node))
-          return {
-            ...base,
-            kind: "state",
-            target: {
-              selection: {
-                kind: "state",
-                journeyRef: journey["@id"],
-                nodeRef: node["@id"],
-              },
-              occurrence,
+    const openChildren = new Map<string, readonly Journey[]>();
+    const exits = journey.exits.map((node) => contract("exit", node));
+    const vertices = journey.states.map((node, stateIndex): FlowVertex => {
+      const key = `${prefix}|${stateIndex}:${node.id}`;
+      const base = {
+        key,
+        id: node.id,
+        label: node.label,
+        journeyId: journey.id,
+        occurrence,
+        stateIndex,
+      };
+      if (node.kind !== "composite")
+        return {
+          ...base,
+          kind: "state",
+          target: {
+            selection: {
+              kind: "state",
+              journeyId: journey.id,
+              nodeId: node.id,
             },
-            surfaces: getNodeSurfaces(document, node["@id"]).length,
-          };
-        const composite = node as UjgCompositeState;
-        const card = compositeCard(
-          journey,
-          occurrence,
-          composite,
-          key,
-          lineage,
-        );
-        if (card.toggle !== "collapse")
-          return { ...base, kind: "composite", card };
-        const children = getChildJourneys(document, composite);
-        openChildren.set(
-          key,
-          children.filter((_, i) => !card.children[i]!.recursive),
-        );
-        const childFrames = children.flatMap(
-          (child, childIndex): FlowFrame[] => {
-            if (card.children[childIndex]!.recursive) return [];
-            const childKey = `${key}/${childIndex}`;
-            const at = childOccurrence(occurrence, stateIndex, childIndex);
-            return [
-              {
-                key: childKey,
-                card: journeyCard(child, at, childKey),
-                content: buildJourney(child, at, lineage),
-              },
-            ];
+            occurrence,
           },
-        );
-        // One child merges into the composite's own frame; several become a row of child frames.
-        const frame: FlowFrame =
-          childFrames.length === 1
-            ? { key, card, content: childFrames[0]!.content }
-            : { key, card, content: { kind: "row", frames: childFrames } };
-        return { ...base, kind: "frame", frame };
-      },
-    );
+          surfaces: nodeSurfaces(graph, node.id).length,
+        };
+      const card = compositeCard(journey, occurrence, node, key, lineage);
+      if (card.toggle !== "collapse")
+        return { ...base, kind: "composite", card };
+      openChildren.set(
+        key,
+        node.children.filter((_, i) => !card.children[i]!.recursive),
+      );
+      const childFrames = node.children.flatMap(
+        (child, childIndex): FlowFrame[] => {
+          if (card.children[childIndex]!.recursive) return [];
+          const childKey = `${key}/${childIndex}`;
+          const at = childOccurrence(occurrence, stateIndex, childIndex);
+          return [
+            {
+              key: childKey,
+              card: journeyCard(child, at, childKey),
+              content: buildJourney(child, at, lineage),
+            },
+          ];
+        },
+      );
+      // One child merges into the composite's own frame; several become a row of child frames.
+      const frame: FlowFrame =
+        childFrames.length === 1
+          ? { key, card, content: childFrames[0]!.content }
+          : { key, card, content: { kind: "row", frames: childFrames } };
+      return { ...base, kind: "frame", frame };
+    });
 
     const stateVertex = new Map<string, FlowVertex>();
     for (const vertex of vertices)
@@ -378,32 +349,25 @@ export function buildFlowScene(
     const exitById = new Map(exits.map((exit) => [exit.id, exit]));
     const childJourneysOf = (vertex: FlowFrameVertex) =>
       openChildren.get(vertex.key) ?? [];
-    const contractOwner = (
-      vertex: FlowFrameVertex,
-      id: string,
-      kind: "entry" | "exit",
-    ) =>
-      childJourneysOf(vertex).find((child) =>
-        (kind === "entry" ? child.entryRefs : (child.exitRefs ?? [])).includes(
-          id,
-        ),
-      );
 
-    const source = (transition: UjgTransition): FlowTerminal | undefined => {
+    const source = (transition: Transition): FlowTerminal | undefined => {
       const vertex = stateVertex.get(transition.from);
       if (!vertex) return undefined;
       if (vertex.kind !== "frame") return { vertex: vertex.key };
-      const id = transition.fromExitRef;
-      if (id && contractOwner(vertex, id, "exit"))
+      const id = transition.fromExit;
+      if (
+        id &&
+        childJourneysOf(vertex).some((child) => exitFrom(transition, child))
+      )
         return { vertex: vertex.key, port: `exit:${id}` };
       if (id)
         issues.push(
-          `${transition["@id"]}: fromExitRef ${id} is not an exit of a child of ${vertex.id}`,
+          `${transition.id}: fromExit ${id} is not an exit of a child of ${vertex.id}`,
         );
       return { vertex: vertex.key, port: "out" };
     };
     const target = (
-      transition: UjgTransition,
+      transition: Transition,
     ): { terminal: FlowTerminal; viaDefault: boolean } | undefined => {
       const exit = exitById.get(transition.to);
       if (exit) return { terminal: { vertex: exit.key }, viaDefault: false };
@@ -411,19 +375,22 @@ export function buildFlowScene(
       if (!vertex) return undefined;
       if (vertex.kind !== "frame")
         return { terminal: { vertex: vertex.key }, viaDefault: false };
-      const id = transition.toEntryRef;
-      if (id && contractOwner(vertex, id, "entry"))
+      const id = transition.toEntry;
+      const children = childJourneysOf(vertex);
+      if (id && children.some((child) => entryInto(transition, child)))
         return {
           terminal: { vertex: vertex.key, port: `entry:${id}` },
           viaDefault: false,
         };
       if (id)
         issues.push(
-          `${transition["@id"]}: toEntryRef ${id} is not an entry of a child of ${vertex.id}`,
+          `${transition.id}: toEntry ${id} is not an entry of a child of ${vertex.id}`,
         );
-      const children = childJourneysOf(vertex);
+      // Without a selected entry a single drawn child starts at its default entry.
       const fallback =
-        !id && children.length === 1 ? children[0]!.defaultEntryRef : undefined;
+        !id && children.length === 1
+          ? entryInto(transition, children[0]!)?.id
+          : undefined;
       return fallback
         ? {
             terminal: { vertex: vertex.key, port: `entry:${fallback}` },
@@ -441,12 +408,12 @@ export function buildFlowScene(
         backward: FlowTransition[];
       }
     >();
-    for (const transition of getJourneyTransitions(document, journey)) {
+    for (const transition of journey.transitions) {
       const from = source(transition);
       const to = target(transition);
       if (!from || !to) {
         issues.push(
-          `${transition["@id"]}: endpoint is not a local vertex of ${journey["@id"]}`,
+          `${transition.id}: endpoint is not a local vertex of ${journey.id}`,
         );
         continue;
       }
@@ -460,8 +427,8 @@ export function buildFlowScene(
       };
       bundles.set(key, bundle);
       const entry = {
-        id: transition["@id"],
-        label: labelOf(transition),
+        id: transition.id,
+        label: transition.label,
         viaDefault: to.viaDefault,
       };
       if (terminalKey(bundle.a) === first) bundle.forward.push(entry);
@@ -469,12 +436,10 @@ export function buildFlowScene(
     }
 
     const associations = entries.flatMap((entry, index): FlowAssociation[] => {
-      const stateId = (entryNodes[index] as UjgJourneyEntry).stateRef;
+      const stateId = journey.entries[index]!.target;
       const vertex = stateVertex.get(stateId);
       if (!vertex) {
-        issues.push(
-          `${entry.id}: stateRef is not a state of ${journey["@id"]}`,
-        );
+        issues.push(`${entry.id}: target is not a state of ${journey.id}`);
         return [];
       }
       return [
@@ -491,7 +456,7 @@ export function buildFlowScene(
 
     return {
       kind: "journey",
-      id: journey["@id"],
+      id: journey.id,
       occurrence,
       entries,
       exits,
@@ -501,15 +466,16 @@ export function buildFlowScene(
     };
   };
 
-  const { roots, rootless } = getJourneyStarts(document);
-  const frames = [...roots, ...rootless].map((journey): FlowFrame => {
-    const occurrence = { startJourneyRef: journey["@id"], steps: [] };
-    const key = occurrenceKey(occurrence);
-    return {
-      key,
-      card: journeyCard(journey, occurrence, key),
-      content: buildJourney(journey, occurrence, []),
-    };
-  });
+  const frames = [...graph.roots, ...graph.rootless].map(
+    (journey): FlowFrame => {
+      const occurrence = { startJourneyId: journey.id, steps: [] };
+      const key = occurrenceKey(occurrence);
+      return {
+        key,
+        card: journeyCard(journey, occurrence, key),
+        content: buildJourney(journey, occurrence, []),
+      };
+    },
+  );
   return { frames, issues };
 }

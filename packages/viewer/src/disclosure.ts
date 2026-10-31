@@ -1,4 +1,4 @@
-import type { UjgDocument } from "@journey-viewer/ujg-jsonld";
+import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import {
   collapseAllJourneys,
   expandAllJourneys,
@@ -90,7 +90,7 @@ export function collapseWithin(
  * the tree's toggle leave the location.
  */
 export function disclose(
-  document: UjgDocument,
+  graph: JourneyGraph,
   screenshots: ScreenshotMap,
   state: ViewerDisclosure,
   action: DisclosureAction,
@@ -107,13 +107,13 @@ export function disclose(
     case "toggle": {
       const { journeyId, stateId, occurrence } = action;
       return expansion(
-        toggleChildJourneys(document, snapshot.interaction, journeyId, stateId),
+        toggleChildJourneys(graph, snapshot.interaction, journeyId, stateId),
         occurrence
           ? {
               selection: {
                 kind: "state",
-                journeyRef: journeyId,
-                nodeRef: stateId,
+                journeyId: journeyId,
+                nodeId: stateId,
               },
               occurrence,
             }
@@ -124,7 +124,7 @@ export function disclose(
     case "pick":
       return {
         snapshot: (action.type === "pick" ? pickSearchResult : navigateViewer)(
-          document,
+          graph,
           snapshot,
           action.target,
         ),
@@ -135,17 +135,17 @@ export function disclose(
       const next =
         action.type === "openScreen"
           ? openScreenshot(
-              document,
+              graph,
               screenshots,
               snapshot,
               action.target,
               action.surfaceId,
             )
-          : stepScreenshot(document, screenshots, snapshot, action.direction);
+          : stepScreenshot(graph, screenshots, snapshot, action.direction);
       return { snapshot: next, location: next.lightbox?.target ?? location };
     }
     case "expandAll":
-      return expansion(expandAllJourneys(document, snapshot.interaction));
+      return expansion(expandAllJourneys(graph, snapshot.interaction));
     case "collapseAll":
       return expansion(collapseAllJourneys(snapshot.interaction));
     case "return":

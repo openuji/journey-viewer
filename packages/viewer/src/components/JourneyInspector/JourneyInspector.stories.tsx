@@ -1,20 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { JourneyInspector } from "@/components/JourneyInspector/JourneyInspector";
-import { oidcDocument } from "~/.storybook/documents";
+import { oidcGraph } from "~/.storybook/documents";
 import { searchViewer } from "@/navigation";
 
 const meta = {
   title: "Viewer/JourneyInspector",
   component: JourneyInspector,
   args: {
-    document: oidcDocument,
+    graph: oidcGraph,
     selection: {
       kind: "state",
-      journeyRef: "urn:ujg:solid-oidc:app-auth-journey",
-      nodeRef: "urn:ujg:solid-oidc:idp-auth-flow",
+      journeyId: "urn:ujg:solid-oidc:app-auth-journey",
+      nodeId: "urn:ujg:solid-oidc:idp-auth-flow",
     },
   },
-  parameters: { controls: { exclude: ["document", "selection"] } },
+  parameters: { controls: { exclude: ["graph", "selection"] } },
 } satisfies Meta<typeof JourneyInspector>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -23,8 +23,8 @@ export const Entry: Story = {
   args: {
     selection: {
       kind: "entry",
-      journeyRef: "urn:ujg:solid-oidc:idp-auth-journey",
-      nodeRef: "urn:ujg:solid-oidc:idp-login-entry",
+      journeyId: "urn:ujg:solid-oidc:idp-auth-journey",
+      nodeId: "urn:ujg:solid-oidc:idp-login-entry",
     },
   },
 };
@@ -32,8 +32,8 @@ export const Exit: Story = {
   args: {
     selection: {
       kind: "exit",
-      journeyRef: "urn:ujg:solid-oidc:idp-auth-journey",
-      nodeRef: "urn:ujg:solid-oidc:idp-auth-failed",
+      journeyId: "urn:ujg:solid-oidc:idp-auth-journey",
+      nodeId: "urn:ujg:solid-oidc:idp-auth-failed",
     },
   },
 };
@@ -41,14 +41,14 @@ export const Journey: Story = {
   args: {
     selection: {
       kind: "journey",
-      journeyRef: "urn:ujg:solid-oidc:app-auth-journey",
-      nodeRef: "urn:ujg:solid-oidc:app-auth-journey",
+      journeyId: "urn:ujg:solid-oidc:app-auth-journey",
+      nodeId: "urn:ujg:solid-oidc:app-auth-journey",
     },
   },
 };
 export const Empty: Story = { args: { selection: null } };
 const login = searchViewer(
-  oidcDocument,
+  oidcGraph,
   "urn:ujg:solid-oidc:idp-login-entry",
 ).find((item) => item.selection.kind === "entry")!;
 export const EntryWithCallSite: Story = {
@@ -58,7 +58,7 @@ export const EntryWithCallSite: Story = {
   },
 };
 const failed = searchViewer(
-  oidcDocument,
+  oidcGraph,
   "urn:ujg:solid-oidc:idp-auth-failed",
 ).find((item) => item.selection.kind === "exit")!;
 export const ExitWithParentHandling: Story = {

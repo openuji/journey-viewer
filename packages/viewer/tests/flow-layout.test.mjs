@@ -9,7 +9,7 @@ import {
   emptyCompositesFixture,
   hierarchyFixture,
   minimalFixture,
-  oidcDocument,
+  oidcGraph,
   scopes,
   screensFixture,
 } from "~/tests/flow-scopes.mjs";
@@ -19,35 +19,31 @@ import { flowLevel } from "@/flow/geometry";
 import { measureArtifacts } from "@/dev/artifacts";
 import { estimate } from "@/flow/text";
 const placements = ["median", "aligned-center", "aligned-left"];
-const layout = (document, interaction, placement = "median") =>
+const layout = (graph, interaction, placement = "median") =>
   composeFlow(
-    buildFlowScene(document, interaction),
+    buildFlowScene(graph, interaction),
     flowLevel(placement),
     estimate,
   );
 test("the own engine draws no diagonals, kinks, short arrivals, or lines through blocks or frame borders, in every placement", () => {
   const cases = [
-    ...scopes(oidcDocument).map(([name, i]) => [
-      `oidc ${name}`,
-      oidcDocument,
-      i,
-    ]),
+    ...scopes(oidcGraph).map(([name, i]) => [`oidc ${name}`, oidcGraph, i]),
     ...[
       hierarchyFixture,
       screensFixture,
       emptyCompositesFixture,
       minimalFixture,
-    ].map((d) => [d["@id"], d, createViewerInteraction(d)]),
-  ].flatMap(([name, document, interaction]) =>
+    ].map((d) => [d.id, d, createViewerInteraction(d)]),
+  ].flatMap(([name, graph, interaction]) =>
     placements.map((placement) => [
       `${name} (${placement})`,
-      document,
+      graph,
       interaction,
       placement,
     ]),
   );
-  for (const [name, document, interaction, placement] of cases) {
-    const report = measureArtifacts(layout(document, interaction, placement));
+  for (const [name, graph, interaction, placement] of cases) {
+    const report = measureArtifacts(layout(graph, interaction, placement));
     assert.deepEqual(
       {
         diagonals: report.diagonals,
@@ -69,8 +65,8 @@ test("the own engine draws no diagonals, kinks, short arrivals, or lines through
 });
 test("states and closed composites have one contact point per side, at its centre unless aligned left", () => {
   for (const placement of placements)
-    for (const [name, interaction] of scopes(oidcDocument)) {
-      const result = layout(oidcDocument, interaction, placement);
+    for (const [name, interaction] of scopes(oidcGraph)) {
+      const result = layout(oidcGraph, interaction, placement);
       // An open composite shares its key with its frame; its connectors attach to the frame's ports.
       const open = new Set(result.frames.map((f) => f.key));
       const boxes = new Map(
@@ -108,7 +104,7 @@ test("states and closed composites have one contact point per side, at its centr
     }
 });
 test("aligned placements stack the main path in one column; aligned left shares its left edge", () => {
-  const [, interaction] = scopes(oidcDocument).find(
+  const [, interaction] = scopes(oidcGraph).find(
     ([name]) => name === "idp-auth-flow open",
   );
   // Select account, Login, MFA challenge, MFA completed, Identity consent, Resource consent.
@@ -121,7 +117,7 @@ test("aligned placements stack the main path in one column; aligned left shares 
     "idp-resource-consent-flow",
   ].map((id) => `urn:ujg:solid-oidc:${id}`);
   for (const placement of ["aligned-center", "aligned-left"]) {
-    const result = layout(oidcDocument, interaction, placement);
+    const result = layout(oidcGraph, interaction, placement);
     const rects = path.map(
       (id) =>
         [
@@ -142,8 +138,8 @@ test("aligned placements stack the main path in one column; aligned left shares 
 });
 test("an open composite's card is its frame's top-left corner; contracts sit on the borders", () => {
   for (const placement of placements)
-    for (const [name, interaction] of scopes(oidcDocument)) {
-      const result = layout(oidcDocument, interaction, placement);
+    for (const [name, interaction] of scopes(oidcGraph)) {
+      const result = layout(oidcGraph, interaction, placement);
       for (const frame of result.frames) {
         const card = result.cards.find(
           (c) => c.key === frame.frame.card.key && c.heads,
@@ -177,21 +173,21 @@ test("an open composite's card is its frame's top-left corner; contracts sit on 
     }
 });
 test("opening a composite never reorders its siblings", () => {
-  const closed = collapseAllJourneys(createViewerInteraction(oidcDocument));
+  const closed = collapseAllJourneys(createViewerInteraction(oidcGraph));
   const opened = toggleChildJourneys(
-    oidcDocument,
+    oidcGraph,
     closed,
     "urn:ujg:solid-oidc:app-auth-journey",
     "urn:ujg:solid-oidc:idp-auth-flow",
   );
   const order = (i) =>
-    layout(oidcDocument, i).levels.find(
+    layout(oidcGraph, i).levels.find(
       (l) => l.frame === "urn:ujg:solid-oidc:app-auth-journey",
     ).layers;
   assert.deepEqual(order(opened), order(closed));
 });
 test("layout is deterministic", () => {
-  const interaction = createViewerInteraction(oidcDocument);
+  const interaction = createViewerInteraction(oidcGraph);
   const strip = (l) =>
     JSON.stringify(
       { ...l, levels: l.levels.map((r) => ({ ...r, milliseconds: 0 })) },
@@ -207,7 +203,7 @@ test("layout is deterministic", () => {
     );
   for (const placement of placements)
     assert.equal(
-      strip(layout(oidcDocument, interaction, placement)),
-      strip(layout(oidcDocument, interaction, placement)),
+      strip(layout(oidcGraph, interaction, placement)),
+      strip(layout(oidcGraph, interaction, placement)),
     );
 });

@@ -5,27 +5,27 @@ import {
   createViewerInteraction,
   toggleChildJourneys,
 } from "@journey-viewer/viewer";
-import { id, oidcDocument } from "~/tests/flow-scopes.mjs";
+import { id, oidcGraph } from "~/tests/flow-scopes.mjs";
 import { composeFlow } from "@/flow/compose";
 import { flowLevel } from "@/flow/geometry";
 import { estimate } from "@/flow/text";
 import { buildFlowScene } from "@/flow/scene";
 import { flowHighlight } from "@/flow/highlight";
-const closed = collapseAllJourneys(createViewerInteraction(oidcDocument));
+const closed = collapseAllJourneys(createViewerInteraction(oidcGraph));
 const idpOpen = toggleChildJourneys(
-  oidcDocument,
+  oidcGraph,
   closed,
   id("app-auth-journey"),
   id("idp-auth-flow"),
 );
 const layout = (interaction) =>
-  composeFlow(buildFlowScene(oidcDocument, interaction), flowLevel(), estimate);
+  composeFlow(buildFlowScene(oidcGraph, interaction), flowLevel(), estimate);
 test("an active exit lights the parent connector that takes it", () => {
   const result = layout(idpOpen);
   const highlight = flowHighlight(result, {
     kind: "exit",
-    journeyRef: id("idp-auth-journey"),
-    nodeRef: id("idp-auth-success"),
+    journeyId: id("idp-auth-journey"),
+    nodeId: id("idp-auth-success"),
   });
   const continuation = result.connectors.find(
     (c) => c.bundle?.a.port === `exit:${id("idp-auth-success")}`,
@@ -44,8 +44,8 @@ test("a two-way connector carries both colours, each with its own arrowhead", ()
   const result = layout(closed);
   const highlight = flowHighlight(result, {
     kind: "state",
-    journeyRef: id("app-auth-journey"),
-    nodeRef: id("app-access-denied"),
+    journeyId: id("app-auth-journey"),
+    nodeId: id("app-access-denied"),
   });
   const twoWay = [...highlight.routes.values()].find(
     (r) => r.incoming.length > 0 && r.outgoing.length > 0,
@@ -61,8 +61,8 @@ test("rest and activation never change geometry", () => {
   const before = JSON.stringify(result.connectors.map((c) => c.points));
   flowHighlight(result, {
     kind: "state",
-    journeyRef: id("idp-auth-journey"),
-    nodeRef: id("idp-login"),
+    journeyId: id("idp-auth-journey"),
+    nodeId: id("idp-login"),
   });
   assert.equal(JSON.stringify(result.connectors.map((c) => c.points)), before);
 });

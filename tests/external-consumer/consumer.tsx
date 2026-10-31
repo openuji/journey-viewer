@@ -9,7 +9,14 @@ import {
   referenceTargets,
   uniqueNodeIds,
 } from "@journey-viewer/lint/ujg";
-import { getNodesByType, type UjgDocument } from "@journey-viewer/ujg-jsonld";
+import {
+  projectJourneyGraph,
+  type JourneyGraph,
+} from "@journey-viewer/ujg-jsonld";
+import {
+  getNodesByType,
+  type UjgDocument,
+} from "@journey-viewer/ujg-jsonld/ed";
 import {
   FlowPlacement,
   FlowSettings,
@@ -35,7 +42,15 @@ export function levelSize(input: LevelInput): number {
   return width * height;
 }
 
-export function Consumer({ document }: Readonly<{ document: UjgDocument }>) {
+/** Derived once per document and kept: every new graph resets the viewer. */
+export function graphOf(document: UjgDocument): JourneyGraph {
+  return projectJourneyGraph(document);
+}
+
+export function Consumer({
+  document,
+  graph,
+}: Readonly<{ document: UjgDocument; graph: JourneyGraph }>) {
   const findings = lint(document, [
     documentShape,
     uniqueNodeIds,
@@ -45,7 +60,7 @@ export function Consumer({ document }: Readonly<{ document: UjgDocument }>) {
   return (
     <main data-jv-theme="light">
       <Button>{`${journeys.length} journeys, ${findings.length} findings`}</Button>
-      <JourneyViewer document={document} />
+      <JourneyViewer graph={graph} />
     </main>
   );
 }
@@ -55,9 +70,9 @@ function ExpandEverything() {
   return <Button onClick={() => dispatch({ type: "expandAll" })}>Open</Button>;
 }
 
-export function Composition({ document }: Readonly<{ document: UjgDocument }>) {
+export function Composition({ graph }: Readonly<{ graph: JourneyGraph }>) {
   return (
-    <Viewer document={document} views={[treeView, flowView()]}>
+    <Viewer graph={graph} views={[treeView, flowView()]}>
       <FlowSettings>
         <ViewerBar>
           <ViewSwitch />

@@ -7,8 +7,8 @@ import type {
   HeadingLevel,
   StateRowProps,
 } from "@journey-viewer/design-system";
-import { getJourneyTouchpoints } from "@journey-viewer/ujg-jsonld";
-import type { UjgDocument, UjgJourney } from "@journey-viewer/ujg-jsonld";
+import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
+import type { Journey, JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import type { ViewerInteraction, ViewerSelection } from "@/interaction";
 import { sameSelection } from "@/interaction";
 import type { ViewerNavigation, ViewerTarget } from "@/navigation";
@@ -35,21 +35,21 @@ import styles from "@/components/JourneyExplorer/JourneyExplorer.module.css";
 export interface JourneyExplorerMedia extends JourneyScreenControls {
   readonly onPreview?: (
     target: ViewerTarget,
-    surfaceRef: string,
+    surfaceId: string,
     anchor: PreviewAnchor | null,
   ) => void;
 }
 
 export interface JourneyExplorerProps {
-  readonly document: UjgDocument;
+  readonly graph: JourneyGraph;
   readonly interaction: ViewerInteraction;
   readonly onSelect: (
     selection: ViewerSelection,
     occurrence: ViewerOccurrence,
   ) => void;
-  readonly onToggleChildren: (journeyRef: string, stateRef: string) => void;
+  readonly onToggleChildren: (journeyId: string, stateId: string) => void;
   /** Shows or hides a journey's entry/exit list; the list stays closed without it. */
-  readonly onToggleContracts?: (journeyRef: string) => void;
+  readonly onToggleContracts?: (journeyId: string) => void;
   readonly navigation?: ViewerNavigation;
   readonly onHover?: (
     selection: ViewerSelection | null,
@@ -65,15 +65,15 @@ export interface JourneyExplorerProps {
 }
 
 const primaryTouchpoint = (
-  document: UjgDocument,
-  journey: UjgJourney,
+  graph: JourneyGraph,
+  journey: Journey,
   presentation: TouchpointPresentation,
 ) => {
-  const touchpoint = getJourneyTouchpoints(document, journey["@id"])[0];
+  const touchpoint = journeyTouchpoints(graph, journey.id)[0];
   if (!touchpoint) return undefined;
   const color = touchpointColor(touchpoint, presentation);
   return {
-    id: touchpoint["@id"],
+    id: touchpoint.id,
     label: touchpointLabel(touchpoint, presentation),
     ...(color ? { color } : {}),
   };
@@ -92,17 +92,19 @@ export function JourneyExplorer({
   extensions,
   ...props
 }: JourneyExplorerProps) {
-  const { document } = props;
+  const { graph } = props;
   const columns = navigation?.mode === "columns";
-  const refs = navigation?.touchpointRefs ?? [];
-  const filtered = (journey: UjgJourney) =>
-    !matchesTouchpoints(document, journey["@id"], refs);
+  const touchpointIds = navigation?.touchpointIds ?? [];
+  const filtered = (journey: Journey) =>
+    !matchesTouchpoints(graph, journey.id, touchpointIds);
   return (
     <HierarchyTree
       {...props}
       touchpointPresentation={touchpoints}
       isJourneyFiltered={filtered}
-      isJourneyMatched={(journey) => refs.length > 0 && !filtered(journey)}
+      isJourneyMatched={(journey) =>
+        touchpointIds.length > 0 && !filtered(journey)
+      }
       {...(columns
         ? {
             occurrences: navigation.lanes,
@@ -117,10 +119,10 @@ export function JourneyExplorer({
           }
         : {})}
       renderNested={(journey, _occurrence, content) => {
-        const touchpoint = primaryTouchpoint(document, journey, touchpoints);
+        const touchpoint = primaryTouchpoint(graph, journey, touchpoints);
         return (
           <JourneyNest
-            matched={refs.length > 0 && !filtered(journey)}
+            matched={touchpointIds.length > 0 && !filtered(journey)}
             {...(touchpoint?.color ? { color: touchpoint.color } : {})}
           >
             {content}
@@ -130,19 +132,19 @@ export function JourneyExplorer({
       {...(extensions?.annotations
         ? {
             renderJourneyAction: (
-              journey: UjgJourney,
+              journey: Journey,
               occurrence: ViewerOccurrence,
             ) => {
               const target: ViewerSelection = {
                 kind: "journey",
-                journeyRef: journey["@id"],
-                nodeRef: journey["@id"],
+                journeyId: journey.id,
+                nodeId: journey.id,
               };
               return (
                 <JourneyAnnotations
                   annotations={extensions.annotations!}
                   context={{
-                    document,
+                    graph,
                     journey,
                     node: journey,
                     selection: target,
@@ -163,8 +165,8 @@ export function JourneyExplorer({
       }) => {
         const target: ViewerSelection = {
           kind: "state",
-          journeyRef: journey["@id"],
-          nodeRef: state["@id"],
+          journeyId: journey.id,
+          nodeId: state.id,
         };
         const childPaths = childJourneys.map((_, childIndex) =>
           childOccurrence(occurrence, stateIndex, childIndex),
@@ -174,36 +176,33 @@ export function JourneyExplorer({
               navigation.lanes.some((lane) => sameOccurrence(lane, path)),
             )
           : childJourneys.some((child) =>
-              interaction.expandedJourneys.includes(child["@id"]),
+              interaction.expandedJourneys.includes(child.id),
             );
         const highlight = getRowHighlight(
-          document,
+          graph,
           interaction,
           navigation,
-          journey["@id"],
-          state["@id"],
+          journey.id,
+          state.id,
         );
-        const parentTouchpoints = getJourneyTouchpoints(
-          document,
-          journey["@id"],
-        ).map((node) => node["@id"]);
+        const parentTouchpoints = journeyTouchpoints(graph, journey.id).map(
+          (node) => node.id,
+        );
         const crossingJourney = childJourneys.find((child) => {
-          const first = getJourneyTouchpoints(document, child["@id"])[0];
-          return (
-            first !== undefined && !parentTouchpoints.includes(first["@id"])
-          );
+          const first = journeyTouchpoints(graph, child.id)[0];
+          return first !== undefined && !parentTouchpoints.includes(first.id);
         });
         const crossing = crossingJourney
-          ? primaryTouchpoint(document, crossingJourney, touchpoints)
+          ? primaryTouchpoint(graph, crossingJourney, touchpoints)
           : undefined;
-        const color = primaryTouchpoint(document, journey, touchpoints)?.color;
+        const color = primaryTouchpoint(graph, journey, touchpoints)?.color;
         const screens = media
-          ? getNodeScreens(document, media.screenshots, state["@id"]).filter(
+          ? getNodeScreens(graph, media.screenshots, state.id).filter(
               (screen) => screen.source,
             )
           : [];
         const context: ViewerStateContext = {
-          document,
+          graph,
           journey,
           node: state,
           selection: target,
@@ -214,7 +213,7 @@ export function JourneyExplorer({
           ...(!columns && childJourneys.length
             ? {
                 description: childJourneys
-                  .map((child) => child.label ?? child["@id"])
+                  .map((child) => child.label)
                   .join(" · "),
               }
             : {}),
@@ -229,11 +228,11 @@ export function JourneyExplorer({
                   incoming: highlight.incoming,
                   outgoing: highlight.outgoing,
                   title: getRouteDescription(
-                    document,
+                    graph,
                     navigation,
                     interaction,
-                    journey["@id"],
-                    state["@id"],
+                    journey.id,
+                    state.id,
                   ),
                 },
               }
@@ -253,38 +252,38 @@ export function JourneyExplorer({
             media &&
             screens.map((screen) => (
               <BrowserScreenButton
-                key={screen.surface["@id"]}
+                key={screen.surface.id}
                 label={
                   screens.length > 1
-                    ? `Screen mockup: ${state.label} (${screen.surface["@id"]})`
+                    ? `Screen mockup: ${state.label} (${screen.surface.id})`
                     : `Screen mockup: ${state.label}`
                 }
                 {...(color ? { color } : {})}
                 onOpen={() =>
                   media.onOpen(
                     { selection: target, occurrence },
-                    screen.surface["@id"],
+                    screen.surface.id,
                   )
                 }
                 onPreview={(anchor) =>
                   media.onPreview?.(
                     { selection: target, occurrence },
-                    screen.surface["@id"],
+                    screen.surface.id,
                     anchor,
                   )
                 }
               />
             )),
           ...(childJourneys.length === 0 && renderChildren
-            ? { notice: renderChildren({ visibleJourneyRefs: [] }) }
+            ? { notice: renderChildren({ visibleJourneyIds: [] }) }
             : {}),
           ...(childJourneys.length > 0 && !columns
             ? {
-                onToggle: () => onToggleChildren(journey["@id"], state["@id"]),
+                onToggle: () => onToggleChildren(journey.id, state.id),
                 children:
                   expanded &&
                   renderChildren?.({
-                    visibleJourneyRefs: interaction.expandedJourneys,
+                    visibleJourneyIds: interaction.expandedJourneys,
                   }),
               }
             : {}),
@@ -312,21 +311,21 @@ export function JourneyExplorer({
       renderContracts={(journey, contracts, occurrence) => (
         <JourneyContractControls
           {...contracts}
-          open={interaction.openContracts.includes(journey["@id"])}
-          onToggle={() => onToggleContracts?.(journey["@id"])}
+          open={interaction.openContracts.includes(journey.id)}
+          onToggle={() => onToggleContracts?.(journey.id)}
           filtered={filtered(journey)}
           selection={
-            interaction.selection?.journeyRef === journey["@id"] &&
+            interaction.selection?.journeyId === journey.id &&
             (interaction.selection.kind === "entry" ||
               interaction.selection.kind === "exit")
               ? {
                   kind: interaction.selection.kind,
-                  id: interaction.selection.nodeRef,
+                  id: interaction.selection.nodeId,
                 }
               : null
           }
-          onSelect={(kind, nodeRef) =>
-            onSelect({ kind, nodeRef, journeyRef: journey["@id"] }, occurrence)
+          onSelect={(kind, nodeId) =>
+            onSelect({ kind, nodeId, journeyId: journey.id }, occurrence)
           }
         />
       )}

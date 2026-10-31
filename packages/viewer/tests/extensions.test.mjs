@@ -10,14 +10,8 @@ import {
   createViewerSnapshot,
   expandAllJourneys,
 } from "@journey-viewer/viewer";
+import { freeze, graphOf } from "~/tests/graphs.mjs";
 
-const freeze = (value) => {
-  if (value && typeof value === "object") {
-    Object.values(value).forEach(freeze);
-    Object.freeze(value);
-  }
-  return value;
-};
 const document = freeze(
   JSON.parse(
     await readFile(
@@ -26,15 +20,15 @@ const document = freeze(
     ),
   ),
 );
-const initial = createViewerSnapshot(document);
+const initial = createViewerSnapshot(graphOf(document));
 // Every journey open, so each call site renders.
 const snapshot = freeze({
   ...initial,
-  interaction: expandAllJourneys(document, initial.interaction),
+  interaction: expandAllJourneys(graphOf(document), initial.interaction),
 });
 const unexpected = () => assert.fail("render must not invoke action callbacks");
 const explorerProps = {
-  document,
+  graph: graphOf(document),
   interaction: snapshot.interaction,
   navigation: snapshot.navigation,
   onSelect: unexpected,
@@ -47,18 +41,21 @@ const explorer = (extensions, props = {}) =>
 const inspector = (extensions, props = {}) =>
   renderToStaticMarkup(
     h(JourneyInspector, {
-      document,
+      graph: graphOf(document),
       selection: snapshot.interaction.selection,
       extensions,
       ...props,
     }),
   );
-const originalNode = (ref) =>
-  document.nodes.find((node) => node["@id"] === ref);
+const graph = graphOf(document);
+const graphNode = (ref) =>
+  [...graph.journeys, ...graph.states, ...graph.entries, ...graph.exits].find(
+    (node) => node.id === ref,
+  );
 const checkContext = (context) => {
-  assert.equal(context.document, document);
-  assert.equal(context.node, originalNode(context.selection.nodeRef));
-  assert.equal(context.journey, originalNode(context.selection.journeyRef));
+  assert.equal(context.graph, graph);
+  assert.equal(context.node, graphNode(context.selection.nodeId));
+  assert.equal(context.journey, graphNode(context.selection.journeyId));
 };
 
 test("omitted, empty and unmatched descriptors preserve exact built-in markup and frozen inputs", () => {
@@ -90,17 +87,13 @@ test("omitted, empty and unmatched descriptors preserve exact built-in markup an
   assert.equal(JSON.stringify({ document, snapshot }), before);
 });
 
-test("matching panels append in supplied order for all selection kinds, using original nodes and explicit navigation", () => {
+test("matching panels append in supplied order for all selection kinds, using the graph's nodes and explicit navigation", () => {
   function Panel(props) {
     checkContext(props);
     assert.equal(props.level, 5);
     assert.equal(props.onNavigate, unexpected);
     assert.equal(props.occurrence, snapshot.navigation.occurrence);
-    return h(
-      Text,
-      null,
-      `Custom ${props.selection.kind}: ${props.node["@id"]}`,
-    );
+    return h(Text, null, `Custom ${props.selection.kind}: ${props.node.id}`);
   }
   const extensions = freeze({
     inspectorPanels: [
@@ -127,21 +120,21 @@ test("matching panels append in supplied order for all selection kinds, using or
       },
     ],
   });
-  for (const [kind, nodeRef] of [
+  for (const [kind, nodeId] of [
     ["journey", "urn:test:first"],
     ["state", "urn:test:compose"],
     ["entry", "urn:test:entry"],
     ["exit", "urn:test:exit"],
   ]) {
     const html = inspector(extensions, {
-      selection: freeze({ kind, journeyRef: "urn:test:first", nodeRef }),
+      selection: freeze({ kind, journeyId: "urn:test:first", nodeId }),
       level: 3,
       navigation: {
         occurrence: snapshot.navigation.occurrence,
         onNavigate: unexpected,
       },
     });
-    assert.match(html, new RegExp(`Custom ${kind}: ${nodeRef}`));
+    assert.match(html, new RegExp(`Custom ${kind}: ${nodeId}`));
     assert.ok(html.indexOf("exported exit") < html.indexOf("Source details"));
     assert.ok(html.indexOf("Source details") < html.indexOf("Additional note"));
     assert.match(html, /<h4[^>]*>Source details/);
@@ -181,7 +174,7 @@ test("annotations receive each finite call site and render for journey/state and
         matches: (context) => {
           checkContext(context);
           return (
-            context.selection.nodeRef === "urn:test:repeat" ||
+            context.selection.nodeId === "urn:test:repeat" ||
             context.selection.kind !== "state"
           );
         },
@@ -194,26 +187,26 @@ test("annotations receive each finite call site and render for journey/state and
   });
   const html = explorer(extensions);
   assert.equal(
-    calls.filter((context) => context.selection.nodeRef === "urn:test:repeat")
+    calls.filter((context) => context.selection.nodeId === "urn:test:repeat")
       .length,
     3,
   );
   const repeated = calls.filter(
-    (context) => context.selection.nodeRef === "urn:test:repeat",
+    (context) => context.selection.nodeId === "urn:test:repeat",
   );
   assert.deepEqual(
     repeated.map((context) => context.occurrence),
     [
       {
-        startJourneyRef: "urn:test:first",
+        startJourneyId: "urn:test:first",
         steps: [{ stateIndex: 0, childIndex: 0 }],
       },
       {
-        startJourneyRef: "urn:test:first",
+        startJourneyId: "urn:test:first",
         steps: [{ stateIndex: 0, childIndex: 2 }],
       },
       {
-        startJourneyRef: "urn:test:second",
+        startJourneyId: "urn:test:second",
         steps: [{ stateIndex: 0, childIndex: 0 }],
       },
     ],
@@ -221,12 +214,12 @@ test("annotations receive each finite call site and render for journey/state and
   assert.match(html, /Note for journey/);
   assert.equal((html.match(/Note for state/g) ?? []).length, 3);
   assert.doesNotMatch(html, /aria-label="Annotations"/);
-  for (const [kind, nodeRef] of [
+  for (const [kind, nodeId] of [
     ["entry", "urn:test:entry"],
     ["exit", "urn:test:exit"],
   ]) {
     const inspected = inspector(extensions, {
-      selection: { kind, journeyRef: "urn:test:first", nodeRef },
+      selection: { kind, journeyId: "urn:test:first", nodeId },
       navigation: {
         occurrence: snapshot.navigation.occurrence,
         onNavigate: unexpected,
@@ -251,7 +244,7 @@ test("the first matching state override receives complete readonly row controls 
       { id: "skip", matches: () => false, Component: unexpected },
       {
         id: "custom",
-        matches: (context) => context.node["@id"] === "urn:test:compose",
+        matches: (context) => context.node.id === "urn:test:compose",
         Component: ({ context, row }) => {
           checkContext(context);
           // A normal React component, rather than a directly invoked render callback.
@@ -263,7 +256,7 @@ test("the first matching state override receives complete readonly row controls 
       {
         id: "later",
         matches: (context) => {
-          assert.notEqual(context.node["@id"], "urn:test:compose");
+          assert.notEqual(context.node.id, "urn:test:compose");
           return false;
         },
         Component: unexpected,
@@ -312,7 +305,7 @@ test("removing descriptors restores defaults, and a matching null override delib
     stateOverrides: [
       {
         id: "hide",
-        matches: (context) => context.node["@id"] === "urn:test:compose",
+        matches: (context) => context.node.id === "urn:test:compose",
         Component: () => null,
       },
     ],
@@ -355,16 +348,16 @@ test("state overrides retain screenshot actions, filtered relations, column care
     ...snapshot.navigation,
     mode: "columns",
     lanes: [snapshot.navigation.occurrence],
-    touchpointRefs: ["urn:test:phone"],
+    touchpointIds: ["urn:test:phone"],
     hover: {
       kind: "state",
-      journeyRef: "urn:test:first",
-      nodeRef: "urn:test:terminal",
+      journeyId: "urn:test:first",
+      nodeId: "urn:test:terminal",
     },
     hoverOccurrence: snapshot.navigation.occurrence,
   });
   explorer(extensions, {
-    document: source,
+    graph: graphOf(source),
     navigation,
     media: {
       screenshots: freeze({ "opaque:screen": "./screen.png" }),
@@ -372,7 +365,7 @@ test("state overrides retain screenshot actions, filtered relations, column care
     },
   });
   const compose = captures.find(
-    ({ context }) => context.node["@id"] === "urn:test:compose",
+    ({ context }) => context.node.id === "urn:test:compose",
   );
   assert.equal(compose.row.composite, true);
   assert.equal(compose.row.expanded, false);
@@ -396,8 +389,8 @@ test("state overrides retain screenshot actions, filtered relations, column care
     ],
   ]);
   assert.equal(
-    captures.find(({ context }) => context.node["@id"] === "urn:test:terminal")
-      .row.tone,
+    captures.find(({ context }) => context.node.id === "urn:test:terminal").row
+      .tone,
     "active",
   );
 
@@ -411,14 +404,14 @@ test("state overrides retain screenshot actions, filtered relations, column care
     ),
   });
   explorer(extensions, {
-    document: empty,
+    graph: graphOf(empty),
     navigation: freeze({
       ...snapshot.navigation,
-      touchpointRefs: ["urn:unassigned"],
+      touchpointIds: ["urn:unassigned"],
     }),
   });
   const emptyRow = captures.find(
-    ({ context }) => context.node["@id"] === "urn:test:compose",
+    ({ context }) => context.node.id === "urn:test:compose",
   ).row;
   assert.equal(emptyRow.filtered, true);
   assert.equal(emptyRow.onToggle, undefined);
@@ -437,8 +430,8 @@ test("invalid/empty inspection never evaluates descriptors; extension errors pro
     inspector(invalid, {
       selection: {
         kind: "state",
-        journeyRef: "urn:test:first",
-        nodeRef: "urn:test:repeat",
+        journeyId: "urn:test:first",
+        nodeId: "urn:test:repeat",
       },
     }),
     /Select a journey/,

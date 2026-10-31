@@ -1,26 +1,22 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { JourneyHierarchy } from "@/components/JourneyHierarchy/JourneyHierarchy";
-import {
-  emptyDocument,
-  oidcDocument,
-  topologyDocument,
-} from "~/.storybook/documents";
+import { emptyGraph, oidcGraph, topologyGraph } from "~/.storybook/documents";
 
 const meta = {
   title: "Viewer/JourneyHierarchy",
   component: JourneyHierarchy,
   tags: ["autodocs"],
-  args: { document: oidcDocument, level: 2 },
-  parameters: { controls: { exclude: ["document"] } },
+  args: { graph: oidcGraph, level: 2 },
+  parameters: { controls: { exclude: ["graph"] } },
 } satisfies Meta<typeof JourneyHierarchy>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Oidc: Story = { name: "Solid-OIDC" };
 export const MultipleRootsAndRecursion: Story = {
-  args: { document: topologyDocument },
+  args: { graph: topologyGraph },
 };
-export const Empty: Story = { args: { document: emptyDocument } };
+export const Empty: Story = { args: { graph: emptyGraph } };
 export const BuiltConsumer: Story = {
   render: () => (
     <iframe

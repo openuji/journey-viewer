@@ -1,17 +1,12 @@
 import {
-  getChildJourneys,
-  getJourneyEntries,
-  getJourneyExits,
-  getJourneyStates,
-  getJourneyTouchpoints,
-  getJourneyTransitions,
-  getNodesByType,
+  entryInto,
+  exitFrom,
+  journeyTouchpoints,
 } from "@journey-viewer/ujg-jsonld";
 import type {
-  UjgDocument,
-  UjgJourney,
-  UjgNode,
-  UjgTransition,
+  Journey,
+  JourneyGraph,
+  Transition,
 } from "@journey-viewer/ujg-jsonld";
 import type {
   InspectorDetail,
@@ -50,109 +45,83 @@ export type InspectorModel = Omit<
     sections: readonly InspectorSectionModel[];
   }>;
 
-const label = (node: UjgNode): string =>
-  typeof node.label === "string" ? node.label : node["@id"];
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
-const tags = (edge: UjgTransition): readonly string[] =>
-  Array.isArray(edge.tags)
-    ? edge.tags.filter(
-        (tag): tag is string => typeof tag === "string" && tag.length > 0,
-      )
-    : [];
 const kindFor = (
-  journey: UjgJourney,
-  document: UjgDocument,
-  ref: string,
+  journey: Journey,
+  id: string,
 ): ViewerSelection["kind"] | undefined =>
-  getJourneyStates(document, journey).some((node) => node["@id"] === ref)
+  journey.states.some((node) => node.id === id)
     ? "state"
-    : getJourneyExits(document, journey).some((node) => node["@id"] === ref)
+    : journey.exits.some((node) => node.id === id)
       ? "exit"
-      : getJourneyEntries(document, journey).some((node) => node["@id"] === ref)
+      : journey.entries.some((node) => node.id === id)
         ? "entry"
         : undefined;
 
-function childrenOf(
-  document: UjgDocument,
-  journey: UjgJourney,
-  stateRef: string,
-): readonly UjgJourney[] {
-  const composite = getNodesByType(document, "CompositeState").find(
-    (node) => node["@id"] === stateRef && journey.stateRefs.includes(stateRef),
+function childrenOf(journey: Journey, stateId: string): readonly Journey[] {
+  const state = journey.states.find(
+    (node) => node.id === stateId && node.kind === "composite",
   );
-  return composite ? getChildJourneys(document, composite) : [];
+  return state?.kind === "composite" ? state.children : [];
 }
 
 /** Boundary wording for a transition that enters or leaves a composite's child journey. */
-function annotation(
-  document: UjgDocument,
-  journey: UjgJourney,
-  edge: UjgTransition,
-): string | undefined {
-  const entered = childrenOf(document, journey, edge.to);
-  const entry = entered.flatMap((child) =>
-    getJourneyEntries(document, child).filter((node) =>
-      edge.toEntryRef
-        ? node["@id"] === edge.toEntryRef
-        : node["@id"] === child.defaultEntryRef,
-    ),
-  )[0];
+function annotation(journey: Journey, edge: Transition): string | undefined {
+  const entered = childrenOf(journey, edge.to);
+  const entry = entered.flatMap((child) => entryInto(edge, child) ?? [])[0];
   const enters =
     entered.length === 0
       ? undefined
-      : `enters at ${entry ? label(entry) : (edge.toEntryRef ?? "default entry")}${edge.toEntryRef ? "" : " (default)"}`;
-  const exit = edge.fromExitRef
-    ? childrenOf(document, journey, edge.from)
-        .flatMap((child) => getJourneyExits(document, child))
-        .find((node) => node["@id"] === edge.fromExitRef)
+      : `enters at ${entry ? entry.label : (edge.toEntry ?? "default entry")}${edge.toEntry ? "" : " (default)"}`;
+  const exit = edge.fromExit
+    ? childrenOf(journey, edge.from).flatMap(
+        (child) => exitFrom(edge, child) ?? [],
+      )[0]
     : undefined;
-  const leaves = edge.fromExitRef
-    ? `on child exit: ${exit ? label(exit) : edge.fromExitRef}`
+  const leaves = edge.fromExit
+    ? `on child exit: ${exit ? exit.label : edge.fromExit}`
     : undefined;
   return [enters, leaves].filter(Boolean).join(" · ") || undefined;
 }
 
 /** Transitions grouped by the node at their other end, in first-appearance order. */
 function groupTransitions(
-  document: UjgDocument,
-  journey: UjgJourney,
-  edges: readonly UjgTransition[],
+  journey: Journey,
+  edges: readonly Transition[],
   direction: InspectorDirection,
   occurrence: ViewerOccurrence | null,
 ): readonly InspectorGroupModel[] {
-  const other = (edge: UjgTransition) =>
+  const other = (edge: Transition) =>
     direction === "incoming" ? edge.from : edge.to;
-  const refs = edges
+  const ids = edges
     .map(other)
-    .filter((ref, index, all) => all.indexOf(ref) === index);
-  return refs.map((ref) => {
-    const kind = kindFor(journey, document, ref);
-    const node = [
-      ...getJourneyStates(document, journey),
-      ...getJourneyExits(document, journey),
-      ...getJourneyEntries(document, journey),
-    ].find((candidate) => candidate["@id"] === ref);
+    .filter((id, index, all) => all.indexOf(id) === index);
+  return ids.map((id) => {
+    const kind = kindFor(journey, id);
+    const node = [...journey.states, ...journey.exits, ...journey.entries].find(
+      (candidate) => candidate.id === id,
+    );
     const items: readonly InspectorTransitionItem[] = edges
-      .filter((edge) => other(edge) === ref)
+      .filter((edge) => other(edge) === id)
       .map((edge) => {
-        const note = annotation(document, journey, edge);
+        const note = annotation(journey, edge);
         return {
-          id: edge["@id"],
-          label: label(edge),
-          tags: tags(edge),
+          id: edge.id,
+          label: edge.label,
+          tags: edge.tags.filter((tag) => tag.length > 0),
           ...(note ? { annotation: note } : {}),
         };
       });
     return {
-      id: ref,
-      label: node ? label(node) : ref,
+      id: id,
+      label: node ? node.label : id,
       exit: kind === "exit",
       items,
       target:
         kind && occurrence
           ? {
-              selection: { kind, journeyRef: journey["@id"], nodeRef: ref },
+              selection: { kind, journeyId: journey.id, nodeId: id },
               occurrence,
             }
           : null,
@@ -161,85 +130,67 @@ function groupTransitions(
 }
 
 const touchpointNames = (
-  document: UjgDocument,
-  journey: UjgJourney,
+  graph: JourneyGraph,
+  journey: Journey,
   presentation: TouchpointPresentation,
 ) =>
-  getJourneyTouchpoints(document, journey["@id"])
+  journeyTouchpoints(graph, journey.id)
     .map((node) => touchpointLabel(node, presentation))
     .join(", ");
 
-/** Builds ephemeral design-system presentation data; source nodes are never normalized or stored. */
+/** Builds ephemeral design-system presentation data from the graph; nothing is stored. */
 export function getInspectorModel(
-  document: UjgDocument,
+  graph: JourneyGraph,
   selection: ViewerSelection | null,
   occurrence: ViewerOccurrence | null,
   presentation: TouchpointPresentation = {},
 ): InspectorModel | undefined {
-  const resolved = selection
-    ? resolveSelection(document, selection)
-    : undefined;
+  const resolved = selection ? resolveSelection(graph, selection) : undefined;
   if (!resolved || !selection) return undefined;
   const { journey, node } = resolved;
-  const trail = occurrence ? getOccurrenceTrail(document, occurrence) : [];
-  const context =
-    trail.at(-1)?.journey["@id"] === journey["@id"] ? occurrence : null;
+  const trail = occurrence ? getOccurrenceTrail(graph, occurrence) : [];
+  const context = trail.at(-1)?.journey.id === journey.id ? occurrence : null;
   const parent = context ? trail.at(-2) : undefined;
-  const via = context ? trail.at(-1)?.viaStateRef : undefined;
-  const entries = getJourneyEntries(document, journey);
-  const exits = getJourneyExits(document, journey);
-  const states = getJourneyStates(document, journey);
-  const transitions = getJourneyTransitions(document, journey);
+  const via = context ? trail.at(-1)?.viaStateId : undefined;
+  const { entries, exits, states, transitions } = journey;
   const target = (
     kind: ViewerSelection["kind"],
-    owner: UjgJourney,
-    ref: string,
+    owner: Journey,
+    id: string,
     path: ViewerOccurrence | null,
   ): ViewerTarget | null =>
     path
       ? {
-          selection: { kind, journeyRef: owner["@id"], nodeRef: ref },
+          selection: { kind, journeyId: owner.id, nodeId: id },
           occurrence: path,
         }
       : null;
   const transitionSections = (
-    ref: string,
+    id: string,
     incomingTitle: string,
     outgoingTitle: string,
   ) => {
-    const incoming = transitions.filter((edge) => edge.to === ref);
-    const outgoing = transitions.filter((edge) => edge.from === ref);
+    const incoming = transitions.filter((edge) => edge.to === id);
+    const outgoing = transitions.filter((edge) => edge.from === id);
     return [
       {
         title: incomingTitle,
         direction: "incoming",
         count: incoming.length,
-        groups: groupTransitions(
-          document,
-          journey,
-          incoming,
-          "incoming",
-          context,
-        ),
+        groups: groupTransitions(journey, incoming, "incoming", context),
       },
       {
         title: outgoingTitle,
         direction: "outgoing",
         count: outgoing.length,
-        groups: groupTransitions(
-          document,
-          journey,
-          outgoing,
-          "outgoing",
-          context,
-        ),
+        groups: groupTransitions(journey, outgoing, "outgoing", context),
       },
     ] as const satisfies readonly InspectorSectionModel[];
   };
   const parentSection = (
     title: string,
     direction: InspectorDirection,
-    edges: readonly UjgTransition[],
+    edges: readonly Transition[],
     empty: string,
   ): readonly InspectorSectionModel[] =>
     parent
@@ -250,7 +201,6 @@ export function getInspectorModel(
             count: edges.length,
             empty,
             groups: groupTransitions(
-              document,
               parent.journey,
               edges,
               direction,
@@ -259,13 +209,10 @@ export function getInspectorModel(
           },
         ]
       : [];
-  const parentEdges =
-    parent && via ? getJourneyTransitions(document, parent.journey) : [];
+  const parentEdges = parent && via ? parent.journey.transitions : [];
   const composite =
-    selection.kind === "state"
-      ? childrenOf(document, journey, node["@id"])
-      : [];
-  const stateIndex = states.findIndex((state) => state["@id"] === node["@id"]);
+    selection.kind === "state" ? childrenOf(journey, node.id) : [];
+  const stateIndex = states.findIndex((state) => state.id === node.id);
   const sections: readonly InspectorSectionModel[] =
     selection.kind === "journey"
       ? [
@@ -273,23 +220,23 @@ export function getInspectorModel(
             title: "Entries",
             count: entries.length,
             details: entries.map((entry) => ({
-              id: entry["@id"],
-              label: label(entry),
+              id: entry.id,
+              label: entry.label,
               sub:
-                entry["@id"] === journey.defaultEntryRef
+                entry.id === journey.defaultEntry
                   ? "Default entry"
                   : "Explicit entry",
-              target: target("entry", journey, entry["@id"], context),
+              target: target("entry", journey, entry.id, context),
             })),
           },
           {
             title: "Exits",
             count: exits.length,
             details: exits.map((exit) => ({
-              id: exit["@id"],
-              label: label(exit),
+              id: exit.id,
+              label: exit.label,
               sub: "Exported exit",
-              target: target("exit", journey, exit["@id"], context),
+              target: target("exit", journey, exit.id, context),
             })),
           },
         ]
@@ -298,46 +245,44 @@ export function getInspectorModel(
             {
               title: "Starts at",
               details: entries
-                .filter((entry) => entry["@id"] === node["@id"])
+                .filter((entry) => entry.id === node.id)
                 .map((entry) => {
                   const start = states.find(
-                    (state) => state["@id"] === entry.stateRef,
+                    (state) => state.id === entry.target,
                   );
                   return {
-                    id: entry.stateRef,
-                    label: start ? label(start) : entry.stateRef,
+                    id: entry.target,
+                    label: start ? start.label : entry.target,
                     sub:
-                      entry["@id"] === journey.defaultEntryRef
+                      entry.id === journey.defaultEntry
                         ? "Default entry"
                         : "Explicit entry",
                     target: start
-                      ? target("state", journey, start["@id"], context)
+                      ? target("state", journey, start.id, context)
                       : null,
                   };
                 }),
             },
             ...parentSection(
-              `Invoked from ${parent ? label(parent.journey) : ""}`,
+              `Invoked from ${parent ? parent.journey.label : ""}`,
               "incoming",
               parentEdges.filter(
                 (edge) =>
-                  edge.to === via &&
-                  (edge.toEntryRef === node["@id"] ||
-                    (!edge.toEntryRef &&
-                      node["@id"] === journey.defaultEntryRef)),
+                  edge.to === via && entryInto(edge, journey)?.id === node.id,
               ),
               "No matching parent call sites",
             ),
           ]
         : selection.kind === "exit"
           ? [
-              { ...transitionSections(node["@id"], "Produced by", "")[0] },
+              { ...transitionSections(node.id, "Produced by", "")[0] },
               ...parentSection(
                 "Handled by parent",
                 "outgoing",
                 parentEdges.filter(
                   (edge) =>
-                    edge.from === via && edge.fromExitRef === node["@id"],
+                    edge.from === via &&
+                    exitFrom(edge, journey)?.id === node.id,
                 ),
                 "No explicit parent handling",
               ),
@@ -352,10 +297,9 @@ export function getInspectorModel(
                           : "Nested journeys",
                       details: composite.map(
                         (child, childIndex): InspectorDetailModel => {
-                          const childStates = getJourneyStates(document, child);
-                          const childTouchpoint = getJourneyTouchpoints(
-                            document,
-                            child["@id"],
+                          const childTouchpoint = journeyTouchpoints(
+                            graph,
+                            child.id,
                           )[0];
                           const color = childTouchpoint
                             ? touchpointColor(childTouchpoint, presentation)
@@ -365,35 +309,26 @@ export function getInspectorModel(
                               ? childOccurrence(context, stateIndex, childIndex)
                               : null;
                           const valid =
-                            path &&
-                            getOccurrenceTrail(document, path).length > 0
+                            path && getOccurrenceTrail(graph, path).length > 0
                               ? path
                               : null;
                           const from = touchpointNames(
-                            document,
+                            graph,
                             journey,
                             presentation,
                           );
                           const to = touchpointNames(
-                            document,
+                            graph,
                             child,
                             presentation,
                           );
                           return {
-                            id: child["@id"],
-                            label: label(child),
+                            id: child.id,
+                            label: child.label,
                             sub: [
-                              plural(childStates.length, "state", "states"),
-                              plural(
-                                getJourneyEntries(document, child).length,
-                                "entry",
-                                "entries",
-                              ),
-                              plural(
-                                getJourneyExits(document, child).length,
-                                "exit",
-                                "exits",
-                              ),
+                              plural(child.states.length, "state", "states"),
+                              plural(child.entries.length, "entry", "entries"),
+                              plural(child.exits.length, "exit", "exits"),
                             ].join(" · "),
                             ...(childTouchpoint
                               ? {
@@ -411,27 +346,27 @@ export function getInspectorModel(
                                   note: `Touchpoint change: ${from || "none"} → ${to}`,
                                 }
                               : {}),
-                            target: childStates[0]
+                            target: child.states[0]
                               ? target(
                                   "state",
                                   child,
-                                  childStates[0]["@id"],
+                                  child.states[0].id,
                                   valid,
                                 )
-                              : target("journey", child, child["@id"], valid),
+                              : target("journey", child, child.id, valid),
                           };
                         },
                       ),
                     },
                   ]
                 : []),
-              ...transitionSections(node["@id"], "Incoming", "Outgoing"),
+              ...transitionSections(node.id, "Incoming", "Outgoing"),
             ];
   const labels = context
-    ? getOccurrenceLabels(document, context).map((crumb) => crumb.label)
-    : [label(journey)];
+    ? getOccurrenceLabels(graph, context).map((crumb) => crumb.label)
+    : [journey.label];
   return {
-    title: label(node),
+    title: node.label,
     typeLabel:
       selection.kind === "journey"
         ? "Journey"
@@ -442,20 +377,18 @@ export function getInspectorModel(
             : composite.length
               ? "Composite state"
               : "State",
-    identity: node["@id"],
+    identity: node.id,
     crumb: labels.join(" / "),
-    touchpoints: getJourneyTouchpoints(document, journey["@id"]).map(
-      (touchpoint) => {
-        const color = touchpointColor(touchpoint, presentation);
-        return {
-          id: touchpoint["@id"],
-          label: label(touchpoint),
-          ...(color ? { color } : {}),
-        };
-      },
-    ),
+    touchpoints: journeyTouchpoints(graph, journey.id).map((touchpoint) => {
+      const color = touchpointColor(touchpoint, presentation);
+      return {
+        id: touchpoint.id,
+        label: touchpoint.label,
+        ...(color ? { color } : {}),
+      };
+    }),
     footnote: [
-      label(journey),
+      journey.label,
       plural(entries.length, "entry", "entries"),
       plural(exits.length, "exported exit", "exported exits"),
     ].join(" · "),

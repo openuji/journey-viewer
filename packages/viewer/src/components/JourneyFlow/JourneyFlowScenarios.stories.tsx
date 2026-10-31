@@ -16,7 +16,7 @@ import { flowView } from "@/components/FlowView/FlowView";
 import { FlowSettings } from "@/components/FlowSettings/FlowSettings";
 import { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
 import { FlowZoom } from "@/components/FlowZoom/FlowZoom";
-import { oidcDocument } from "~/.storybook/documents";
+import { oidcGraph } from "~/.storybook/documents";
 import { oidcScreenshots, oidcTouchpoints } from "~/.storybook/screenshots";
 
 /** The spike's main scope: the app journey with the identity provider's flow open inside it. */
@@ -30,7 +30,7 @@ const appWithIdpOpen: readonly ViewerInitialCommand[] = [
 ];
 
 const inputs = {
-  document: oidcDocument,
+  graph: oidcGraph,
   screenshots: oidcScreenshots,
   touchpoints: oidcTouchpoints,
   initialView: "flow",
