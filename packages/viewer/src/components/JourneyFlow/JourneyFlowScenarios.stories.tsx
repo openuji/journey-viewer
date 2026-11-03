@@ -15,8 +15,9 @@ import { columnsView, treeView } from "@/components/ExplorerView/ExplorerView";
 import { flowView } from "@/components/FlowView/FlowView";
 import { FlowSettings } from "@/components/FlowSettings/FlowSettings";
 import { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
+import { FlowRoots } from "@/components/FlowRoots/FlowRoots";
 import { FlowZoom } from "@/components/FlowZoom/FlowZoom";
-import { oidcGraph } from "~/.storybook/documents";
+import { oidcGraph, topologyGraph } from "~/.storybook/documents";
 import { oidcScreenshots, oidcTouchpoints } from "~/.storybook/screenshots";
 
 /** The spike's main scope: the app journey with the identity provider's flow open inside it. */
@@ -56,6 +57,14 @@ const flowControls = (
     <FlowKey />
   </>
 );
+const rootControls = (
+  <>
+    <FlowPlacement />
+    <FlowZoom />
+    <FlowRoots />
+    <FlowKey />
+  </>
+);
 
 /**
  * Toolbar arrangements for a Flow view beside Tree and Columns. Each story is a plain composition
@@ -92,6 +101,29 @@ export const ControlsOnTheCanvas: Story = {
       <Viewer
         {...inputs}
         views={[treeView, columnsView, flowView({ pathEnd: flowControls })]}
+      >
+        <ViewerBar>
+          <DocumentSummary />
+          <ViewSwitch />
+          {tools}
+        </ViewerBar>
+        <ViewerMain />
+      </Viewer>
+    </FlowSettings>
+  ),
+};
+
+/**
+ * A document with several root journeys, drawn one at a time: Journeys beside Placement and Zoom,
+ * and the first step of the journey path switches between the roots.
+ */
+export const OneJourneyAtATime: Story = {
+  render: () => (
+    <FlowSettings initialRoots="one">
+      <Viewer
+        graph={topologyGraph}
+        initialView="flow"
+        views={[treeView, columnsView, flowView({ pathEnd: rootControls })]}
       >
         <ViewerBar>
           <DocumentSummary />

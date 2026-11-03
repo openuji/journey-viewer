@@ -190,7 +190,7 @@ try {
     const stories = Object.values(index.entries).filter(
       (entry) => entry.type === "story",
     );
-    assert.equal(stories.length, 46);
+    assert.equal(stories.length, 47);
     assert.ok(stories.every((entry) => entry.title.startsWith("Viewer/")));
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);

@@ -63,6 +63,7 @@ function FlowStage({ pathEnd }: FlowViewOptions) {
       location={disclosure.location}
       placement={settings.placement}
       zoom={settings.zoom}
+      roots={settings.roots}
       screenshots={screenshots}
       touchpoints={touchpoints}
       touchpointIds={snapshot.navigation.touchpointIds}
@@ -81,8 +82,8 @@ function FlowStage({ pathEnd }: FlowViewOptions) {
 
 /**
  * The flow chart: nested frames for open journeys, metro-style connectors and the journey path,
- * over the snapshot Tree and Columns share. Placement and zoom come from an enclosing
- * `FlowSettings`.
+ * over the snapshot Tree and Columns share. Placement, zoom and the root scope come from an
+ * enclosing `FlowSettings`.
  */
 export function flowView(options: FlowViewOptions = {}): ViewerView {
   return {

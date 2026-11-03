@@ -1,11 +1,28 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FlowKey } from "@/components/FlowKey/FlowKey";
 import { JourneyPath } from "@/components/JourneyPath/JourneyPath";
-import { createJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.fixtures";
+import {
+  createJourneyPathFixture,
+  createJourneyPathRootsFixture,
+} from "@/components/JourneyPath/JourneyPath.fixtures";
+import type { JourneyPathFixture } from "@/components/JourneyPath/JourneyPath.fixtures";
 
-const withSelect = (fixture = createJourneyPathFixture()) => ({
+const withSelect = (
+  fixture: JourneyPathFixture = createJourneyPathFixture(),
+) => ({
   ...fixture,
-  items: fixture.items.map((item) => ({ ...item, onSelect: () => undefined })),
+  items: fixture.items.map(({ choices, ...item }) => ({
+    ...item,
+    ...(choices
+      ? {
+          choices: choices.map((choice) => ({
+            ...choice,
+            onSelect: () => undefined,
+          })),
+        }
+      : {}),
+    onSelect: () => undefined,
+  })),
 });
 
 const meta = {
@@ -26,4 +43,17 @@ export const RootJourney: Story = {
 /** Canvas controls at the bar's end. */
 export const WithControls: Story = {
   args: { ...withSelect(), end: <FlowKey /> },
+};
+/** One root journey at a time: the chevron beside the root's title switches to another root. */
+export const RootChoice: Story = {
+  args: withSelect(createJourneyPathRootsFixture()),
+};
+/** The same switch on a path that goes deeper: the root stays a step back to its own journey. */
+export const RootChoiceWithOpenJourney: Story = {
+  args: withSelect({
+    items: [
+      ...createJourneyPathRootsFixture().items,
+      ...createJourneyPathFixture().items.slice(1),
+    ],
+  }),
 };

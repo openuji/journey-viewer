@@ -3,6 +3,7 @@ import { FlowKey, Text } from "@journey-viewer/design-system";
 import {
   ExpandCollapse,
   FlowPlacement,
+  FlowRoots,
   FlowSettings,
   FlowZoom,
   GraphSearch,
@@ -41,6 +42,7 @@ const views = [
       <>
         <FlowPlacement />
         <FlowZoom />
+        <FlowRoots />
         <FlowKey />
       </>
     ),

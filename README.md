@@ -30,12 +30,7 @@ pnpm test:consumer
 pnpm test:visualise
 ```
 
-```sh
-ln -s ../.. apps/web/.journey-viewer
-pnpm --dir apps/web install --frozen-lockfile
-pnpm dev
-pnpm storybook:web
-```
+
 
 `pnpm build` builds the six parent library packages; `pnpm test` checks the
 formatting and source layout and verifies the packages and the captured baseline.
@@ -196,28 +191,3 @@ its manifest, README and `dist`.
   composition and `Application`, lays out a flow level, resolves every CSS export
   and runs the installed `journey-viewer generate` and `run`. It needs registry access or a warm pnpm store.
 
-## Nested repository ownership
-
-`apps/web` is ignored by this parent and excluded from its pnpm workspace. It has
-its own Git metadata, lockfile and dependency versions. Since Stage 11A it reaches
-this repository only through its git-ignored `.journey-viewer` alias:
-`link:.journey-viewer/packages/...` dependencies on four built public libraries (all but flow-layout)
-and `.journey-viewer/examples/`. Locally the alias is a symlink to this checkout;
-Cloudflare's build clones this repository there (see the app README). It does not
-rejoin the parent workspace or alias library source. Run the parent install/build
-before app checks or development. A fresh parent clone needs that independent
-checkout supplied separately before the web convenience commands can run; library
-builds/tests require no site checkout.
-
-Six old web files remain tracked in the parent index until you finish the agreed
-ownership transfer. From this parent directory, run:
-
-```sh
-git rm -r --cached -- apps/web
-```
-
-This preserves the files and nested repository on disk. The command is left to
-you under the no-staging agreement. No gitlink/submodule, remote or commit was
-created. Review parent changes and `git -C apps/web status` independently.
-
-Only the user may commit. Agent changes remain uncommitted for review.

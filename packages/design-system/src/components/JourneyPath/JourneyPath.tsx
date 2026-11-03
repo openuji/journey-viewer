@@ -1,13 +1,23 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@/components/Button/Button";
+import { Icon } from "@/components/Icon/Icon";
 import { Text } from "@/components/Text/Text";
 import { TouchpointDot } from "@/components/TouchpointDot/TouchpointDot";
 import styles from "@/components/JourneyPath/JourneyPath.module.css";
+
+/** A journey that can stand in a step of the path. */
+export interface JourneyPathChoice {
+  readonly id: string;
+  readonly title: string;
+  readonly onSelect: () => void;
+}
 
 export interface JourneyPathItem {
   readonly id: string;
   readonly title: string;
   readonly touchpoint?: Readonly<{ label: string; color?: string }>;
+  /** The journeys this step could be, itself included: its title gains a switch between them. */
+  readonly choices?: readonly JourneyPathChoice[];
   readonly onSelect: () => void;
 }
 
@@ -15,17 +25,20 @@ export interface JourneyPathProps {
   /** Outermost first; the last item is the current journey. */
   readonly items: readonly JourneyPathItem[];
   readonly label?: string;
+  /** Accessible name of a step's switch between journeys. */
+  readonly choiceLabel?: string;
   /** Controls for what the path shows, at the bar's end. */
   readonly end?: ReactNode;
 }
 
 /**
  * The path of open journeys down to the current one, from the root journey. Choosing an earlier
- * step returns to that journey.
+ * step returns to that journey; a step with choices can also be switched to another journey.
  */
 export function JourneyPath({
   items,
   label = "Journey path",
+  choiceLabel = "Switch journey",
   end,
 }: JourneyPathProps) {
   if (items.length === 0 && end === undefined) return null;
@@ -70,6 +83,27 @@ export function JourneyPath({
                     {item.title}
                   </Text>
                 </Button>
+                {item.choices && item.choices.length > 1 && (
+                  <span className={styles.choice}>
+                    <select
+                      className={styles.select}
+                      aria-label={choiceLabel}
+                      value={item.id}
+                      onChange={(event) =>
+                        item.choices
+                          ?.find((choice) => choice.id === event.target.value)
+                          ?.onSelect()
+                      }
+                    >
+                      {item.choices.map((choice) => (
+                        <option key={choice.id} value={choice.id}>
+                          {choice.title}
+                        </option>
+                      ))}
+                    </select>
+                    <Icon name="chevron" />
+                  </span>
+                )}
               </li>
             );
           })}

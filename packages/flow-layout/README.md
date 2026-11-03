@@ -104,7 +104,11 @@ layers grow with the arrival, and the horizontal rules below grow with the step.
 2. Dummy chains for long edges, one per node pair, then crossing reduction by
    barycenter and median sweeps plus transposition. Ordering looks at node pairs, not
    ports, so replacing a block with a frame of the same id (opening nested content)
-   keeps every layer's order.
+   keeps every layer's order. Crossings are counted by pure functions of an ordering
+   (`src/crossings.ts`), and transposition judges a swap by its gain from the two
+   vertices' neighbours alone, changing the layer only when the swap pays. The cost
+   follows the swap, not the level: a dense level with some 15,000 dummy vertices
+   lays out in about a second.
 3. Corridors: neighbouring dummy chains and the lanes beside frames merge into one
    line.
 4. Preferred positions: median isotonic regression, or Brandes–Köpf columns packed

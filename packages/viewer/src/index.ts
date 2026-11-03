@@ -47,7 +47,9 @@ export type {
   FlowSettingsValue,
 } from "@/components/FlowSettings/FlowSettings";
 export { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
+export { FlowRoots } from "@/components/FlowRoots/FlowRoots";
 export { FlowZoom } from "@/components/FlowZoom/FlowZoom";
+export type { FlowRootScope } from "@/flow/roots";
 export { JourneyFlow } from "@/components/JourneyFlow/JourneyFlow";
 export type {
   JourneyFlowProps,

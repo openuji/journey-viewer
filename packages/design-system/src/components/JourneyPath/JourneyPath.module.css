@@ -1,3 +1,5 @@
+@reference "@/styles/tailwind.css";
+
 .bar {
   display: flex;
   flex-wrap: wrap;
@@ -47,4 +49,43 @@
 }
 .step[aria-current].step {
   color: var(--jv-color-foreground);
+}
+/* A switch between journeys beside a step: the chevron is the visible control, and the native
+   select laid over it supplies the list, the keyboard and the accessible name. */
+.choice {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--jv-size-control-mobile);
+  min-block-size: var(--jv-size-control-mobile);
+  border-radius: var(--jv-radius-sm);
+  color: var(--jv-color-muted);
+  @variant md {
+    min-inline-size: var(--jv-size-control-xs);
+    min-block-size: var(--jv-size-control-xs);
+  }
+}
+.choice:hover {
+  background: var(--jv-color-hover);
+  color: var(--jv-color-foreground);
+}
+.choice:has(.select:focus-visible) {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: var(--jv-border-focus);
+}
+.select {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  appearance: none;
+  cursor: pointer;
+}
+.choice svg {
+  transform: rotate(90deg);
+  pointer-events: none;
 }

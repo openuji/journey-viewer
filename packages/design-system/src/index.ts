@@ -121,6 +121,7 @@ export { JourneyPath } from "@/components/JourneyPath/JourneyPath";
 export type {
   JourneyPathProps,
   JourneyPathItem,
+  JourneyPathChoice,
 } from "@/components/JourneyPath/JourneyPath";
 export { FlowKey } from "@/components/FlowKey/FlowKey";
 export type { FlowKeyProps } from "@/components/FlowKey/FlowKey";

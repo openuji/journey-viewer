@@ -57,7 +57,10 @@ import { createConnectorFixture } from "@/components/Connector/Connector.fixture
 import { checkConnectorFixture } from "@/components/Connector/Connector.checks";
 import { createRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.fixtures";
 import { checkRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.checks";
-import { createJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.fixtures";
+import {
+  createJourneyPathFixture,
+  createJourneyPathRootsFixture,
+} from "@/components/JourneyPath/JourneyPath.fixtures";
 import { checkJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.checks";
 import { createFlowKeyFixture } from "@/components/FlowKey/FlowKey.fixtures";
 import { checkFlowKeyFixture } from "@/components/FlowKey/FlowKey.checks";
@@ -183,6 +186,12 @@ const findings = [
     ...finding,
     path: ["JourneyPath", ...finding.path],
   })),
+  ...checkJourneyPathFixture(createJourneyPathRootsFixture()).map(
+    (finding) => ({
+      ...finding,
+      path: ["JourneyPath roots", ...finding.path],
+    }),
+  ),
   ...checkFlowKeyFixture(createFlowKeyFixture()).map((finding) => ({
     ...finding,
     path: ["FlowKey", ...finding.path],

@@ -18,6 +18,8 @@ import { blockRects } from "@/flow/blocks";
 import { composeFlow } from "@/flow/compose";
 import { flowLevel } from "@/flow/geometry";
 import { flowHighlight } from "@/flow/highlight";
+import { sceneForRoots } from "@/flow/roots";
+import type { FlowRootScope } from "@/flow/roots";
 import { buildFlowScene, frameShows } from "@/flow/scene";
 import type { FlowCard, FlowFrame } from "@/flow/scene";
 import type { TextMeasure } from "@/flow/text";
@@ -54,6 +56,11 @@ export interface JourneyFlowProps {
   readonly location: ViewerTarget | null;
   readonly placement?: Placement;
   readonly zoom?: FlowZoomLevel;
+  /**
+   * Every root journey (the default), or one at a time: the root the location starts from, with
+   * the others a choice on the first step of the journey path, and only the shown one laid out.
+   */
+  readonly roots?: FlowRootScope;
   readonly screenshots?: ScreenshotMap;
   readonly touchpoints?: TouchpointPresentation;
   /** The touchpoint filter: blocks of other journeys recede. */
@@ -102,6 +109,7 @@ function FlowCanvas({
   location,
   placement = "median",
   zoom = "actual",
+  roots = "all",
   screenshots = {},
   touchpoints = {},
   touchpointIds = [],
@@ -120,9 +128,14 @@ function FlowCanvas({
     () => buildFlowScene(graph, { expandedJourneys }),
     [graph, expandedJourneys],
   );
+  const startJourneyId = location?.occurrence.startJourneyId;
+  const staged = useMemo(
+    () => sceneForRoots(scene, roots, startJourneyId),
+    [scene, roots, startJourneyId],
+  );
   const layout = useMemo(
-    () => composeFlow(scene, flowLevel(placement), measure),
-    [scene, placement, measure],
+    () => composeFlow(staged, flowLevel(placement), measure),
+    [staged, placement, measure],
   );
   const blocks = useMemo(() => blockRects(layout), [layout]);
   // A target asks for the block that shows it in this layout, which arrives with the request.
@@ -187,6 +200,19 @@ function FlowCanvas({
     if (depth === path.length - 1) onView(next);
     else onAction({ type: "return", frame }, next);
   };
+  // One root at a time: the path's first step also switches roots, to the top of the new canvas.
+  const rootChoices =
+    roots === "one" && scene.frames.length > 1
+      ? scene.frames.map((frame) => ({
+          id: frame.key,
+          title: frame.card.label,
+          onSelect: () =>
+            onAction(
+              { type: "navigate", target: frame.card.target },
+              { anchor: null, reveal: { start: true } },
+            ),
+        }))
+      : undefined;
   const toggle = (card: FlowCard) =>
     onAction(
       {
@@ -209,6 +235,7 @@ function FlowCanvas({
             id: frame.key,
             title: frame.card.label,
             ...(touchpoint ? { touchpoint } : {}),
+            ...(depth === 0 && rootChoices ? { choices: rootChoices } : {}),
             onSelect: () => returnTo(frame, depth),
           };
         })}

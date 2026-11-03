@@ -259,6 +259,12 @@ The layout uses the design system's public Tailwind bridge during the viewer
 build to consume its shared `lg` breakpoint. Consumers only import compiled CSS;
 they need no Tailwind plugin. No production CSS reaches into design-system source.
 
+The flow's layout cost grows with the connections that skip layers: one dummy vertex
+per skipped layer, and ordering must keep track of all of them. Ordering judges each
+swap by its gain, a pure function of the swapped vertices' neighbours, so a journey of
+56 states and 1,278 transitions lays out in well under a second; `roots: "one"` lays out
+only the root in view. Layout still runs synchronously during render.
+
 Large-document rendering remains deferred: fully expanding every occurrence can
 produce exponentially many rows in a heavily shared graph. Queries scan source
 collections, and there is no render-size or depth policy yet. Ancestor lookup on
@@ -611,9 +617,15 @@ import { FlowKey } from "@journey-viewer/design-system";
   `ExpandCollapse`, `TouchpointFilter`, `GraphSearch` (with trailing tools as
   children), `ResetView` and `ViewerMain`. `JourneyNavigation`, the controlled bar,
   arranges the same parts for callers that own the snapshot.
-- **Flow settings.** Placement and zoom are not graph state. `FlowSettings` holds them
-  for `FlowPlacement`, `FlowZoom` and the flow view, wherever those sit. Without it the
-  flow draws median at 100%, and the two controls throw.
+- **Flow settings.** Placement, zoom and the root scope are not graph state.
+  `FlowSettings` holds them for `FlowPlacement`, `FlowZoom`, `FlowRoots` and the flow
+  view, wherever those sit. Without it the flow draws every root journey, median at
+  100%, and the three controls throw. `FlowRoots` switches between every root journey
+  on the canvas (the default) and one at a time; `initialRoots="one"` starts there.
+  One at a time, the first step of the journey path gains a chevron that switches
+  roots, the root shown follows the flow's location (a click, a search result, an
+  inspector link, a switch on the path), and only that root is laid out. Roots are
+  independent frames that no connector joins, so no topology within a root is dropped.
 
 ### Writing a control
 
