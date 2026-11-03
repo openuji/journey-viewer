@@ -281,6 +281,13 @@
           ]
         }
       },
+      "pressed": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [0.23529411764705882, 0.2980392156862745, 0.4]
+        }
+      },
       "accent": {
         "$type": "color",
         "$value": {

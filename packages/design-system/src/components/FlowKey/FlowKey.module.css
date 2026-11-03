@@ -1,7 +1,8 @@
 .key {
   display: inline-flex;
 }
-/* Top layer: centred where anchor positioning is missing, beside the button where it exists. */
+/* Top layer: centred where anchor positioning is missing; where it exists, centred below the
+   button and kept a gutter away from the window's edges. */
 .panel {
   box-sizing: border-box;
   max-inline-size: min(22rem, calc(100vw - 2 * var(--jv-space-lg)));
@@ -15,9 +16,9 @@
 @supports (position-area: bottom) {
   .panel {
     inset: auto;
-    margin: var(--jv-space-xs) 0 0;
-    position-area: bottom span-right;
-    position-try-fallbacks: flip-inline, flip-block;
+    margin: var(--jv-space-xs) var(--jv-space-sm) 0;
+    position-area: bottom;
+    position-try-fallbacks: flip-block;
   }
 }
 .list {

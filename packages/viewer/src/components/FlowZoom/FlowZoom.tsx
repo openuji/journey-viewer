@@ -1,9 +1,9 @@
-import { SegmentedControl } from "@journey-viewer/design-system";
+import { Icon, SegmentedControl } from "@journey-viewer/design-system";
 import { useFlowSettings } from "@/components/FlowSettings/FlowSettings";
 
 const zooms = [
-  { value: "actual", label: "100%" },
-  { value: "fit", label: "Fit" },
+  { value: "actual", label: "100%", icon: <Icon name="zoom-actual" /> },
+  { value: "fit", label: "Fit", icon: <Icon name="zoom-fit" /> },
 ] as const;
 
 /** The flow at its drawn size or fitted to the canvas; needs an enclosing `FlowSettings`. */

@@ -1,4 +1,4 @@
-import { Icon, IconButton } from "@journey-viewer/design-system";
+import { Icon, IconButton, Tooltip } from "@journey-viewer/design-system";
 import { useViewer } from "@/components/Viewer/Viewer";
 import styles from "@/components/ExpandCollapse/ExpandCollapse.module.css";
 
@@ -14,18 +14,20 @@ export function ControlledExpandCollapse({
 }: ControlledExpandCollapseProps) {
   return (
     <div className={styles.tools}>
-      <IconButton
-        label="Expand all"
-        title="Expand all"
-        icon={<Icon name="expand-all" />}
-        onClick={onExpandAll}
-      />
-      <IconButton
-        label="Collapse all"
-        title="Collapse all"
-        icon={<Icon name="collapse-all" />}
-        onClick={onCollapseAll}
-      />
+      <Tooltip label="Expand all">
+        <IconButton
+          label="Expand all"
+          icon={<Icon name="expand-all" />}
+          onClick={onExpandAll}
+        />
+      </Tooltip>
+      <Tooltip label="Collapse all">
+        <IconButton
+          label="Collapse all"
+          icon={<Icon name="collapse-all" />}
+          onClick={onCollapseAll}
+        />
+      </Tooltip>
     </div>
   );
 }

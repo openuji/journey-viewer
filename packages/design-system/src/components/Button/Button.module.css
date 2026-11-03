@@ -122,8 +122,9 @@
   color: var(--jv-color-foreground);
   box-shadow: var(--jv-shadow-subtle);
 }
+/* Raised out of its trough in both themes: lighter than the trough, with a hairline edge. */
 .button[data-variant="segment"][data-selected] {
-  border-color: transparent;
+  background: var(--jv-color-pressed);
 }
 .button[data-variant="chip"][data-selected] {
   border-color: var(--jv-color-accent);

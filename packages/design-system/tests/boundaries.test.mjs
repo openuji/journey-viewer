@@ -35,6 +35,8 @@ const owners = [
   "RouteOverlay",
   "JourneyPath",
   "FlowKey",
+  "CanvasHeader",
+  "Tooltip",
 ];
 
 test("shared primitives have single owners and colocated public contracts, fixtures, checks, and stories", async () => {

@@ -21,6 +21,10 @@ import {
   StateNode,
   ContractGlyph,
   JourneyPath,
+  CanvasHeader,
+  SegmentedControl,
+  Tooltip,
+  FlowKey,
   Connector,
   RouteOverlay,
   parallel,
@@ -470,6 +474,56 @@ test("the journey path marks its last step as the current location", () => {
   assert.equal((html.match(/aria-current="location"/g) ?? []).length, 1);
   assert.match(html, /aria-current="location"[^>]*>.*IdP auth flow/);
   assert.equal(renderToStaticMarkup(h(JourneyPath, { items: [] })), "");
+  assert.doesNotMatch(html, /data-canvas-header/);
+});
+
+test("the canvas header holds the path and a named command plane, and nothing when both are empty", () => {
+  const html = renderToStaticMarkup(
+    h(CanvasHeader, {
+      path: h("nav", { "aria-label": "Journey path" }),
+      commands: h(FlowKey),
+    }),
+  );
+  assert.match(html, /data-canvas-header/);
+  assert.match(
+    html,
+    /<nav aria-label="Journey path"><\/nav>.*role="group" aria-label="Canvas commands"/,
+  );
+  assert.match(html, /popovertarget="[^"]+"[^>]*aria-label="Key"/i);
+  assert.equal(renderToStaticMarkup(h(CanvasHeader, {})), "");
+  assert.doesNotMatch(
+    renderToStaticMarkup(h(CanvasHeader, { path: h("nav") })),
+    /role="group"/,
+  );
+});
+
+test("a glyph option is a named, pressed icon button with its label as a hidden tooltip", () => {
+  const html = renderToStaticMarkup(
+    h(SegmentedControl, {
+      label: "Zoom",
+      value: "fit",
+      onChange: () => assert.fail("rendering does not invoke callbacks"),
+      options: [
+        { value: "actual", label: "100%" },
+        { value: "fit", label: "Fit", icon: h("svg", { "data-glyph": "" }) },
+      ],
+    }),
+  );
+  assert.match(html, /aria-pressed="false"[^>]*>100%<\/button>/);
+  assert.match(
+    html,
+    /<button(?=[^>]*aria-label="Fit")(?=[^>]*aria-pressed="true")[^>]*data-icon-only="true"><span[^>]*aria-hidden="true"><svg data-glyph=""><\/svg><\/span><\/button><span[^>]*aria-hidden="true"><span[^>]*>Fit<\/span><\/span>/,
+  );
+  const tip = renderToStaticMarkup(
+    h(
+      Tooltip,
+      { label: "Reset view" },
+      h("button", { "aria-label": "Reset view" }),
+    ),
+  );
+  assert.match(tip, /anchor-name:--tooltip-/);
+  assert.match(tip, /position-anchor:--tooltip-/);
+  assert.match(tip, /aria-hidden="true"><span[^>]*>Reset view<\/span>/);
 });
 
 test("connectors and routes draw rounded orthogonal paths with arrowheads only on routes", () => {

@@ -94,13 +94,13 @@ export const ControlsInTheBar: Story = {
   ),
 };
 
-/** Only the view switch in the bar; Placement, Zoom and the key beside the journey path. */
+/** Only the view switch in the bar; Placement, Zoom and the key in the canvas header's command plane. */
 export const ControlsOnTheCanvas: Story = {
   render: () => (
     <FlowSettings>
       <Viewer
         {...inputs}
-        views={[treeView, columnsView, flowView({ pathEnd: flowControls })]}
+        views={[treeView, columnsView, flowView({ commands: flowControls })]}
       >
         <ViewerBar>
           <DocumentSummary />
@@ -123,7 +123,7 @@ export const OneJourneyAtATime: Story = {
       <Viewer
         graph={topologyGraph}
         initialView="flow"
-        views={[treeView, columnsView, flowView({ pathEnd: rootControls })]}
+        views={[treeView, columnsView, flowView({ commands: rootControls })]}
       >
         <ViewerBar>
           <DocumentSummary />

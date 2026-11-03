@@ -1,7 +1,8 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { Button } from "@/components/Button/Button";
 import { Icon } from "@/components/Icon/Icon";
 import { Text } from "@/components/Text/Text";
+import { Tooltip } from "@/components/Tooltip/Tooltip";
 import { TouchpointDot } from "@/components/TouchpointDot/TouchpointDot";
 import styles from "@/components/JourneyPath/JourneyPath.module.css";
 
@@ -25,65 +26,68 @@ export interface JourneyPathProps {
   /** Outermost first; the last item is the current journey. */
   readonly items: readonly JourneyPathItem[];
   readonly label?: string;
-  /** Accessible name of a step's switch between journeys. */
+  /** Accessible name and tooltip of a step's switch between journeys. */
   readonly choiceLabel?: string;
-  /** Controls for what the path shows, at the bar's end. */
-  readonly end?: ReactNode;
 }
 
 /**
  * The path of open journeys down to the current one, from the root journey. Choosing an earlier
- * step returns to that journey; a step with choices can also be switched to another journey.
+ * step returns to that journey; a step with choices can also be switched to another journey. From
+ * the `md` breakpoint the path keeps to one line: earlier steps give up width before the current
+ * one.
  */
 export function JourneyPath({
   items,
   label = "Journey path",
   choiceLabel = "Switch journey",
-  end,
 }: JourneyPathProps) {
-  if (items.length === 0 && end === undefined) return null;
+  if (items.length === 0) return null;
   return (
-    <div className={styles.bar}>
-      <nav className={styles.path} aria-label={label}>
-        <ol className={styles.list}>
-          {items.map((item, i) => {
-            const current = i === items.length - 1;
-            return (
-              <li
-                key={item.id}
-                className={styles.item}
-                style={
-                  item.touchpoint?.color
-                    ? ({
-                        "--jv-touchpoint-color": item.touchpoint.color,
-                      } as CSSProperties)
-                    : undefined
-                }
+    <nav className={styles.path} aria-label={label}>
+      <ol
+        className={styles.list}
+        style={{ "--jv-path-earlier": items.length - 1 } as CSSProperties}
+      >
+        {items.map((item, i) => {
+          const current = i === items.length - 1;
+          return (
+            <li
+              key={item.id}
+              className={styles.item}
+              style={
+                item.touchpoint?.color
+                  ? ({
+                      "--jv-touchpoint-color": item.touchpoint.color,
+                    } as CSSProperties)
+                  : undefined
+              }
+            >
+              <Button
+                variant="ghost"
+                size="xs"
+                className={styles.step}
+                aria-current={current ? "location" : undefined}
+                onClick={item.onSelect}
               >
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  className={styles.step}
-                  aria-current={current ? "location" : undefined}
-                  onClick={item.onSelect}
+                {item.touchpoint && (
+                  <TouchpointDot
+                    label={item.touchpoint.label}
+                    {...(item.touchpoint.color
+                      ? { color: item.touchpoint.color }
+                      : {})}
+                    decorative
+                  />
+                )}
+                <Text
+                  variant="label"
+                  weight={current ? "semibold" : "medium"}
+                  className={styles.title}
                 >
-                  {item.touchpoint && (
-                    <TouchpointDot
-                      label={item.touchpoint.label}
-                      {...(item.touchpoint.color
-                        ? { color: item.touchpoint.color }
-                        : {})}
-                      decorative
-                    />
-                  )}
-                  <Text
-                    variant="label"
-                    weight={current ? "semibold" : "medium"}
-                  >
-                    {item.title}
-                  </Text>
-                </Button>
-                {item.choices && item.choices.length > 1 && (
+                  {item.title}
+                </Text>
+              </Button>
+              {item.choices && item.choices.length > 1 && (
+                <Tooltip label={choiceLabel}>
                   <span className={styles.choice}>
                     <select
                       className={styles.select}
@@ -103,13 +107,12 @@ export function JourneyPath({
                     </select>
                     <Icon name="chevron" />
                   </span>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
-      {end !== undefined && <div className={styles.end}>{end}</div>}
-    </div>
+                </Tooltip>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

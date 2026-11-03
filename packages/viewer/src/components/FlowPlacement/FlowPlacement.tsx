@@ -1,10 +1,18 @@
-import { SegmentedControl } from "@journey-viewer/design-system";
+import { Icon, SegmentedControl } from "@journey-viewer/design-system";
 import { useFlowSettings } from "@/components/FlowSettings/FlowSettings";
 
 const placements = [
-  { value: "median", label: "Median" },
-  { value: "aligned-center", label: "Aligned centre" },
-  { value: "aligned-left", label: "Aligned left" },
+  { value: "median", label: "Median", icon: <Icon name="align-median" /> },
+  {
+    value: "aligned-center",
+    label: "Aligned centre",
+    icon: <Icon name="align-centre" />,
+  },
+  {
+    value: "aligned-left",
+    label: "Aligned left",
+    icon: <Icon name="align-left" />,
+  },
 ] as const;
 
 /** Where each layer's states sit; needs an enclosing `FlowSettings`. */

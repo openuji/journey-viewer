@@ -40,6 +40,10 @@
       "$type": "color",
       "$value": "{foundation.dark.hover}"
     },
+    "pressed": {
+      "$type": "color",
+      "$value": "{foundation.dark.pressed}"
+    },
     "accent": {
       "$type": "color",
       "$value": "{foundation.dark.accent}"

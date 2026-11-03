@@ -1,9 +1,9 @@
-import { SegmentedControl } from "@journey-viewer/design-system";
+import { Icon, SegmentedControl } from "@journey-viewer/design-system";
 import { useFlowSettings } from "@/components/FlowSettings/FlowSettings";
 
 const roots = [
-  { value: "all", label: "All journeys" },
-  { value: "one", label: "One journey" },
+  { value: "all", label: "All journeys", icon: <Icon name="frames" /> },
+  { value: "one", label: "One journey", icon: <Icon name="frame" /> },
 ] as const;
 
 /**

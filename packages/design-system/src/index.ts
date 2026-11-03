@@ -125,3 +125,7 @@ export type {
 } from "@/components/JourneyPath/JourneyPath";
 export { FlowKey } from "@/components/FlowKey/FlowKey";
 export type { FlowKeyProps } from "@/components/FlowKey/FlowKey";
+export { CanvasHeader } from "@/components/CanvasHeader/CanvasHeader";
+export type { CanvasHeaderProps } from "@/components/CanvasHeader/CanvasHeader";
+export { Tooltip } from "@/components/Tooltip/Tooltip";
+export type { TooltipProps } from "@/components/Tooltip/Tooltip";

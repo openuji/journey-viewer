@@ -64,6 +64,10 @@ import {
 import { checkJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.checks";
 import { createFlowKeyFixture } from "@/components/FlowKey/FlowKey.fixtures";
 import { checkFlowKeyFixture } from "@/components/FlowKey/FlowKey.checks";
+import { createCanvasHeaderFixture } from "@/components/CanvasHeader/CanvasHeader.fixtures";
+import { checkCanvasHeaderFixture } from "@/components/CanvasHeader/CanvasHeader.checks";
+import { createTooltipFixture } from "@/components/Tooltip/Tooltip.fixtures";
+import { checkTooltipFixture } from "@/components/Tooltip/Tooltip.checks";
 const findings = [
   ...checkIconFixture(createIconFixture()).map((finding) => ({
     ...finding,
@@ -196,9 +200,17 @@ const findings = [
     ...finding,
     path: ["FlowKey", ...finding.path],
   })),
+  ...checkCanvasHeaderFixture(createCanvasHeaderFixture()).map((finding) => ({
+    ...finding,
+    path: ["CanvasHeader", ...finding.path],
+  })),
+  ...checkTooltipFixture(createTooltipFixture()).map((finding) => ({
+    ...finding,
+    path: ["Tooltip", ...finding.path],
+  })),
 ];
 if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("31 component fixture contracts pass independently.");
+} else console.log("33 component fixture contracts pass independently.");

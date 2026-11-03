@@ -41,6 +41,8 @@ for (const name of [
   "RouteOverlay",
   "JourneyPath",
   "FlowKey",
+  "CanvasHeader",
+  "Tooltip",
 ]) {
   const { [`create${name}Fixture`]: generate } = await import(
     `../src/components/${name}/${name}.fixtures.ts`

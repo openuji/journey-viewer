@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FlowKey } from "@/components/FlowKey/FlowKey";
 import { JourneyPath } from "@/components/JourneyPath/JourneyPath";
 import {
   createJourneyPathFixture,
@@ -33,16 +32,20 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const TwoJourneysOpen: Story = {};
+/** Earlier steps give up width first; the current journey keeps its title longest. */
+export const NarrowPath: Story = {
+  render: (args) => (
+    <div style={{ inlineSize: 320 }}>
+      <JourneyPath {...args} />
+    </div>
+  ),
+};
 export const RootJourney: Story = {
   args: withSelect(
     createJourneyPathFixture({
       items: createJourneyPathFixture().items.slice(0, 1),
     }),
   ),
-};
-/** Canvas controls at the bar's end. */
-export const WithControls: Story = {
-  args: { ...withSelect(), end: <FlowKey /> },
 };
 /** One root journey at a time: the chevron beside the root's title switches to another root. */
 export const RootChoice: Story = {

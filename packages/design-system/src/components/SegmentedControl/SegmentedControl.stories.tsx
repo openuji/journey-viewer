@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Icon } from "@/components/Icon/Icon";
 import { SegmentedControl } from "@/components/SegmentedControl/SegmentedControl";
 import { createSegmentedControlFixture } from "@/components/SegmentedControl/SegmentedControl.fixtures";
 
@@ -27,3 +28,25 @@ function Controlled() {
   );
 }
 export const ControlledSwitch: Story = { render: () => <Controlled /> };
+function Glyphs() {
+  const [value, setValue] = useState<"actual" | "fit">("actual");
+  return (
+    <div style={{ minBlockSize: 80 }}>
+      <SegmentedControl
+        label="Zoom"
+        value={value}
+        onChange={setValue}
+        options={[
+          {
+            value: "actual",
+            label: "100%",
+            icon: <Icon name="zoom-actual" />,
+          },
+          { value: "fit", label: "Fit", icon: <Icon name="zoom-fit" /> },
+        ]}
+      />
+    </div>
+  );
+}
+/** Glyph options: each label is the option's name and its tooltip. */
+export const WithIcons: Story = { render: () => <Glyphs /> };

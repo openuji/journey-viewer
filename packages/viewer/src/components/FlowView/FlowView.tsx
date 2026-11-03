@@ -10,8 +10,8 @@ import type { FlowSettingsValue } from "@/components/FlowSettings/FlowSettings";
 import styles from "@/components/FlowView/FlowView.module.css";
 
 export interface FlowViewOptions {
-  /** Controls at the end of the journey path's bar. */
-  readonly pathEnd?: ReactNode;
+  /** The canvas header's command plane, beside the journey path. */
+  readonly commands?: ReactNode;
 }
 
 /** The canvas's own presentation, and the inputs it last followed. */
@@ -24,7 +24,7 @@ interface FlowStageState {
 
 const still: FlowView = { anchor: null, reveal: null };
 
-function FlowStage({ pathEnd }: FlowViewOptions) {
+function FlowStage({ commands }: FlowViewOptions) {
   const { graph, screenshots, touchpoints, state, dispatch } = useViewer();
   const settings = useFlowSettingsValue();
   const [stage, setStage] = useState<FlowStageState>(() => ({
@@ -69,7 +69,7 @@ function FlowStage({ pathEnd }: FlowViewOptions) {
       touchpointIds={snapshot.navigation.touchpointIds}
       active={stage.active}
       view={stage.view}
-      {...(pathEnd !== undefined ? { pathEnd } : {})}
+      {...(commands !== undefined ? { commands } : {})}
       onAction={(action, view) => {
         dispatch(action);
         setStage((current) => ({ ...current, view }));

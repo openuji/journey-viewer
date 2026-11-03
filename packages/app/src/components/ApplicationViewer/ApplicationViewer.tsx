@@ -33,12 +33,12 @@ export interface ApplicationViewerProps {
   readonly touchpoints: TouchpointPresentation;
 }
 
-/** Flow's own controls sit beside its journey path, so the bar is the same in every view. */
+/** Flow's own controls sit in its canvas header, so the bar is the same in every view. */
 const views = [
   treeView,
   columnsView,
   flowView({
-    pathEnd: (
+    commands: (
       <>
         <FlowPlacement />
         <FlowZoom />

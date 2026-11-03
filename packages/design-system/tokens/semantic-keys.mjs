@@ -26,6 +26,7 @@ export const semanticKeys = Object.freeze([
   "color.muted",
   "color.muted-surface",
   "color.on-accent",
+  "color.pressed",
   "color.scrim",
   "color.subtle",
   "color.surface",

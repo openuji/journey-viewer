@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
-import { JourneyPath } from "@journey-viewer/design-system";
+import { CanvasHeader, JourneyPath } from "@journey-viewer/design-system";
 import type { Placement } from "@journey-viewer/flow-layout";
 import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
@@ -68,8 +68,8 @@ export interface JourneyFlowProps {
   /** A hovered or focused block, whose routes show without selecting it. */
   readonly active?: ViewerSelection | null;
   readonly view?: FlowView;
-  /** Controls at the end of the journey path's bar. */
-  readonly pathEnd?: ReactNode;
+  /** The canvas header's command plane, beside the journey path. */
+  readonly commands?: ReactNode;
   readonly label?: string;
   readonly className?: string | undefined;
   /** Every selection, screen and disclosure change, with where the screen should stay. */
@@ -83,9 +83,9 @@ const still: FlowView = { anchor: null, reveal: null };
 
 /**
  * Controlled flow chart of a journey document: nested frames for open journeys, contracts on their
- * borders, metro-style connectors and the active step's routes, with the journey path above. The
- * page's fonts size the layout, which reruns only for the document, the expansion and the
- * placement.
+ * borders, metro-style connectors and the active step's routes, under a canvas header that holds
+ * the journey path and the commands. The page's fonts size the layout, which reruns only for the
+ * document, the expansion and the placement.
  */
 export function JourneyFlow(props: JourneyFlowProps) {
   return (
@@ -115,7 +115,7 @@ function FlowCanvas({
   touchpointIds = [],
   active = null,
   view = still,
-  pathEnd,
+  commands,
   label = "Journey flow",
   className,
   onAction,
@@ -213,6 +213,16 @@ function FlowCanvas({
             ),
         }))
       : undefined;
+  const steps = path.map((frame, depth) => {
+    const touchpoint = touchpointOf(frame.card.touchpointJourneyId);
+    return {
+      id: frame.key,
+      title: frame.card.label,
+      ...(touchpoint ? { touchpoint } : {}),
+      ...(depth === 0 && rootChoices ? { choices: rootChoices } : {}),
+      onSelect: () => returnTo(frame, depth),
+    };
+  });
   const toggle = (card: FlowCard) =>
     onAction(
       {
@@ -228,18 +238,9 @@ function FlowCanvas({
       className={[styles.flow, className].filter(Boolean).join(" ")}
       data-placement={placement}
     >
-      <JourneyPath
-        items={path.map((frame, depth) => {
-          const touchpoint = touchpointOf(frame.card.touchpointJourneyId);
-          return {
-            id: frame.key,
-            title: frame.card.label,
-            ...(touchpoint ? { touchpoint } : {}),
-            ...(depth === 0 && rootChoices ? { choices: rootChoices } : {}),
-            onSelect: () => returnTo(frame, depth),
-          };
-        })}
-        {...(pathEnd !== undefined ? { end: pathEnd } : {})}
+      <CanvasHeader
+        path={steps.length > 0 ? <JourneyPath items={steps} /> : undefined}
+        commands={commands}
       />
       <BrowserFlowViewport
         blocks={blocks}

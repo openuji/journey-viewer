@@ -1,11 +1,13 @@
 import { useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "@/components/Button/Button";
+import { Icon } from "@/components/Icon/Icon";
+import { IconButton } from "@/components/IconButton/IconButton";
 import { Text } from "@/components/Text/Text";
+import { Tooltip } from "@/components/Tooltip/Tooltip";
 import styles from "@/components/FlowKey/FlowKey.module.css";
 
 export interface FlowKeyProps {
-  /** The button that opens the panel. */
+  /** Name and tooltip of the button that opens the panel. */
   readonly label?: string;
 }
 
@@ -74,22 +76,23 @@ const marks: readonly (readonly [ReactNode, string])[] = [
 ];
 
 /**
- * The marks a flow canvas uses, in a popover beside its controls. The panel opens in the top layer,
- * so no scrolling or rounded container clips it; Escape and a click outside close it.
+ * The marks a flow canvas uses, in a popover opened by a glyph among its commands. The panel opens
+ * in the top layer, so no scrolling or rounded container clips it; Escape and a click outside close
+ * it.
  */
 export function FlowKey({ label = "Key" }: FlowKeyProps) {
   const id = useId();
   const anchor = `--flow-key-${id.replace(/[^\w-]/g, "")}`;
   return (
     <span className={styles.key}>
-      <Button
-        variant="outline"
-        size="sm"
-        popoverTarget={id}
-        style={{ anchorName: anchor } as CSSProperties}
-      >
-        {label}
-      </Button>
+      <Tooltip label={label}>
+        <IconButton
+          label={label}
+          icon={<Icon name="legend" />}
+          popoverTarget={id}
+          style={{ anchorName: anchor } as CSSProperties}
+        />
+      </Tooltip>
       <div
         id={id}
         popover="auto"

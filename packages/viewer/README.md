@@ -610,8 +610,9 @@ import { FlowKey } from "@journey-viewer/design-system";
 - **Views** are readonly `ViewerView` descriptors `{ id, label, render, enter?, inspector? }`.
   `ViewSwitch` lists them and `ViewerMain` renders the active one beside the inspector.
   `treeView` and `columnsView` use `enter` to set the snapshot's mode, and
-  `flowView({ pathEnd })` renders `JourneyFlow` with optional controls at the end of
-  its journey path. All views share selection and expansion.
+  `flowView({ commands })` renders `JourneyFlow` under a canvas header: the journey
+  path on the left and, when given, `commands` in its command plane on the right, on
+  one row from the `md` breakpoint. All views share selection and expansion.
 - **Pieces** read the enclosing viewer and dispatch commands: `ViewerBar`,
   `DocumentSummary`, `ViewSwitch`, `WhenView` (children only while a view is active),
   `ExpandCollapse`, `TouchpointFilter`, `GraphSearch` (with trailing tools as
@@ -620,7 +621,8 @@ import { FlowKey } from "@journey-viewer/design-system";
 - **Flow settings.** Placement, zoom and the root scope are not graph state.
   `FlowSettings` holds them for `FlowPlacement`, `FlowZoom`, `FlowRoots` and the flow
   view, wherever those sit. Without it the flow draws every root journey, median at
-  100%, and the three controls throw. `FlowRoots` switches between every root journey
+  100%, and the three controls throw. The three draw their options as glyphs; each
+  option's label is its accessible name and its tooltip. `FlowRoots` switches between every root journey
   on the canvas (the default) and one at a time; `initialRoots="one"` starts there.
   One at a time, the first step of the journey path gains a chevron that switches
   roots, the root shown follows the flow's location (a click, a search result, an

@@ -231,12 +231,11 @@ try {
       (await canvas.locator('[data-flow-key^="state:"]').count()) > 0,
       "the canvas draws the journey's states",
     );
-    // Flow's own controls sit beside its journey path, not in the bar.
-    const path = page
-      .getByRole("navigation", { name: "Journey path" })
-      .locator("..");
-    await path.getByRole("group", { name: "Placement" }).waitFor();
-    await path.getByRole("group", { name: "Zoom" }).waitFor();
+    // Flow's own controls sit in its canvas header, beside the journey path, not in the bar.
+    const header = page.locator("[data-canvas-header]");
+    await header.getByRole("navigation", { name: "Journey path" }).waitFor();
+    await header.getByRole("group", { name: "Placement" }).waitFor();
+    await header.getByRole("group", { name: "Zoom" }).waitFor();
     assert.equal(
       await page
         .locator("[data-explorer-bar]")

@@ -40,8 +40,9 @@ disclosure control is meaningful.
 | --- | --- |
 | `Button` | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
 | `IconButton` | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`. |
-| `Icon` | Decorative chevron, phone, expand/collapse-all, reset, previous/next and close glyphs; the enclosing control supplies the name. |
-| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Columns. |
+| `Icon` | Decorative glyphs named by purpose (chevron, phone, expand/collapse-all, reset, previous/next, close, check, file, and the flow canvas commands `align-median`, `align-centre`, `align-left`, `zoom-actual`, `zoom-fit`, `frames`, `frame`, `legend`), all drawn from one family, [Lucide](https://lucide.dev) (`lucide-react`, a dependency), at a 1.5px stroke whatever the size. The enclosing control supplies the name. |
+| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Columns. An option with an `icon` is drawn as that glyph alone, named by its `label` and shown in a `Tooltip`. The pressed option takes the `color.pressed` fill, lighter than the trough in both themes. |
+| `Tooltip` | The visible name of an icon-only control, below it on hover (after a delay) and on keyboard focus. CSS only: hidden from assistive technology, because the trigger carries the same name. Wrap the control: `<Tooltip label="Reset view"><IconButton label="Reset view" … /></Tooltip>`. |
 | `SearchField` | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller. |
 | `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`). |
 | `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`. |
@@ -103,12 +104,17 @@ tooltip without replacing that accessible explanation.
 ## Flow primitives
 
 `FlowFrame`, `StateNode`, `CompositeCard`, `ContractGlyph`, `Connector`, `RouteOverlay`,
-`JourneyPath` and `FlowKey` draw a flow chart from positions and pre-wrapped text that the
-caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`, `Text` and
-`TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
+`JourneyPath`, `CanvasHeader` and `FlowKey` draw a flow chart from positions and pre-wrapped
+text that the caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`,
+`Text`, `Tooltip` and `TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
 radius, arrowheads, route width, contract glyph), so a layout engine can reserve room for them;
 `parallel` offsets an orthogonal polyline to one side of its travel. Resting connectors use the
 `color.connector` token, which keeps at least 3:1 on paper and ground in both themes.
+
+`CanvasHeader` is the slim row above a canvas: a `path` (such as `JourneyPath`) on the left and
+`commands` in a named command plane on the right, on one row from `md`; below it the commands wrap
+onto their own rows. From `md`, `JourneyPath` keeps to one line: earlier steps truncate first and
+the current journey last. `FlowKey` opens its legend from a glyph button with a tooltip.
 
 ## Tokens and themes
 

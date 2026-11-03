@@ -1,24 +1,9 @@
 @reference "@/styles/tailwind.css";
 
-.bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--jv-space-2xs) var(--jv-space-md);
-  padding: var(--jv-space-2xs) var(--jv-space-sm);
-  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
-  background: var(--jv-color-surface);
-}
 .path {
-  flex: 1 1 auto;
   min-inline-size: 0;
 }
-.end {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--jv-space-sm);
-}
+/* Wraps on small screens, where the path has a row of its own; one line from `md`. */
 .list {
   display: flex;
   flex-wrap: wrap;
@@ -27,12 +12,30 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  @variant md {
+    flex-wrap: nowrap;
+  }
 }
+/* From `md`, earlier steps give up width first, down to a dot and a few letters (explicit floors,
+   because a nowrap title's own minimum is its full width). The current journey never shrinks
+   with them: it shortens only beyond what those floors leave (`--jv-path-earlier` counts them). */
 .item {
   display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: var(--jv-space-2xs);
-  min-inline-size: 0;
+  @variant md {
+    min-inline-size: 4.5rem;
+  }
+}
+.item:last-child {
+  flex-shrink: 0;
+  @variant md {
+    min-inline-size: 3rem;
+    max-inline-size: calc(
+      100% - var(--jv-path-earlier) * (4.5rem + var(--jv-space-2xs))
+    );
+  }
 }
 .item + .item::before {
   content: "";
@@ -50,8 +53,27 @@
 .step[aria-current].step {
   color: var(--jv-color-foreground);
 }
-/* A switch between journeys beside a step: the chevron is the visible control, and the native
-   select laid over it supplies the list, the keyboard and the accessible name. */
+.title {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The switch sits against its step's title, so the two read as one split control, and the next
+   separator keeps its distance from the switch's chevron. */
+.item:has(.choice) {
+  gap: 0;
+}
+.item:has(.choice) > .step {
+  padding-inline-end: var(--jv-space-2xs);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+.item:has(.choice) + .item::before {
+  margin-inline-start: var(--jv-space-sm);
+}
+/* The chevron is the visible control, and the native select laid over it supplies the list, the
+   keyboard and the accessible name. */
 .choice {
   position: relative;
   display: inline-flex;
@@ -61,10 +83,17 @@
   min-inline-size: var(--jv-size-control-mobile);
   min-block-size: var(--jv-size-control-mobile);
   border-radius: var(--jv-radius-sm);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
   color: var(--jv-color-muted);
+  /* As tall as its step, and no smaller than a 24px target. */
   @variant md {
-    min-inline-size: var(--jv-size-control-xs);
-    min-block-size: var(--jv-size-control-xs);
+    min-inline-size: calc(var(--jv-size-control-xs) + 2 * var(--jv-space-2xs));
+    min-block-size: calc(var(--jv-size-control-xs) + 2 * var(--jv-space-2xs));
+  }
+  @media (pointer: coarse) {
+    min-inline-size: var(--jv-size-control-mobile);
+    min-block-size: var(--jv-size-control-mobile);
   }
 }
 .choice:hover {

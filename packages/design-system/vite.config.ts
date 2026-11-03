@@ -16,6 +16,8 @@ export default defineConfig({
       fileName: "index",
       cssFileName: "styles",
     },
-    rolldownOptions: { external: ["react", "react/jsx-runtime"] },
+    rolldownOptions: {
+      external: ["react", "react/jsx-runtime", "lucide-react"],
+    },
   },
 });

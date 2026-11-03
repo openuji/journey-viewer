@@ -1,9 +1,8 @@
 import { useId } from "react";
 import type { ReactNode } from "react";
-import { Button, Heading, Text } from "@journey-viewer/design-system";
+import { Button, Heading, Icon, Text } from "@journey-viewer/design-system";
 import { blocksOpening, findingPath } from "@/document-policy";
 import type { ApplicationReport } from "@/report";
-import { CheckGlyph, FileGlyph } from "@/components/Glyphs/Glyphs";
 import styles from "@/components/ApplicationHeader/ApplicationHeader.module.css";
 
 export interface ApplicationHeaderProps {
@@ -46,7 +45,7 @@ function Status({
         className={styles.ok}
         title={conformance}
       >
-        <CheckGlyph />
+        <Icon name="check" />
         No findings
       </Text>
     );
@@ -184,7 +183,7 @@ export function ApplicationHeader({
           className={styles.open}
           onClick={onOpenFile}
         >
-          <FileGlyph />
+          <Icon name="file" />
           <span className={styles.openLabel}>Open file…</span>
         </Button>
       </div>

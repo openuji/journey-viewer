@@ -2278,9 +2278,7 @@ try {
 
   await test("flow scenarios: canvas controls change placement and zoom; search reveals its result in the flow", async () => {
     await flowStory("viewer-flow-scenarios--controls-on-the-canvas");
-    const bar = page
-      .getByRole("navigation", { name: "Journey path" })
-      .locator("..");
+    const bar = page.locator("[data-canvas-header]");
     await bar
       .getByRole("group", { name: "Placement" })
       .getByRole("button", { name: "Aligned left" })
@@ -2314,6 +2312,124 @@ try {
     );
     assert.equal((await pathSteps()).at(-1), "MFA challenge");
     assert.equal(await page.getByRole("searchbox").inputValue(), "");
+    assert.deepEqual(errors, []);
+  });
+
+  await test("canvas header: path and commands share one row from md, the current journey truncates last, and commands wrap below the path on a phone", async () => {
+    const header = page.locator("[data-canvas-header]");
+    const path = page.getByRole("navigation", { name: "Journey path" });
+    const commands = header.getByRole("group", { name: "Canvas commands" });
+    const rows = async () => {
+      const [h, p, c] = await Promise.all([
+        header.boundingBox(),
+        path.boundingBox(),
+        commands.boundingBox(),
+      ]);
+      return { h, p, c };
+    };
+    for (const width of [1440, 900]) {
+      // Three steps open: the app journey, the identity provider, MFA.
+      await flowStory("viewer-flow-scenarios--controls-on-the-canvas", width);
+      await page
+        .getByRole("button", { name: "Expand MFA challenge", exact: true })
+        .click();
+      await page.waitForFunction(
+        () =>
+          document.querySelectorAll('[aria-label="Journey path"] li').length ===
+          3,
+      );
+      const { h, p, c } = await rows();
+      assert.ok(
+        Math.abs(p.y + p.height / 2 - (c.y + c.height / 2)) < 4,
+        `${width}px: the path and the commands share one row`,
+      );
+      assert.ok(h.height < 48, `${width}px: the header is one row tall`);
+      assert.ok(
+        c.x + c.width <= h.x + h.width,
+        `${width}px: the commands stay inside the header`,
+      );
+      const current = await path
+        .locator("li:last-child [aria-current] > span:last-child")
+        .evaluate((title) => title.scrollWidth <= title.clientWidth);
+      assert.ok(current, `${width}px: the current journey keeps its title`);
+    }
+    await flowStory("viewer-flow-scenarios--one-journey-at-a-time", 375, 812);
+    const { h, p, c } = await rows();
+    assert.ok(c.y >= p.y + p.height, "375px: the commands sit below the path");
+    assert.ok(
+      c.x >= h.x && c.x + c.width <= h.x + h.width,
+      "375px: the commands wrap inside the header",
+    );
+    await page.setViewportSize({ width: 1280, height: 900 });
+    assert.deepEqual(errors, []);
+  });
+
+  await test("canvas header: each glyph command shows its name on hover and on keyboard focus, inside the window", async () => {
+    await flowStory("viewer-flow-scenarios--one-journey-at-a-time");
+    const header = page.locator("[data-canvas-header]");
+    const tip = (button) =>
+      button.evaluate((element) => {
+        const tip = element
+          .closest("[class*=_tooltip_]")
+          .querySelector("[class*=_tip_]");
+        const box = tip.getBoundingClientRect();
+        return {
+          text: tip.textContent,
+          shown: getComputedStyle(tip).visibility === "visible",
+          inside: box.left >= 0 && box.right <= window.innerWidth,
+          below: box.top >= element.getBoundingClientRect().bottom,
+        };
+      });
+    for (const name of [
+      "Median",
+      "Aligned centre",
+      "Aligned left",
+      "100%",
+      "Fit",
+      "All journeys",
+      "One journey",
+      "Key",
+    ]) {
+      const button = header.getByRole("button", { name, exact: true });
+      assert.equal((await tip(button)).shown, false, `${name}: hidden at rest`);
+      await button.hover();
+      await page.waitForTimeout(650);
+      assert.deepEqual(
+        await tip(button),
+        { text: name, shown: true, inside: true, below: true },
+        `${name}: its tooltip names it below the button`,
+      );
+      await page.mouse.move(640, 880);
+    }
+    await page.waitForTimeout(300);
+    await header.getByRole("button", { name: "Median", exact: true }).focus();
+    await page.keyboard.press("Tab");
+    const focused = header.getByRole("button", {
+      name: "Aligned centre",
+      exact: true,
+    });
+    assert.equal(
+      await focused.evaluate((element) => element === document.activeElement),
+      true,
+    );
+    assert.equal(
+      (await tip(focused)).shown,
+      true,
+      "focus shows the tooltip at once",
+    );
+    // The explorer bar's backdrop filter contains fixed descendants: its tips still hang below.
+    const reset = page
+      .locator("[data-explorer-bar]")
+      .getByRole("button", { name: "Reset view", exact: true });
+    await reset.hover();
+    await page.waitForTimeout(650);
+    assert.deepEqual(await tip(reset), {
+      text: "Reset view",
+      shown: true,
+      inside: true,
+      below: true,
+    });
+    await page.mouse.move(640, 880);
     assert.deepEqual(errors, []);
   });
 
