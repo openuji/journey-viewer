@@ -41,12 +41,16 @@ test("the public build keeps package boundaries and excludes development data an
 });
 
 // The viewer root owns the graph state and shares it through context; the flow's settings and
-// its canvas's own hover and anchor are the only other state.
+// its canvas's own hover/anchor and the open lightbox's sizing mode are local UI state.
 const contextOwners = [
   "components/Viewer/Viewer.tsx",
   "components/FlowSettings/FlowSettings.tsx",
 ];
-const stateOwners = [...contextOwners, "components/FlowView/FlowView.tsx"];
+const stateOwners = [
+  ...contextOwners,
+  "components/FlowView/FlowView.tsx",
+  "components/JourneyLightbox/JourneyLightbox.tsx",
+];
 
 test("graph state stays at the viewer boundary; browser-only effects/loading stay in named adapters", async () => {
   const root = new URL("../src/", import.meta.url);

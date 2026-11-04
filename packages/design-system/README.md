@@ -66,14 +66,19 @@ the toolbar header (sticky from `md`, marked with `data-explorer-bar`).
 `ScreenImage` renders an image at its natural ratio from explicit `source`,
 `label`, `status` (`loading`, `ready`, `unavailable`), `fit` (`width` fills the
 container; `height` is bounded by `--jv-screen-image-height` and the viewport
-width) and required load/error callbacks. The caller owns load status; the
+width; `contain` fits a definite stage without upscaling; `original` scrolls at
+one image pixel per CSS pixel) and required load/error callbacks. An optional
+`imageRef` lets the browser caller check readiness before paint. The caller owns load status; the
 component has no state or effects. `ScreenThumbnail` is the inspector's compact
 screenshot with an “Enlarge” hint; without `onOpen` it is not interactive.
 `ScreenPreview` is the floating, `aria-hidden` hover card (title, context, dot);
 its caller supplies placement through `style` and may pass a `ref` for
-measurement. `ScreenLightbox` owns only modal content: the phone-sized image slot
-and a caption with dot, title, context, position and previous/next/close icon
-buttons. The browser/caller owns the actual dialog lifecycle, keyboard handling
+measurement. `ScreenLightbox` owns only modal content: a stable viewport-bounded
+image stage, a bounded scrollable title/context region and a separate counter/control
+toolbar. Optional controlled `sizingMode` (`fit` or `original`) and
+`onSizingModeChange` props add the Original size / Fit to window toggle. The
+caption is at most 42rem wide; when its width falls below 30rem the counter has its own row.
+The browser/caller owns the actual dialog lifecycle, keyboard handling
 and focus. Its heading is level 2 within the independent dialog; it does not
 inherit a hierarchy heading level. All four have pure
 fixtures, separate checks and stories; no UJG IDs or asset path conventions enter

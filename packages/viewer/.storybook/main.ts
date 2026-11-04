@@ -9,6 +9,7 @@ const config: StorybookConfig = {
   },
   addons: ["@storybook/addon-docs", "@storybook/addon-a11y"],
   staticDirs: [
+    { from: "../tests/fixtures/lightbox", to: "/lightbox-fixtures" },
     { from: "../../../examples/solid-oidc", to: "/solid-oidc" },
     { from: "../.test-output/consumer", to: "/viewer-consumer" },
   ],

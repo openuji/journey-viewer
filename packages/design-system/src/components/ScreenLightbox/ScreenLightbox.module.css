@@ -1,44 +1,84 @@
 .figure {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
   gap: var(--jv-space-sm);
+  inline-size: 100%;
+  block-size: calc(100dvh - 2 * var(--jv-space-lg));
   margin: 0;
   min-inline-size: 0;
+  min-block-size: 0;
 }
 .body {
-  --jv-screen-image-height: min(calc(100dvh - 8rem), var(--jv-size-lightbox));
+  --jv-screen-image-height: min(100cqh, var(--jv-size-lightbox));
+  --jv-screen-image-width: 100cqw;
   --jv-screen-image-shadow: var(--jv-shadow-lightbox);
-  display: flex;
-  justify-content: center;
-  max-inline-size: 100%;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
   min-inline-size: 0;
+  min-block-size: 0;
 }
 .caption {
+  container-type: inline-size;
   box-sizing: border-box;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
   gap: var(--jv-space-sm);
-  inline-size: min(
-    var(--jv-size-lightbox-caption),
-    calc(100vw - 2 * var(--jv-space-lg))
-  );
-  padding: var(--jv-space-xs) var(--jv-space-xs) var(--jv-space-xs)
-    var(--jv-space-md);
+  inline-size: min(var(--jv-size-lightbox-caption), 100%);
+  min-inline-size: 0;
+  padding: var(--jv-space-sm);
   border-radius: var(--jv-radius-lg);
   background: var(--jv-color-surface);
   color: var(--jv-color-foreground);
 }
+.details {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jv-space-sm);
+  block-size: min(4rem, 24dvh);
+  min-inline-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--jv-color-border-strong) transparent;
+}
+.details:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: calc(-1 * var(--jv-border-focus));
+}
 .text {
-  flex: 1 1 8rem;
+  flex: 1;
   min-inline-size: 0;
 }
 .context {
   display: block;
 }
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  min-inline-size: 0;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--jv-space-xs);
+}
 .count {
-  flex: 0 1 auto;
-  white-space: nowrap;
+  min-inline-size: 0;
   font-variant-numeric: tabular-nums;
+}
+/* Caption width also accounts for enlarged text and the dialog's outer gutters. */
+@container (inline-size < 30rem) {
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .count {
+    block-size: 2lh;
+  }
+  .controls {
+    justify-self: end;
+  }
 }

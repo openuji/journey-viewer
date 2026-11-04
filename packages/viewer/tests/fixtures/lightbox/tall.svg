@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="3000">
+  <rect width="100%" height="100%" fill="#f6f7f9"/>
+  <path d="M0 64H480" stroke="#b9c3d0"/>
+  <text x="16" y="40" font-family="sans-serif" font-size="16" fill="#1a2333">tall fixture</text>
+  <rect x="16" y="80" width="448" height="2904" rx="6" fill="#eef1f4" stroke="#b9c3d0"/>
+</svg>

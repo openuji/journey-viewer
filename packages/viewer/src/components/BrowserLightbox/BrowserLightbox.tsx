@@ -23,6 +23,9 @@ export function BrowserLightbox({
     const trigger = dialog.ownerDocument.activeElement;
     const owner = dialog.parentElement;
     dialog.showModal();
+    dialog
+      .querySelector<HTMLButtonElement>("[data-lightbox-close]")
+      ?.focus({ preventScroll: true });
     return () => {
       dialog.close();
       if (
@@ -51,12 +54,13 @@ export function BrowserLightbox({
       }}
       onKeyDown={(event) => {
         if (event.key === "Tab") {
-          const buttons =
-            event.currentTarget.querySelectorAll<HTMLButtonElement>(
-              "button:not(:disabled)",
-            );
-          const first = buttons[0];
-          const last = buttons[buttons.length - 1];
+          const focusable = [
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              'button:not(:disabled), [tabindex="0"]',
+            ),
+          ].filter((element) => element.getClientRects().length > 0);
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
           const active = event.currentTarget.ownerDocument.activeElement;
           if (event.shiftKey && active === first) {
             event.preventDefault();
@@ -66,6 +70,15 @@ export function BrowserLightbox({
             first?.focus();
           }
         }
+        if (
+          event.altKey ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey ||
+          (event.target instanceof Element &&
+            event.target.closest("[data-screen-scroll]"))
+        )
+          return;
         if (event.key === "ArrowLeft") {
           event.preventDefault();
           onPrevious();

@@ -345,9 +345,16 @@ the selected composite's child disclosure unchanged. The native modal has
 Previous/Next buttons, Left/Right keys, Escape/Close, forward/reverse Tab wrapping,
 backdrop clicks and focus restoration to the opener. If that opener was removed
 or disabled, focus returns to the owning viewer's first enabled control. The
-screenshot is shown at phone size (at most 760px tall, within the viewport) above
-a compact caption with the touchpoint dot, title, context, position and
-previous/next/close icon buttons. Closing retains the last selected screen's graph
+screenshot opens in Fit mode, centered at its natural ratio without upscaling
+and at most 760px tall. The stage and footer stay in place across image shapes
+and loading states. Original size shows one image pixel per CSS pixel, with native
+scrolling inside the image stage; Fit to window returns to Fit. Navigation to a
+different view (including another call site of the same image), URL replacement,
+and reopening reset to Fit; window resizing preserves the mode.
+The caption has a bounded scrollable title/context region and a separate counter
+and control toolbar. Close receives focus on opening. Both scroll regions are
+keyboard accessible; arrow keys scroll a focused region and step screenshots
+elsewhere. Closing retains the last selected screen's graph
 item. Ordinary graph navigation closes the modal.
 The dialog uses an independent level-2 heading; `JourneyViewer.level` controls
 the hierarchy and inspector headings.
@@ -372,8 +379,11 @@ Removal clears the old image and displays Screenshot unavailable; adding/restori
 the mapping or changing its URL can recover it. Clear-all disables stepping.
 Image error/loading state is local to the actual URL at the browser boundary,
 separate from the immutable graph snapshot. After the page is idle, every mapped
-image is preloaded into the document's image cache, so previews and lightbox steps
-appear without blank frames. Images keep their natural aspect ratio.
+image is preloaded into the document's image cache. Complete cached images become
+ready before paint; fresh loads decode before being revealed. Pending loads show
+an explicit status in the stable stage, without a portrait-shaped placeholder.
+Superseded loads and decode results cannot replace the selected image. Images keep
+their natural aspect ratio.
 
 New image bytes at an unchanged URL follow the host/browser cache policy. Supply
 a revised URL, query revision, or blob URL through the same map when needed.

@@ -614,7 +614,7 @@
       "lightbox-caption": {
         "$type": "dimension",
         "$value": {
-          "value": 26.25,
+          "value": 42,
           "unit": "rem"
         }
       }

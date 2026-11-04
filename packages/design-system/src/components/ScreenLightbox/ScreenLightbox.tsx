@@ -4,6 +4,7 @@ import { Icon } from "@/components/Icon/Icon";
 import { IconButton } from "@/components/IconButton/IconButton";
 import { Text } from "@/components/Text/Text";
 import { TouchpointDot } from "@/components/TouchpointDot/TouchpointDot";
+import { Tooltip } from "@/components/Tooltip/Tooltip";
 import styles from "@/components/ScreenLightbox/ScreenLightbox.module.css";
 
 export interface ScreenLightboxProps {
@@ -15,7 +16,9 @@ export interface ScreenLightboxProps {
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly onClose: () => void;
-  /** Usually a `ScreenImage` with `fit="height"`. */
+  readonly sizingMode?: "fit" | "original";
+  readonly onSizingModeChange?: (mode: "fit" | "original") => void;
+  /** Usually a `ScreenImage` with `fit="contain"` or `fit="original"`. */
   readonly children?: ReactNode;
 }
 
@@ -29,52 +32,88 @@ export function ScreenLightbox({
   onPrevious,
   onNext,
   onClose,
+  sizingMode,
+  onSizingModeChange,
   children,
 }: ScreenLightboxProps) {
   return (
     <figure className={styles.figure}>
       <div className={styles.body}>{children}</div>
       <figcaption className={styles.caption}>
-        {touchpoint && (
-          <TouchpointDot
-            label={touchpoint.label}
-            decorative
-            {...(touchpoint.color ? { color: touchpoint.color } : {})}
-          />
-        )}
-        <div className={styles.text}>
-          <Heading level={2} size="sm">
-            {title}
-          </Heading>
-          <Text variant="caption" tone="muted" className={styles.context}>
-            {context}
-          </Text>
-        </div>
-        <Text
-          role="status"
-          variant="caption"
-          tone="subtle"
-          className={styles.count}
+        <div
+          className={styles.details}
+          role="region"
+          aria-label="Screenshot details"
+          tabIndex={0}
+          data-screen-scroll=""
         >
-          {position}
-        </Text>
-        <IconButton
-          label="Previous screen"
-          icon={<Icon name="previous" />}
-          disabled={!canStep}
-          onClick={onPrevious}
-        />
-        <IconButton
-          label="Next screen"
-          icon={<Icon name="next" />}
-          disabled={!canStep}
-          onClick={onNext}
-        />
-        <IconButton
-          label="Close screenshot"
-          icon={<Icon name="close" />}
-          onClick={onClose}
-        />
+          {touchpoint && (
+            <TouchpointDot
+              label={touchpoint.label}
+              decorative
+              {...(touchpoint.color ? { color: touchpoint.color } : {})}
+            />
+          )}
+          <div className={styles.text}>
+            <Heading level={2} size="sm">
+              {title}
+            </Heading>
+            <Text variant="caption" tone="muted" className={styles.context}>
+              {context}
+            </Text>
+          </div>
+        </div>
+        <div className={styles.toolbar}>
+          <Text
+            role="status"
+            variant="caption"
+            tone="subtle"
+            className={styles.count}
+          >
+            {position}
+          </Text>
+          <div className={styles.controls}>
+            {sizingMode !== undefined && onSizingModeChange && (
+              <Tooltip
+                label={sizingMode === "fit" ? "Original size" : "Fit to window"}
+              >
+                <IconButton
+                  label={
+                    sizingMode === "fit" ? "Original size" : "Fit to window"
+                  }
+                  icon={
+                    <Icon
+                      name={sizingMode === "fit" ? "zoom-actual" : "zoom-fit"}
+                    />
+                  }
+                  onClick={() =>
+                    onSizingModeChange(
+                      sizingMode === "fit" ? "original" : "fit",
+                    )
+                  }
+                />
+              </Tooltip>
+            )}
+            <IconButton
+              label="Previous screen"
+              icon={<Icon name="previous" />}
+              disabled={!canStep}
+              onClick={onPrevious}
+            />
+            <IconButton
+              label="Next screen"
+              icon={<Icon name="next" />}
+              disabled={!canStep}
+              onClick={onNext}
+            />
+            <IconButton
+              label="Close screenshot"
+              data-lightbox-close=""
+              icon={<Icon name="close" />}
+              onClick={onClose}
+            />
+          </div>
+        </div>
       </figcaption>
     </figure>
   );

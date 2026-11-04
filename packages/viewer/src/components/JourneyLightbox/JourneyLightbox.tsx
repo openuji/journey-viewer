@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ScreenLightbox } from "@journey-viewer/design-system";
 import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
@@ -83,6 +84,28 @@ export function JourneyLightbox({
       : journeyLabel,
     ...(short ? [short] : []),
   ].join(" · ");
+  const [sizing, setSizing] = useState<
+    Readonly<{
+      lightbox: ViewerLightbox;
+      source: string | undefined;
+      mode: "fit" | "original";
+    }>
+  >(() => ({ lightbox, source: screen?.source, mode: "fit" }));
+  const sameView =
+    sizing.lightbox.surfaceId === lightbox.surfaceId &&
+    sameSelection(
+      sizing.lightbox.target.selection,
+      lightbox.target.selection,
+    ) &&
+    sameOccurrence(
+      sizing.lightbox.target.occurrence,
+      lightbox.target.occurrence,
+    ) &&
+    sizing.source === screen?.source;
+  if (!sameView) {
+    setSizing({ lightbox, source: screen?.source, mode: "fit" });
+    return null;
+  }
   return (
     <BrowserLightbox onClose={onClose} onPrevious={onPrevious} onNext={onNext}>
       <ScreenLightbox
@@ -96,11 +119,15 @@ export function JourneyLightbox({
         onPrevious={onPrevious}
         onNext={onNext}
         onClose={onClose}
+        sizingMode={sizing.mode}
+        onSizingModeChange={(mode) =>
+          setSizing({ lightbox, source: screen?.source, mode })
+        }
       >
         <BrowserScreenImage
           source={screen?.source}
           label={title}
-          fit="height"
+          fit={sizing.mode === "fit" ? "contain" : "original"}
         />
       </ScreenLightbox>
     </BrowserLightbox>

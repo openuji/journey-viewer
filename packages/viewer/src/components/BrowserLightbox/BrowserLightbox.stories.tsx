@@ -4,6 +4,7 @@ import { Button, ScreenLightbox } from "@journey-viewer/design-system";
 import { BrowserLightbox } from "@/components/BrowserLightbox/BrowserLightbox";
 import { BrowserScreenImage } from "@/browser/BrowserScreenImage";
 import { oidcScreenshots } from "~/.storybook/screenshots";
+import { LightboxShapes } from "~/.storybook/LightboxShapes";
 
 const screens = Object.values(oidcScreenshots).slice(0, 3);
 
@@ -37,7 +38,7 @@ function ThreeScreens() {
             <BrowserScreenImage
               source={screens[open]}
               label={`Screen ${open + 1}`}
-              fit="height"
+              fit="contain"
             />
           </ScreenLightbox>
         </BrowserLightbox>
@@ -60,3 +61,5 @@ type Story = StoryObj<typeof meta>;
 export const ThreeScreensFromAButton: Story = {
   render: () => <ThreeScreens />,
 };
+
+export const MixedShapes: Story = { render: () => <LightboxShapes /> };

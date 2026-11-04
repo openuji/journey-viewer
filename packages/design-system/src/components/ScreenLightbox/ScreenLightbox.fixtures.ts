@@ -2,7 +2,7 @@ import type { ScreenLightboxProps } from "@/components/ScreenLightbox/ScreenLigh
 export type ScreenLightboxFixture = Readonly<
   Pick<
     ScreenLightboxProps,
-    "title" | "context" | "position" | "canStep" | "touchpoint"
+    "title" | "context" | "position" | "canStep" | "touchpoint" | "sizingMode"
   >
 >;
 export function createScreenLightboxFixture(

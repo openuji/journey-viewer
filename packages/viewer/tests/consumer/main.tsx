@@ -9,6 +9,7 @@ import "~/tests/consumer/consumer.css";
 import { InteractionExamples } from "~/tests/consumer/InteractionExamples";
 import { ScreenshotExamples } from "~/tests/consumer/ScreenshotExamples";
 import { ExtensionExamples } from "~/tests/consumer/ExtensionExamples";
+import { LightboxShapes } from "~/.storybook/LightboxShapes";
 
 createRoot(document.getElementById("root")!).render(
   <main className="consumer" data-jv-theme="light">
@@ -28,6 +29,7 @@ createRoot(document.getElementById("root")!).render(
     </div>
     <InteractionExamples />
     <ScreenshotExamples />
+    <LightboxShapes />
     <ExtensionExamples />
   </main>,
 );

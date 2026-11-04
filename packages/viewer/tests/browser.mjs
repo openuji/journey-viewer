@@ -5,6 +5,7 @@ import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
+import { checkLightbox } from "./lightbox-cases.mjs";
 
 const root = fileURLToPath(new URL("../storybook-static/", import.meta.url));
 const evidence = fileURLToPath(new URL("../.test-output/", import.meta.url));
@@ -190,7 +191,7 @@ try {
     const stories = Object.values(index.entries).filter(
       (entry) => entry.type === "story",
     );
-    assert.equal(stories.length, 52);
+    assert.equal(stories.length, 53);
     assert.ok(stories.every((entry) => entry.title.startsWith("Viewer/")));
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
@@ -1705,8 +1706,19 @@ try {
         path: `${evidence}/stage10d-call-sites-${width}.png`,
       });
     }
-    await lightbox().press("ArrowRight");
+    await lightbox()
+      .getByRole("button", { name: "Original size", exact: true })
+      .click();
+    await lightbox()
+      .getByRole("button", { name: "Next screen", exact: true })
+      .click();
     await readyImage();
+    assert.equal(
+      await lightbox()
+        .getByRole("button", { name: "Original size", exact: true })
+        .count(),
+      1,
+    );
     assert.equal(await position(), "6 / 6 views · 3 of 3 call sites");
     assert.equal(
       await lightbox().getByRole("img").getAttribute("src"),
@@ -1720,6 +1732,8 @@ try {
     assert.deepEqual(errors, []);
     await lightbox().press("Escape");
   });
+
+  await checkLightbox({ page, url, evidence });
 
   await test("thumbnails and the phone-sized lightbox fit mobile and shared thresholds with compiled styles", async () => {
     await consumerPage();
