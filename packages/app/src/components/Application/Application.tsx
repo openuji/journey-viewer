@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type {
   ScreenshotMap,
@@ -12,6 +12,11 @@ import { ApplicationHeader } from "@/components/ApplicationHeader/ApplicationHea
 import { ApplicationEmpty } from "@/components/ApplicationEmpty/ApplicationEmpty";
 import { ApplicationViewer } from "@/components/ApplicationViewer/ApplicationViewer";
 import { useFilePicker } from "@/file-picker";
+import {
+  assetDownloadName,
+  createAssetArchive,
+  saveAssetArchive,
+} from "@/download-assets";
 import type { ApplicationReport } from "@/report";
 import styles from "@/components/Application/Application.module.css";
 
@@ -29,13 +34,14 @@ type ReadRequest = Readonly<
 >;
 interface LoadedDocument {
   readonly name: string;
+  readonly text: string;
   readonly graph: JourneyGraph;
   readonly screenshots: ScreenshotMap;
   readonly touchpoints: TouchpointPresentation;
 }
 
 /**
- * Reads a document, checks it with the application's policy and shows it in the viewer. Open file
+ * Reads a document, checks it with the application's policy and shows it in the viewer. Upload UJG
  * replaces it with a local one; a rejected replacement keeps the open journey.
  */
 export function Application({ source, brand, alternatives }: ApplicationProps) {
@@ -44,7 +50,57 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
   );
   const [loaded, setLoaded] = useState<LoadedDocument | null>(null);
   const [report, setReport] = useState<ApplicationReport>({ kind: "idle" });
-  const picker = useFilePicker((file) => setRequest({ kind: "file", file }));
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const download = useRef<AbortController | null>(null);
+  const releaseDownload = useRef<(() => void) | null>(null);
+  const picker = useFilePicker((file) => {
+    download.current?.abort();
+    download.current = null;
+    setIsDownloading(false);
+    setDownloadError("");
+    setRequest({ kind: "file", file });
+  });
+
+  useEffect(
+    () => () => {
+      download.current?.abort();
+      download.current = null;
+      releaseDownload.current?.();
+    },
+    [],
+  );
+
+  async function downloadAssets() {
+    if (!loaded || report.kind === "reading" || download.current) return;
+    const controller = new AbortController();
+    download.current = controller;
+    setIsDownloading(true);
+    setDownloadError("");
+    try {
+      const blob = await createAssetArchive(loaded, controller.signal);
+      controller.signal.throwIfAborted();
+      releaseDownload.current?.();
+      releaseDownload.current = saveAssetArchive(
+        blob,
+        assetDownloadName(loaded.name),
+      );
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        controller.abort();
+        setDownloadError(
+          error instanceof Error
+            ? error.message
+            : "The archive could not be created.",
+        );
+      }
+    } finally {
+      if (download.current === controller) {
+        download.current = null;
+        setIsDownloading(false);
+      }
+    }
+  }
 
   useEffect(() => {
     if (!request) return;
@@ -97,6 +153,7 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
         // Retain the derived graph until the next successful load; a new one resets the viewer.
         setLoaded({
           name,
+          text: input.text,
           graph: checked.graph,
           screenshots: input.screenshots,
           touchpoints: input.touchpoints,
@@ -118,6 +175,9 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
         placeholder={source?.name ?? "Open a journey"}
         report={report}
         onOpenFile={picker.open}
+        onDownloadAssets={() => void downloadAssets()}
+        isDownloading={isDownloading}
+        downloadError={downloadError}
         document={
           loaded ? { title: loaded.name, identity: loaded.graph.id } : null
         }

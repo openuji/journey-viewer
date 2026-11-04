@@ -28,8 +28,8 @@ export function ApplicationEmpty({
         className={styles.open}
         onClick={onOpenFile}
       >
-        <Icon name="file" />
-        Open file…
+        <Icon name="upload" />
+        Upload UJG
       </Button>
       {children && (
         <Text as="p" variant="caption" tone="muted">

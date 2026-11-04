@@ -7,6 +7,7 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   Columns3,
+  Download,
   Expand,
   File,
   Info,
@@ -15,6 +16,7 @@ import {
   Shrink,
   Smartphone,
   Square,
+  Upload,
   Workflow,
   X,
 } from "lucide-react";
@@ -32,6 +34,8 @@ export type IconName =
   | "close"
   | "check"
   | "file"
+  | "upload"
+  | "download"
   | "layout-rows"
   | "layout-columns"
   | "align-median"
@@ -59,6 +63,8 @@ const glyphs: Readonly<Record<IconName, LucideIcon>> = {
   close: X,
   check: Check,
   file: File,
+  upload: Upload,
+  download: Download,
   "layout-rows": Rows3,
   "layout-columns": Columns3,
   // Placement: states placed by their connections, centred on an axis, or flush left.

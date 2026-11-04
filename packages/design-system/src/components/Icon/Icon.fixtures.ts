@@ -12,6 +12,8 @@ export const iconNames = Object.freeze([
   "close",
   "check",
   "file",
+  "upload",
+  "download",
   "layout-rows",
   "layout-columns",
   "align-median",

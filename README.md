@@ -64,7 +64,8 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 - `packages/app`: the application (reading, check policy, findings header, empty
   state and its Tree/Flow arrangement), a prebuilt static site with a
   relative base, and the `journey-viewer` commands: `generate` copies the site
-  and a document into a folder, `run` also serves it with Vite. See [its README](packages/app/README.md).
+  and a document into a folder, `run` also serves it with Vite. Its internal
+  component Storybook runs on port 6009. See [its README](packages/app/README.md).
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export, the source layout check and the
   external-consumer smoke check with its fixture.
@@ -81,7 +82,7 @@ screenshot/presentation inputs; local documents do not inherit them.
 
 The new workspace does not import or link to the source repository. No YAML
 compiler, graph store, or deployment tooling is installed at
-this checkpoint. The library Storybooks stay internal to the viewer and design-system
+this checkpoint. The library Storybooks stay internal to the app, viewer and design-system
 packages; the independent site owns its native Astro catalog. The query
 and lint packages have no runtime dependencies. Native
 JSON parsing, rule selection, and reporting remain separate application operations.
@@ -103,6 +104,9 @@ pnpm check:fixtures
 pnpm build:design-system
 pnpm storybook
 pnpm build:storybook
+pnpm storybook:app
+pnpm build:storybook:app
+pnpm test:app:storybook
 pnpm test:design-system:browser
 ```
 

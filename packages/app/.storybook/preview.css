@@ -1,0 +1,10 @@
+/* Development framing only; component layout and colors retain their existing owners. */
+.story-scope {
+  min-inline-size: 0;
+  min-block-size: 100vh;
+  padding: var(--jv-space-lg);
+  background: var(--jv-color-background);
+}
+.story-fullscreen {
+  padding: 0;
+}

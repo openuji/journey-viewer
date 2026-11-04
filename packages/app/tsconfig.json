@@ -16,8 +16,9 @@
     "types": ["vite/client", "node"],
     "paths": {
       "@/*": ["./src/*"],
+      "~/examples/*": ["../../examples/*"],
       "~/*": ["./*"]
     }
   },
-  "include": ["src", "vite.config.ts", "vite.site.config.ts"]
+  "include": ["src", ".storybook", "vite.config.ts", "vite.site.config.ts"]
 }
