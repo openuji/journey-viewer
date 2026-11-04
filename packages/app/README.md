@@ -2,8 +2,8 @@
 
 `@journey-viewer/app` is the Journey Viewer application: it reads a User Journey
 Graph JSON-LD document, checks it with the application's policy, reports the
-outcome in its header and shows the document in the viewer's Tree, Columns and
-Flow views. It ships as React components and as a prebuilt static site with a
+outcome in its header and shows the document in the viewer's Tree and Flow
+views. Tree offers Rows and Columns layouts. It ships as React components and as a prebuilt static site with a
 command that puts a document beside it.
 
 ## Generate or run a document
@@ -113,9 +113,12 @@ import "@journey-viewer/app/styles.css";
 
 The viewer arrangement lives in one file,
 `src/components/ApplicationViewer/ApplicationViewer.tsx`: the explorer bar with
-the document's counts, the Tree | Columns | Flow switch, expand and collapse
-(Tree and Flow), the touchpoint filter, search and reset; Flow's placement, zoom
-and key sit beside its journey path. Change the arrangement there.
+the document's counts, the Tree | Flow switch, the touchpoint filter, search and
+reset. The composition places Tree's Rows | Columns icons with tooltips in the bar,
+followed by expand/collapse in Rows; Flow's
+placement, zoom and key sit beside its journey path, with expand/collapse in the
+explorer bar. Switching views preserves the tree layout, selection and expansion.
+Change the arrangement there.
 
 The viewer opens collapsed, like every viewer: the first root journey with its
 states, every composite closed. Expand all, Collapse all and the chevrons open and

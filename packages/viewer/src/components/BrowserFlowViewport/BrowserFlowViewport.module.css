@@ -1,4 +1,12 @@
+/* The canvas's grid cell: the scrolling viewport fills it, and the inset map floats over it. */
+.canvas {
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  min-inline-size: 0;
+  min-block-size: 0;
+}
 .viewport {
+  grid-area: 1 / 1;
   position: relative;
   overflow: auto;
   overscroll-behavior: contain;

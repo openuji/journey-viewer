@@ -1,7 +1,7 @@
 import { ScreenLightbox } from "@journey-viewer/design-system";
 import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
-import { BrowserLightbox } from "@/browser/BrowserLightbox";
+import { BrowserLightbox } from "@/components/BrowserLightbox/BrowserLightbox";
 import { BrowserScreenImage } from "@/browser/BrowserScreenImage";
 import { getNodeScreens, getScreens } from "@/screens";
 import type { ScreenshotMap, ViewerLightbox } from "@/screens";

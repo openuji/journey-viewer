@@ -54,15 +54,15 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
   readonly presentation contracts, independent fixture checks, and Storybook.
-- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree,
-  Columns and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
+- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree (Rows or
+  Columns) and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
   explicit occurrence paths and an instance-local React boundary with document-replacement reset.
 - `packages/flow-layout`: dependency-free layered layout of one flow-chart level
   (positions and orthogonal metro-style routes for sized nodes and fixed-port
   frames), with drawn sizes and spacing as options. It knows nothing of UJG;
   `flow-spike/` composes it into nested journey frames.
 - `packages/app`: the application (reading, check policy, findings header, empty
-  state and its Tree/Columns/Flow arrangement), a prebuilt static site with a
+  state and its Tree/Flow arrangement), a prebuilt static site with a
   relative base, and the `journey-viewer` commands: `generate` copies the site
   and a document into a folder, `run` also serves it with Vite. See [its README](packages/app/README.md).
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.

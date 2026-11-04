@@ -19,7 +19,7 @@ const graph = projectJourneyGraph(document);
 
 <main data-jv-theme="light">
   <JourneyHierarchy graph={graph} level={2} />
-</main>
+</main>;
 ```
 
 `JourneyHierarchy` retains its static contract: only `graph` and optional
@@ -71,7 +71,7 @@ import "@journey-viewer/viewer/styles.css";
 
 <main data-jv-theme="light">
   <JourneyViewer graph={graph} />
-</main>
+</main>;
 ```
 
 `JourneyViewer` is the default arrangement of the composition kit described in
@@ -82,7 +82,7 @@ same frozen graph. The state boundary retains the graph reference only to detect
 replacement. A new graph object, including one projected again from the same
 document, resets selection, expansion, mode, search, filters, hover,
 the hover preview and the lightbox before children render. No mutable store or
-identity registry is used; DOM effects live only in the named `browser/` adapters.
+identity registry is used; DOM effects live only in the named `Browser*` adapters.
 Optional `headerStart` / `headerEnd` content replaces the default document summary
 at the start of the explorer bar or is appended at its end.
 Keep `graph` referentially stable between actual replacements. Projecting it
@@ -163,8 +163,10 @@ explicit extension descriptors are described below.
 ## Navigation
 
 The explorer bar holds the document summary (journeys, states, transitions and
-mapped screens), a Tree/Columns switch, expand/collapse-all icons (tree only),
-touchpoint chips, the search field and a reset icon. From the `md` breakpoint it
+mapped screens), a Tree/Flow switch, touchpoint chips, the search field and a
+reset icon. The composition places Tree's Rows/Columns icons with tooltips in the bar,
+followed by expand/collapse-all in Rows. Flow has its own canvas controls and
+expand/collapse in the explorer bar. From the `md` breakpoint it
 sticks to the top of the viewport and its height is exposed as
 `--jv-explorer-offset`, which positions the sticky inspector and row scroll margins.
 Below `md` the inspector precedes the graph, as in the original hierarchy.
@@ -252,7 +254,7 @@ props supply presentation and actions. `JourneyInspector.navigation` couples
 occurrence context with its required navigation callback. `JourneyViewer` remains
 the sole React graph-interaction state owner; controlled components invoke no
 callbacks during rendering. Scrolling, the “/” shortcut, outside clicks, DOM
-measurement and image preloading stay in the `browser/` adapters, which use their
+measurement and image preloading stay in the `Browser*` adapters, which use their
 own elements' `ownerDocument`/`defaultView` and receive no graph types.
 
 The layout uses the design system's public Tailwind bridge during the viewer
@@ -298,16 +300,26 @@ The caller reads/parses that document and resolves relative paths against an
 explicit mapping-document or asset base. It then passes the resulting map:
 
 ```tsx
-import type { ScreenshotMap, TouchpointPresentation } from "@journey-viewer/viewer";
+import type {
+  ScreenshotMap,
+  TouchpointPresentation,
+} from "@journey-viewer/viewer";
 
 const screenshots: ScreenshotMap = {
   "urn:example:surface": "https://example.test/screens/sign-in.png",
 };
 const touchpoints: TouchpointPresentation = {
-  "urn:example:app": { shortLabel: "App", color: "var(--jv-color-category-orange)" },
+  "urn:example:app": {
+    shortLabel: "App",
+    color: "var(--jv-color-category-orange)",
+  },
 };
 
-<JourneyViewer graph={graph} screenshots={screenshots} touchpoints={touchpoints} />
+<JourneyViewer
+  graph={graph}
+  screenshots={screenshots}
+  touchpoints={touchpoints}
+/>;
 ```
 
 `ScreenshotMap` is `Readonly<Record<string, string>>`. Exact surface IDs are
@@ -386,7 +398,9 @@ receives the current identity, map and explicit close/previous/next callbacks.
 `hoverNode` accepts an optional occurrence; `JourneyExplorer.onHover` reports it
 as a second argument. Existing single-argument callbacks remain compatible.
 
-The `browser/` adapters own every DOM effect: `BrowserScreenImage` (per-URL load
+The `Browser*` adapters own every DOM effect. Single-file adapters live in `browser/`; an
+adapter with its own styles has a folder beside the other components, with a story
+(`Viewer/Browser*`). They are `BrowserScreenImage` (per-URL load
 status), `BrowserLightbox` (native modal, keys, focus, backdrop), `BrowserScreenButton`
 (measures its own rectangle), `BrowserScreenPreview` (placement and dismissal),
 `BrowserScreenPreload`, `BrowserColumns` (scrolls to new columns),
@@ -414,7 +428,9 @@ dispose lifecycle, parser selection or shared runtime state is involved.
 import { Badge, StateRow, Text } from "@journey-viewer/design-system";
 import { JourneyViewer } from "@journey-viewer/viewer";
 import type {
-  ViewerExtensions, ViewerInspectorPanelProps, ViewerStateRenderProps,
+  ViewerExtensions,
+  ViewerInspectorPanelProps,
+  ViewerStateRenderProps,
 } from "@journey-viewer/viewer";
 
 function SourceNote({ node }: ViewerInspectorPanelProps) {
@@ -424,21 +440,31 @@ function ReviewedRow({ row }: ViewerStateRenderProps) {
   return <StateRow {...row} description="Review this step" />;
 }
 const extensions = {
-  inspectorPanels: [{
-    id: "source-note", title: "Source note",
-    matches: () => true, Component: SourceNote,
-  }],
-  annotations: [{
-    id: "review", matches: ({ selection }) => selection.kind === "state",
-    Component: () => <Badge>Needs review</Badge>,
-  }],
-  stateOverrides: [{
-    id: "reviewed-row", matches: ({ node }) => node.tags?.includes("review") ?? false,
-    Component: ReviewedRow,
-  }],
+  inspectorPanels: [
+    {
+      id: "source-note",
+      title: "Source note",
+      matches: () => true,
+      Component: SourceNote,
+    },
+  ],
+  annotations: [
+    {
+      id: "review",
+      matches: ({ selection }) => selection.kind === "state",
+      Component: () => <Badge>Needs review</Badge>,
+    },
+  ],
+  stateOverrides: [
+    {
+      id: "reviewed-row",
+      matches: ({ node }) => node.tags?.includes("review") ?? false,
+      Component: ReviewedRow,
+    },
+  ],
 } as const satisfies ViewerExtensions;
 
-<JourneyViewer graph={graph} extensions={extensions} />
+<JourneyViewer graph={graph} extensions={extensions} />;
 ```
 
 All matching inspector panels append in array order after the built-in sections,
@@ -564,28 +590,48 @@ different JSX tree, not a set of flags, and there is no plugin runtime or regist
 
 ```tsx
 import {
-  DocumentSummary, ExpandCollapse, FlowPlacement, FlowSettings, FlowZoom,
-  GraphSearch, ResetView, TouchpointFilter, Viewer, ViewerBar, ViewerMain,
-  ViewSwitch, WhenView, columnsView, flowView, treeView,
+  DocumentSummary,
+  ExpandCollapse,
+  FlowPlacement,
+  FlowSettings,
+  FlowZoom,
+  GraphSearch,
+  ResetView,
+  TouchpointFilter,
+  TreeLayout,
+  Viewer,
+  ViewerBar,
+  ViewerMain,
+  ViewSwitch,
+  WhenView,
+  WhenTreeLayout,
+  flowView,
+  treeView,
 } from "@journey-viewer/viewer";
 import { FlowKey } from "@journey-viewer/design-system";
 
-<Viewer
-  graph={graph}
-  screenshots={screenshots}
-  touchpoints={touchpoints}
-  views={[treeView, columnsView, flowView()]}
->
-  <FlowSettings>
+<FlowSettings>
+  <Viewer
+    graph={graph}
+    screenshots={screenshots}
+    touchpoints={touchpoints}
+    views={[treeView, flowView()]}
+  >
     <ViewerBar>
       <DocumentSummary />
       <ViewSwitch />
+      <WhenView id="tree">
+        <TreeLayout />
+        <WhenTreeLayout mode="tree">
+          <ExpandCollapse />
+        </WhenTreeLayout>
+      </WhenView>
       <WhenView id="flow">
         <FlowPlacement />
         <FlowZoom />
         <FlowKey />
       </WhenView>
-      <WhenView id="tree">
+      <WhenView id="flow">
         <ExpandCollapse />
       </WhenView>
       <TouchpointFilter />
@@ -594,8 +640,8 @@ import { FlowKey } from "@journey-viewer/design-system";
       </GraphSearch>
     </ViewerBar>
     <ViewerMain />
-  </FlowSettings>
-</Viewer>
+  </Viewer>
+</FlowSettings>;
 ```
 
 - **`Viewer`** is the state boundary. It holds one immutable `ViewerState` (the
@@ -609,18 +655,26 @@ import { FlowKey } from "@journey-viewer/design-system";
   Reset also returns the flow canvas to its first view.
 - **Views** are readonly `ViewerView` descriptors `{ id, label, render, enter?, inspector? }`.
   `ViewSwitch` lists them and `ViewerMain` renders the active one beside the inspector.
-  `treeView` and `columnsView` use `enter` to set the snapshot's mode, and
-  `flowView({ commands })` renders `JourneyFlow` under a canvas header: the journey
+  `treeView` renders the hierarchy only. The composition places `TreeLayout` in the bar;
+  its Rows/Columns icons have tooltips and dispatch
+  `{ type: "treeLayout", mode: "tree" | "columns" }`. The layout survives view switches,
+  while reset restores the initial layout. `flowView({ commands })` renders `JourneyFlow` under a canvas header: the journey
   path on the left and, when given, `commands` in its command plane on the right, on
   one row from the `md` breakpoint. All views share selection and expansion.
 - **Pieces** read the enclosing viewer and dispatch commands: `ViewerBar`,
   `DocumentSummary`, `ViewSwitch`, `WhenView` (children only while a view is active),
-  `ExpandCollapse`, `TouchpointFilter`, `GraphSearch` (with trailing tools as
+  `ExpandCollapse`, `TreeLayout`, `TouchpointFilter`, `GraphSearch` (with trailing tools as
   children), `ResetView` and `ViewerMain`. `JourneyNavigation`, the controlled bar,
   arranges the same parts for callers that own the snapshot.
+- **Conditional composition.** `WhenTreeLayout mode="tree"` shows its children in Rows;
+  `mode="columns"` shows them in Columns. It tests layout only: nest it inside
+  `WhenView id="tree"` to also require Tree. Controls do not choose their own placement
+  or visibility; the JSX composition does.
 - **Flow settings.** Placement, zoom and the root scope are not graph state.
-  `FlowSettings` holds them for `FlowPlacement`, `FlowZoom`, `FlowRoots` and the flow
-  view, wherever those sit. Without it the flow draws every root journey, median at
+  `FlowSettings` explicitly wraps `Viewer` in compositions and holds settings for
+  `FlowPlacement`, `FlowZoom`, `FlowRoots` and the flow view. Either nesting order works
+  when the provider encloses all consumers; the examples consistently place it outside
+  `Viewer`. Without it the flow draws every root journey, median at
   100%, and the three controls throw. The three draw their options as glyphs; each
   option's label is its accessible name and its tooltip. `FlowRoots` switches between every root journey
   on the canvas (the default) and one at a time; `initialRoots="one"` starts there.
@@ -638,7 +692,9 @@ Any component inside a `Viewer` can be a control. `useViewer()` returns the inpu
 ```tsx
 function OpenEverything() {
   const { dispatch } = useViewer();
-  return <Button onClick={() => dispatch({ type: "expandAll" })}>Open all</Button>;
+  return (
+    <Button onClick={() => dispatch({ type: "expandAll" })}>Open all</Button>
+  );
 }
 ```
 
@@ -662,8 +718,9 @@ its own provider instead of extending `ViewerState`.
 - `src/disclosure.ts`: `disclose`, the reducer behind every navigation, screen and
   disclosure command; it also marks `location`, the node the journey path leads to.
 - `JourneyFlow`: the controlled canvas with its journey path, composed of the design
-  system's `Flow/*` primitives. `browser/BrowserTextMeasure` sizes text with the rendered
-  fonts and `browser/BrowserFlowViewport` owns scrolling, fit, anchoring and reveals.
+  system's `Flow/*` primitives. `BrowserTextMeasure` sizes text with the rendered fonts,
+  `BrowserFlowViewport` owns scrolling, fit, anchoring and reveals, and `BrowserInsetMap`
+  follows and moves the canvas from the inset map.
 - `src/dev/artifacts.ts`: layout metrics for tests and stories; never in `dist`.
 - Storybook: `Viewer/JourneyFlow` (scopes and placements, each reporting its artifacts) and
   `Viewer/Flow scenarios`, five arrangements written as plain compositions, including a

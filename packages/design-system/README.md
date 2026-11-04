@@ -12,7 +12,7 @@ import "@journey-viewer/design-system/styles.css";
   <JourneyCard title="Account access" count="4 states">
     <StateRow label="Choose a method" selected={selected} onSelect={onSelect} />
   </JourneyCard>
-</section>
+</section>;
 ```
 
 Callers supply selection/expansion snapshots and callbacks. `StateRow` does not
@@ -36,18 +36,18 @@ disclosure control is meaningful.
 
 ## Primitive ownership
 
-| Export | Owns |
-| --- | --- |
-| `Button` | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
-| `IconButton` | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`. |
-| `Icon` | Decorative glyphs named by purpose (chevron, phone, expand/collapse-all, reset, previous/next, close, check, file, and the flow canvas commands `align-median`, `align-centre`, `align-left`, `zoom-actual`, `zoom-fit`, `frames`, `frame`, `legend`), all drawn from one family, [Lucide](https://lucide.dev) (`lucide-react`, a dependency), at a 1.5px stroke whatever the size. The enclosing control supplies the name. |
-| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Columns. An option with an `icon` is drawn as that glyph alone, named by its `label` and shown in a `Tooltip`. The pressed option takes the `color.pressed` fill, lighter than the trough in both themes. |
-| `Tooltip` | The visible name of an icon-only control, below it on hover (after a delay) and on keyboard focus. CSS only: hidden from assistive technology, because the trigger carries the same name. Wrap the control: `<Tooltip label="Reset view"><IconButton label="Reset view" … /></Tooltip>`. |
-| `SearchField` | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller. |
-| `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`). |
-| `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`. |
-| `Badge` | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips. |
-| `Surface` | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance. |
+| Export             | Owns                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`           | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices.                                                  |
+| `IconButton`       | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`.                                                                                                                                                                                                                                                                                                                    |
+| `Icon`             | Decorative glyphs named by purpose (chevron, phone, expand/collapse-all, reset, previous/next, close, check, file, and the flow canvas commands `align-median`, `align-centre`, `align-left`, `zoom-actual`, `zoom-fit`, `frames`, `frame`, `legend`), all drawn from one family, [Lucide](https://lucide.dev) (`lucide-react`, a dependency), at a 1.5px stroke whatever the size. The enclosing control supplies the name. |
+| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Flow or Rows/Columns. An option with an `icon` is drawn as that glyph alone, named by its `label` and shown in a `Tooltip`. The pressed option takes the `color.pressed` fill, lighter than the trough in both themes.                                                                                                                         |
+| `Tooltip`          | The visible name of an icon-only control, below it on hover (after a delay) and on keyboard focus. CSS only: hidden from assistive technology, because the trigger carries the same name. Wrap the control: `<Tooltip label="Reset view"><IconButton label="Reset view" … /></Tooltip>`.                                                                                                                                     |
+| `SearchField`      | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller.                                                                                                                                                                                                                      |
+| `Heading`          | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`).                                                                                                                                                                                                                                                                                                                         |
+| `Text`             | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`.                                                                                                                                                                                                                                                                               |
+| `Badge`            | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips.                                                                                                                                                                                                                                                                                                                    |
+| `Surface`          | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance.                                                                                                                                                                                                                                                                                           |
 
 Hierarchy compositions are `ExplorerBar` (with `ExplorerBarTitle` and
 `ExplorerBarSpacer`), `TouchpointDot`, `JourneyHead`, `JourneyCard`, `JourneyNest`,
@@ -104,7 +104,7 @@ tooltip without replacing that accessible explanation.
 ## Flow primitives
 
 `FlowFrame`, `StateNode`, `CompositeCard`, `ContractGlyph`, `Connector`, `RouteOverlay`,
-`JourneyPath`, `CanvasHeader` and `FlowKey` draw a flow chart from positions and pre-wrapped
+`JourneyPath`, `CanvasHeader`, `FlowKey` and `InsetMap` draw a flow chart from positions and pre-wrapped
 text that the caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`,
 `Text`, `Tooltip` and `TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
 radius, arrowheads, route width, contract glyph), so a layout engine can reserve room for them;
@@ -115,6 +115,11 @@ radius, arrowheads, route width, contract glyph), so a layout engine can reserve
 `commands` in a named command plane on the right, on one row from `md`; below it the commands wrap
 onto their own rows. From `md`, `JourneyPath` keeps to one line: earlier steps truncate first and
 the current journey last. `FlowKey` opens its legend from a glyph button with a tooltip.
+
+`InsetMap` draws a whole chart in miniature: frames and blocks from their rectangles, the selection in
+accent, and the `view` the canvas shows, with the chart outside it veiled. It is decorative to
+assistive technology and takes pointer handlers through its spread props, so a browser adapter can
+move the canvas from it.
 
 ## Tokens and themes
 

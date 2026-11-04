@@ -25,6 +25,7 @@ import {
   SegmentedControl,
   Tooltip,
   FlowKey,
+  InsetMap,
   Connector,
   RouteOverlay,
   parallel,
@@ -524,6 +525,80 @@ test("a glyph option is a named, pressed icon button with its label as a hidden 
   assert.match(tip, /anchor-name:--tooltip-/);
   assert.match(tip, /position-anchor:--tooltip-/);
   assert.match(tip, /aria-hidden="true"><span[^>]*>Reset view<\/span>/);
+});
+
+test("the inset map draws frames and blocks, veils what the view leaves out, and clips the view to the chart", () => {
+  const props = {
+    width: 400,
+    height: 600,
+    frames: [
+      {
+        id: "frame:root",
+        rect: { x: 0, y: 0, width: 400, height: 600 },
+        context: "outside",
+      },
+      {
+        id: "frame:child",
+        rect: { x: 100, y: 200, width: 280, height: 300 },
+        context: "current",
+      },
+    ],
+    blocks: [
+      { id: "state:a", rect: { x: 20, y: 20, width: 120, height: 40 } },
+      {
+        id: "state:b",
+        rect: { x: 140, y: 240, width: 120, height: 40 },
+        selected: true,
+      },
+      {
+        id: "state:c",
+        rect: { x: 20, y: 400, width: 120, height: 40 },
+        receded: true,
+      },
+      {
+        id: "contract:in",
+        rect: { x: 240, y: 200, width: 0, height: 0 },
+        dot: true,
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    h(InsetMap, {
+      ...props,
+      view: { x: -50, y: 450, width: 300, height: 400 },
+    }),
+  );
+  assert.match(
+    html,
+    /^<div(?=[^>]*data-inset-map="")(?=[^>]*aria-hidden="true")/,
+  );
+  assert.match(html, /--inset-ratio:0\.666/);
+  assert.match(html, /viewBox="0 0 400 600"/);
+  assert.equal((html.match(/data-context=/g) ?? []).length, 2);
+  assert.equal((html.match(/data-selected="true"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-receded="true"/g) ?? []).length, 1);
+  assert.match(
+    html,
+    /<rect[^>]*data-inset-view=""[^>]*x="0" y="450" width="250" height="150"/,
+  );
+  assert.match(html, /fill-rule="evenodd"/);
+  assert.match(html, /<path[^>]*d="M240 200h0"/, "a contract is a dot");
+  const chartOnly = renderToStaticMarkup(h(InsetMap, { ...props, view: null }));
+  assert.doesNotMatch(chartOnly, /data-inset-view|evenodd/);
+  assert.doesNotMatch(
+    renderToStaticMarkup(
+      h(InsetMap, {
+        ...props,
+        view: { x: 500, y: 0, width: 100, height: 100 },
+      }),
+    ),
+    /data-inset-view/,
+    "a view beside the chart draws nothing",
+  );
+  assert.equal(
+    renderToStaticMarkup(h(InsetMap, { ...props, width: 0, view: null })),
+    "",
+  );
 });
 
 test("connectors and routes draw rounded orthogonal paths with arrowheads only on routes", () => {

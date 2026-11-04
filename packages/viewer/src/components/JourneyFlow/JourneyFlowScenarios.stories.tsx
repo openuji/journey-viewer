@@ -6,12 +6,14 @@ import { ViewerBar } from "@/components/ViewerBar/ViewerBar";
 import { DocumentSummary } from "@/components/DocumentSummary/DocumentSummary";
 import { ViewSwitch } from "@/components/ViewSwitch/ViewSwitch";
 import { WhenView } from "@/components/WhenView/WhenView";
+import { WhenTreeLayout } from "@/components/WhenTreeLayout/WhenTreeLayout";
+import { TreeLayout } from "@/components/TreeLayout/TreeLayout";
 import { ExpandCollapse } from "@/components/ExpandCollapse/ExpandCollapse";
 import { TouchpointFilter } from "@/components/TouchpointFilter/TouchpointFilter";
 import { GraphSearch } from "@/components/GraphSearch/GraphSearch";
 import { ResetView } from "@/components/ResetView/ResetView";
 import { ViewerMain } from "@/components/ViewerMain/ViewerMain";
-import { columnsView, treeView } from "@/components/ExplorerView/ExplorerView";
+import { treeView } from "@/components/ExplorerView/ExplorerView";
 import { flowView } from "@/components/FlowView/FlowView";
 import { FlowSettings } from "@/components/FlowSettings/FlowSettings";
 import { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
@@ -38,10 +40,19 @@ const inputs = {
   initialCommands: appWithIdpOpen,
 };
 
+const treeControls = (
+  <WhenView id="tree">
+    <TreeLayout />
+    <WhenTreeLayout mode="tree">
+      <ExpandCollapse />
+    </WhenTreeLayout>
+  </WhenView>
+);
+
 /** The explorer bar's other tools, after the view switch and anything placed beside it. */
 const tools = (
   <>
-    <WhenView id={["tree", "flow"]}>
+    <WhenView id="flow">
       <ExpandCollapse />
     </WhenView>
     <TouchpointFilter />
@@ -67,7 +78,7 @@ const rootControls = (
 );
 
 /**
- * Toolbar arrangements for a Flow view beside Tree and Columns. Each story is a plain composition
+ * Toolbar arrangements for a Flow view beside Tree. Each story is a plain composition
  * of the viewer's pieces: an arrangement is a different tree, not a flag.
  */
 const meta = {
@@ -77,20 +88,21 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Tree | Columns | Flow, then Placement, Zoom and the key in the bar. */
+/** Tree | Flow, then Placement, Zoom and the key in the bar. */
 export const ControlsInTheBar: Story = {
   render: () => (
-    <Viewer {...inputs} views={[treeView, columnsView, flowView()]}>
-      <FlowSettings>
+    <FlowSettings>
+      <Viewer {...inputs} views={[treeView, flowView()]}>
         <ViewerBar>
           <DocumentSummary />
           <ViewSwitch />
+          {treeControls}
           <WhenView id="flow">{flowControls}</WhenView>
           {tools}
         </ViewerBar>
         <ViewerMain />
-      </FlowSettings>
-    </Viewer>
+      </Viewer>
+    </FlowSettings>
   ),
 };
 
@@ -100,11 +112,12 @@ export const ControlsOnTheCanvas: Story = {
     <FlowSettings>
       <Viewer
         {...inputs}
-        views={[treeView, columnsView, flowView({ commands: flowControls })]}
+        views={[treeView, flowView({ commands: flowControls })]}
       >
         <ViewerBar>
           <DocumentSummary />
           <ViewSwitch />
+          {treeControls}
           {tools}
         </ViewerBar>
         <ViewerMain />
@@ -123,11 +136,12 @@ export const OneJourneyAtATime: Story = {
       <Viewer
         graph={topologyGraph}
         initialView="flow"
-        views={[treeView, columnsView, flowView({ commands: rootControls })]}
+        views={[treeView, flowView({ commands: rootControls })]}
       >
         <ViewerBar>
           <DocumentSummary />
           <ViewSwitch />
+          {treeControls}
           {tools}
         </ViewerBar>
         <ViewerMain />
@@ -139,10 +153,11 @@ export const OneJourneyAtATime: Story = {
 /** Only the view switch: median placement at 100%. */
 export const FlowWithDefaults: Story = {
   render: () => (
-    <Viewer {...inputs} views={[treeView, columnsView, flowView()]}>
+    <Viewer {...inputs} views={[treeView, flowView()]}>
       <ViewerBar>
         <DocumentSummary />
         <ViewSwitch />
+        {treeControls}
         {tools}
       </ViewerBar>
       <ViewerMain />
@@ -150,7 +165,7 @@ export const FlowWithDefaults: Story = {
   ),
 };
 
-/** No bar and no Tree or Columns: the canvas, its journey path and the inspector, as if embedded. */
+/** No bar and no Tree: the canvas, its journey path and the inspector, as if embedded. */
 export const FlowOnItsOwn: Story = {
   render: () => (
     <Viewer {...inputs} views={[flowView()]}>
@@ -186,6 +201,7 @@ export const CustomCommand: Story = {
       <ViewerBar>
         <DocumentSummary />
         <ViewSwitch />
+        {treeControls}
         <ToggleMfa />
         {tools}
       </ViewerBar>

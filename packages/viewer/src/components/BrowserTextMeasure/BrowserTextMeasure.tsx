@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Text } from "@journey-viewer/design-system";
 import { estimate } from "@/flow/text";
 import type { TextMeasure, TextRole } from "@/flow/text";
-import styles from "@/browser/BrowserTextMeasure.module.css";
+import styles from "@/components/BrowserTextMeasure/BrowserTextMeasure.module.css";
 
 export interface BrowserTextMeasureProps {
   /** Receives null until the page's fonts have been read. */

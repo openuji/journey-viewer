@@ -190,7 +190,7 @@ try {
     const stories = Object.values(index.entries).filter(
       (entry) => entry.type === "story",
     );
-    assert.equal(stories.length, 47);
+    assert.equal(stories.length, 52);
     assert.ok(stories.every((entry) => entry.title.startsWith("Viewer/")));
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
@@ -731,9 +731,10 @@ try {
   const lanes = (scope) =>
     scope.getByRole("group", { name: "Journey columns" });
   const mode = (scope, name) =>
-    scope
-      .getByRole("group", { name: "View" })
-      .getByRole("button", { name, exact: true });
+    scope.getByRole("group", { name: "Tree layout" }).getByRole("button", {
+      name: name === "Tree" ? "Rows" : name,
+      exact: true,
+    });
 
   await test("search supports native keyboard picking/clearing, the slash shortcut, outside dismissal and instance isolation", async () => {
     await consumerPage();
@@ -1495,9 +1496,10 @@ try {
       .getByRole("button", { name: "Close screenshot", exact: true })
       .click();
     assert.equal(
-      await mode(scope, "Tree").evaluate(
-        (element) => element === element.ownerDocument.activeElement,
-      ),
+      await scope
+        .getByRole("group", { name: "View", exact: true })
+        .getByRole("button", { name: "Tree", exact: true })
+        .evaluate((element) => element === element.ownerDocument.activeElement),
       true,
       "focus falls back to the viewer's first control when the opener disappears",
     );
@@ -2230,7 +2232,7 @@ try {
   await test("flow scenarios: Tree and Flow share selection and expansion; contracts and screens work in both", async () => {
     await flowStory("viewer-flow-scenarios--controls-in-the-bar");
     await block("state", urn("idp-login")).getByRole("button").first().click();
-    const view = page.getByRole("group", { name: "View" });
+    const view = page.getByRole("group", { name: "View", exact: true });
     await view.getByRole("button", { name: "Tree" }).click();
     const inspector = page.getByRole("complementary", {
       name: "Selection inspector",
@@ -2273,6 +2275,169 @@ try {
     await dialog.waitFor();
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(errors, []);
+  });
+
+  await test("tree controls are composed in the bar with named icons, keyboard tooltips and Rows-only expansion", async () => {
+    for (const story of [
+      "controls-in-the-bar",
+      "controls-on-the-canvas",
+      "one-journey-at-a-time",
+      "flow-with-defaults",
+      "custom-command",
+    ]) {
+      await flowStory(`viewer-flow-scenarios--${story}`);
+      const view = page.getByRole("group", { name: "View", exact: true });
+      const bar = page.locator("[data-explorer-bar]");
+      const inBar = story === "controls-in-the-bar";
+      const onCanvas = [
+        "controls-on-the-canvas",
+        "one-journey-at-a-time",
+      ].includes(story);
+      assert.equal(
+        await bar
+          .getByRole("group", { name: "Placement", exact: true })
+          .count(),
+        inBar ? 1 : 0,
+      );
+      assert.equal(
+        await page
+          .locator("[data-canvas-header]")
+          .getByRole("group", { name: "Placement", exact: true })
+          .count(),
+        onCanvas ? 1 : 0,
+      );
+      await view.getByRole("button", { name: "Tree", exact: true }).click();
+      const layout = bar.getByRole("group", {
+        name: "Tree layout",
+        exact: true,
+      });
+      const rows = layout.getByRole("button", { name: "Rows", exact: true });
+      const columns = layout.getByRole("button", {
+        name: "Columns",
+        exact: true,
+      });
+      assert.equal(await page.locator("[data-canvas-header]").count(), 0);
+      assert.deepEqual(await layout.getByRole("button").allTextContents(), [
+        "",
+        "",
+      ]);
+      assert.equal(await rows.locator('[data-icon="layout-rows"]').count(), 1);
+      assert.equal(
+        await columns.locator('[data-icon="layout-columns"]').count(),
+        1,
+      );
+      assert.equal(
+        await bar
+          .getByRole("button", { name: "Expand all", exact: true })
+          .count(),
+        1,
+      );
+      await view
+        .getByRole("button", { name: "Flow", exact: true })
+        .press("Tab");
+      assert.equal(
+        await rows.evaluate(
+          (element) => element === element.ownerDocument.activeElement,
+        ),
+        true,
+      );
+      assert.equal(
+        await layout.getByText("Rows", { exact: true }).isVisible(),
+        true,
+      );
+      await rows.press("Tab");
+      assert.equal(
+        await layout.getByText("Columns", { exact: true }).isVisible(),
+        true,
+      );
+      await columns.press("Enter");
+      await page
+        .getByRole("group", { name: "Journey columns", exact: true })
+        .waitFor();
+      assert.equal(
+        await bar
+          .getByRole("button", { name: "Expand all", exact: true })
+          .count(),
+        0,
+      );
+      await view.getByRole("button", { name: "Flow", exact: true }).click();
+      assert.equal(await layout.count(), 0);
+      assert.equal(
+        await bar
+          .getByRole("button", { name: "Expand all", exact: true })
+          .count(),
+        1,
+        "Flow controls remain visible while the saved tree layout is Columns",
+      );
+      await view.getByRole("button", { name: "Tree", exact: true }).click();
+      assert.equal(await columns.getAttribute("aria-pressed"), "true");
+      await rows.click();
+      if (story === "controls-in-the-bar") {
+        for (const theme of ["light", "dark"]) {
+          await page
+            .locator("[data-jv-theme]")
+            .first()
+            .evaluate(
+              (element, value) => element.setAttribute("data-jv-theme", value),
+              theme,
+            );
+          for (const width of [320, 1440]) {
+            await page.setViewportSize({ width, height: 900 });
+            assert.equal(
+              await page.evaluate(
+                () =>
+                  document.documentElement.scrollWidth <=
+                  document.documentElement.clientWidth,
+              ),
+              true,
+            );
+            await page.screenshot({
+              path: `${evidence}/tree-toolbar-${theme}-${width}.png`,
+            });
+          }
+        }
+      }
+    }
+    assert.deepEqual(errors, []);
+  });
+
+  await test("flow settings stay local to each composed viewer and survive Tree switches", async () => {
+    await consumerPage();
+    const view = (scope) =>
+      scope.getByRole("group", { name: "View", exact: true });
+    for (const scope of [first(), second()])
+      await view(scope)
+        .getByRole("button", { name: "Flow", exact: true })
+        .click();
+    await first()
+      .getByRole("group", { name: "Placement", exact: true })
+      .getByRole("button", { name: "Aligned left", exact: true })
+      .click();
+    assert.equal(
+      await first()
+        .getByRole("button", { name: "Aligned left", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(
+      await second()
+        .getByRole("button", { name: "Median", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await view(first())
+      .getByRole("button", { name: "Tree", exact: true })
+      .click();
+    await view(first())
+      .getByRole("button", { name: "Flow", exact: true })
+      .click();
+    assert.equal(
+      await first()
+        .getByRole("button", { name: "Aligned left", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
     assert.deepEqual(errors, []);
   });
 
@@ -2478,7 +2643,7 @@ try {
     assert.equal(await collapse.count(), 0);
     await page.getByRole("button", { name: "Toggle MFA", exact: true }).click();
     assert.equal(await collapse.count(), 1, "the flow opens the MFA journey");
-    const view = page.getByRole("group", { name: "View" });
+    const view = page.getByRole("group", { name: "View", exact: true });
     await view.getByRole("button", { name: "Tree" }).click();
     assert.ok((await mfaRows.count()) > 0, "the tree shows it open too");
     await page.getByRole("button", { name: "Toggle MFA", exact: true }).click();
@@ -2506,6 +2671,121 @@ try {
         );
       }
     await page.setViewportSize({ width: 1280, height: 900 });
+    assert.deepEqual(errors, []);
+  });
+  await test("flow inset map: it shows the canvas's view and follows its scroll; pressing, dragging and wheeling over it move the canvas; Fit hides it", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await flowStory("viewer-flow-scenarios--controls-on-the-canvas", 1280, 900);
+    const viewport = page.getByRole("region", { name: "Journey flow" });
+    const inset = page.locator("[data-inset-map]");
+    const outline = inset.locator("[data-inset-view]");
+    await outline.waitFor();
+    assert.equal(await inset.getAttribute("aria-hidden"), "true");
+    const [box, area] = await Promise.all([
+      inset.boundingBox(),
+      viewport.boundingBox(),
+    ]);
+    assert.ok(
+      box.x > area.x + area.width / 2 &&
+        box.y > area.y + area.height / 2 &&
+        box.x + box.width <= area.x + area.width &&
+        box.y + box.height <= area.y + area.height,
+      "the inset floats in the canvas's bottom-right corner",
+    );
+    const scroll = () =>
+      viewport.evaluate((element) => [element.scrollLeft, element.scrollTop]);
+    const corner = async () =>
+      Promise.all([outline.getAttribute("x"), outline.getAttribute("y")]).then(
+        (values) => values.map(Number),
+      );
+    // At 100% one canvas pixel is one chart unit, so the outline moves as far as the canvas scrolls.
+    await viewport.evaluate((element) => element.scrollBy(400, 300));
+    await page.waitForTimeout(100);
+    const [x1, y1] = await corner();
+    await viewport.evaluate((element) => element.scrollBy(100, 50));
+    await page.waitForTimeout(100);
+    const [x2, y2] = await corner();
+    assert.deepEqual([x2 - x1, y2 - y1], [100, 50]);
+    // Dragging the outline scrolls the canvas by the drag over the inset's own scale.
+    const [scaleX, scaleY] = await inset
+      .locator("svg")
+      .evaluate((svg) => [svg.getScreenCTM().a, svg.getScreenCTM().d]);
+    const held = await outline.boundingBox();
+    const [left, top] = await scroll();
+    await page.mouse.move(held.x + held.width / 2, held.y + held.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      held.x + held.width / 2 + 20,
+      held.y + held.height / 2 + 10,
+      { steps: 4 },
+    );
+    await page.mouse.up();
+    const [draggedLeft, draggedTop] = await scroll();
+    assert.ok(
+      Math.abs(draggedLeft - left - 20 / scaleX) < 1.5 &&
+        Math.abs(draggedTop - top - 10 / scaleY) < 1.5,
+      `dragged by ${[draggedLeft - left, draggedTop - top]}`,
+    );
+    // Pressing a spot away from the outline brings what is there into the canvas.
+    const target = page.locator('[data-flow-key^="state:"]').last();
+    const spot = await target.evaluate((element) => {
+      const svg = document.querySelector("[data-inset-map] svg");
+      const m = svg.getScreenCTM();
+      const x = element.offsetLeft + element.offsetWidth / 2;
+      const y = element.offsetTop + element.offsetHeight / 2;
+      return [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f];
+    });
+    const before = await target.boundingBox();
+    assert.ok(
+      before.y + before.height > area.y + area.height ||
+        before.y < area.y ||
+        before.x < area.x ||
+        before.x + before.width > area.x + area.width,
+      "the chosen state starts out of sight",
+    );
+    await page.mouse.click(...spot);
+    const shown = await target.boundingBox();
+    assert.ok(
+      shown.x >= area.x &&
+        shown.y >= area.y &&
+        shown.x + shown.width <= area.x + area.width &&
+        shown.y + shown.height <= area.y + area.height,
+      "the pressed state is inside the canvas",
+    );
+    // A wheel over the inset scrolls the canvas, not the page.
+    const [, wheelTop] = await scroll();
+    const now = await inset.boundingBox();
+    await page.mouse.move(now.x + now.width / 2, now.y + now.height / 2);
+    await page.mouse.wheel(0, -200);
+    await page.waitForFunction(
+      (top) =>
+        document.querySelector('[aria-label="Journey flow"]').scrollTop < top,
+      wheelTop,
+    );
+    // Fit shows the whole chart, so there is nothing to find.
+    const zoom = page
+      .locator("[data-canvas-header]")
+      .getByRole("group", { name: "Zoom" });
+    await zoom.getByRole("button", { name: "Fit" }).click();
+    await page.locator('[data-zoom="fit"]').waitFor();
+    assert.equal(await inset.count(), 0);
+    await zoom.getByRole("button", { name: "100%" }).click();
+    await outline.waitFor();
+    // A phone's stage runs past the bottom of the window; the inset waits at the window's edge.
+    await flowStory("viewer-flow-scenarios--controls-on-the-canvas", 375, 640);
+    const [canvas, waiting] = await Promise.all([
+      viewport.boundingBox(),
+      inset.boundingBox(),
+    ]);
+    assert.ok(
+      canvas.y + canvas.height > 640 + 24,
+      "the canvas runs past the window",
+    );
+    assert.ok(
+      waiting.y >= canvas.y && Math.abs(waiting.y + waiting.height - 628) < 1,
+      `the inset waits 12px above the window's edge: ${JSON.stringify(waiting)}`,
+    );
+    await page.emulateMedia({ reducedMotion: null });
     assert.deepEqual(errors, []);
   });
   await test("flow polish: the key opens above everything and closes on Escape; touch reaches 44px; the first phone view keeps the selection", async () => {

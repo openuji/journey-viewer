@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Rect } from "@/flow/geometry";
-import styles from "@/browser/BrowserFlowViewport.module.css";
+import type { FlowInset } from "@/flow/inset";
+import { BrowserInsetMap } from "@/components/BrowserInsetMap/BrowserInsetMap";
+import styles from "@/components/BrowserFlowViewport/BrowserFlowViewport.module.css";
 
 const MARGIN = 24;
 /**
@@ -31,6 +33,8 @@ export interface BrowserFlowViewportProps {
     | null;
   /** A block the first view keeps in sight, such as the selection; else the top-left corner. */
   readonly initial?: string | null;
+  /** The chart in miniature, shown over the canvas while the chart is larger than the canvas. */
+  readonly inset: FlowInset;
   readonly label: string;
   readonly children: ReactNode;
 }
@@ -74,7 +78,7 @@ const reducedMotion = (element: Element) =>
 
 /**
  * Browser boundary for the flow canvas: native scrolling, fit zoom, keeping a toggled card where it
- * was, the one disclosure transition, and revealing a block on request.
+ * was, the one disclosure transition, revealing a block on request, and the inset map.
  */
 export function BrowserFlowViewport({
   blocks,
@@ -84,6 +88,7 @@ export function BrowserFlowViewport({
   anchor,
   reveal,
   initial = null,
+  inset,
   label,
   children,
 }: BrowserFlowViewportProps) {
@@ -112,6 +117,11 @@ export function BrowserFlowViewport({
           (size.height - 2 * MARGIN) / height,
         )
       : 1;
+  // Nothing to find when the whole chart is in view, as at Fit.
+  const overflows =
+    size.width > 0 &&
+    (width * scale + 2 * MARGIN > size.width ||
+      height * scale + 2 * MARGIN > size.height);
 
   useLayoutEffect(() => {
     const element = scroller.current;
@@ -232,32 +242,45 @@ export function BrowserFlowViewport({
   }, [reveal]);
 
   return (
-    <div
-      ref={scroller}
-      className={styles.viewport}
-      role="region"
-      aria-label={label}
-      tabIndex={0}
-      data-zoom={zoom}
-    >
+    <div className={styles.canvas}>
       <div
-        className={styles.sizer}
-        style={{
-          width: width * scale + 2 * SLACK,
-          height: height * scale + 2 * SLACK,
-        }}
+        ref={scroller}
+        className={styles.viewport}
+        role="region"
+        aria-label={label}
+        tabIndex={0}
+        data-zoom={zoom}
       >
         <div
-          ref={scene}
-          className={styles.scene}
+          className={styles.sizer}
           style={{
-            transform: `translate(${SLACK}px, ${SLACK}px) scale(${scale})`,
+            width: width * scale + 2 * SLACK,
+            height: height * scale + 2 * SLACK,
           }}
-          data-scale={scale.toFixed(3)}
         >
-          {children}
+          <div
+            ref={scene}
+            className={styles.scene}
+            style={{
+              transform: `translate(${SLACK}px, ${SLACK}px) scale(${scale})`,
+            }}
+            data-scale={scale.toFixed(3)}
+          >
+            {children}
+          </div>
         </div>
       </div>
+      {overflows && (
+        <BrowserInsetMap
+          {...inset}
+          scroller={scroller}
+          origin={SLACK}
+          scale={scale}
+          size={size}
+          width={width}
+          height={height}
+        />
+      )}
     </div>
   );
 }

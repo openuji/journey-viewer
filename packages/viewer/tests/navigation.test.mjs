@@ -660,7 +660,8 @@ test("controlled columns, search and inspector rendering remain pure with frozen
   );
   assert.match(navigation, /reference 2 of 2/);
   assert.match(navigation, /aria-label="Search the graph results"/);
-  assert.match(navigation, /aria-pressed="true"[^>]*>Columns</);
+  assert.match(navigation, /aria-pressed="true"[^>]*aria-label="Columns"/);
+  assert.match(navigation, /data-icon="layout-columns"/);
   assert.doesNotMatch(
     navigation,
     /Expand all/,
@@ -698,7 +699,7 @@ test("empty navigation remains explicit without fabricating a scope", () => {
   const html = renderToStaticMarkup(
     h(JourneyNavigation, { graph: graphOf(document), snapshot, ...bar }),
   );
-  assert.match(html, /aria-pressed="true"[^>]*>Tree</);
+  assert.match(html, /aria-pressed="true"[^>]*aria-label="Rows"/);
   assert.match(html, /0 journeys · 0 states · 0 transitions/);
   assert.match(html, /aria-pressed="true"[^>]*>All</);
 });

@@ -129,3 +129,10 @@ export { CanvasHeader } from "@/components/CanvasHeader/CanvasHeader";
 export type { CanvasHeaderProps } from "@/components/CanvasHeader/CanvasHeader";
 export { Tooltip } from "@/components/Tooltip/Tooltip";
 export type { TooltipProps } from "@/components/Tooltip/Tooltip";
+export { InsetMap } from "@/components/InsetMap/InsetMap";
+export type {
+  InsetMapProps,
+  InsetMapRect,
+  InsetMapFrame,
+  InsetMapBlock,
+} from "@/components/InsetMap/InsetMap";

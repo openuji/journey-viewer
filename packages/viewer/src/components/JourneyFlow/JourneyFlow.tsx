@@ -18,13 +18,14 @@ import { blockRects } from "@/flow/blocks";
 import { composeFlow } from "@/flow/compose";
 import { flowLevel } from "@/flow/geometry";
 import { flowHighlight } from "@/flow/highlight";
+import { insetShapes } from "@/flow/inset";
 import { sceneForRoots } from "@/flow/roots";
 import type { FlowRootScope } from "@/flow/roots";
 import { buildFlowScene, frameShows } from "@/flow/scene";
 import type { FlowCard, FlowFrame } from "@/flow/scene";
 import type { TextMeasure } from "@/flow/text";
-import { BrowserFlowViewport } from "@/browser/BrowserFlowViewport";
-import { BrowserTextMeasure } from "@/browser/BrowserTextMeasure";
+import { BrowserFlowViewport } from "@/components/BrowserFlowViewport/BrowserFlowViewport";
+import { BrowserTextMeasure } from "@/components/BrowserTextMeasure/BrowserTextMeasure";
 import { FlowScene } from "@/components/JourneyFlow/FlowScene";
 import styles from "@/components/JourneyFlow/JourneyFlow.module.css";
 
@@ -223,6 +224,8 @@ function FlowCanvas({
       onSelect: () => returnTo(frame, depth),
     };
   });
+  const filtered = (journeyId: string) =>
+    !matchesTouchpoints(graph, journeyId, touchpointIds);
   const toggle = (card: FlowCard) =>
     onAction(
       {
@@ -250,6 +253,11 @@ function FlowCanvas({
         anchor={view.anchor}
         reveal={reveal}
         initial={selectedBlock}
+        inset={insetShapes(layout, {
+          selected: chosen.selected,
+          current,
+          receded: filtered,
+        })}
         label={label}
       >
         <FlowScene
@@ -258,9 +266,7 @@ function FlowCanvas({
           current={current}
           location={activeFrame?.key ?? null}
           touchpointOf={touchpointOf}
-          filtered={(journeyId) =>
-            !matchesTouchpoints(graph, journeyId, touchpointIds)
-          }
+          filtered={filtered}
           screenOf={(vertex) => {
             const screen = getNodeScreens(graph, screenshots, vertex.id).find(
               (s) => s.source,

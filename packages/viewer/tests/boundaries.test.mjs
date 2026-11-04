@@ -54,8 +54,11 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
     if (!/\.tsx?$/.test(file) || /stories/.test(file)) continue;
     const source = await readFile(new URL(file, root), "utf8");
     // Named browser adapters own DOM effects, measurement and listeners, reaching the page only
-    // through their own elements' ownerDocument/defaultView, never through globals.
-    const browser = file.startsWith("browser/");
+    // through their own elements' ownerDocument/defaultView, never through globals. They live in
+    // `browser/`, or in a folder of their own beside the other components when they bring styles.
+    const browser =
+      file.startsWith("browser/") ||
+      /^components\/Browser[A-Z]\w*\//.test(file);
     assert.doesNotMatch(source, /window\.|document\./, file);
     if (!contextOwners.includes(file))
       assert.doesNotMatch(source, /useContext|createContext/, file);

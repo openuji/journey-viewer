@@ -1,4 +1,4 @@
-import { ExplorerBar, SegmentedControl } from "@journey-viewer/design-system";
+import { ExplorerBar } from "@journey-viewer/design-system";
 import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
 import type { ReactNode } from "react";
 import type { ViewerMode, ViewerSnapshot, ViewerTarget } from "@/navigation";
@@ -9,6 +9,7 @@ import { ControlledExpandCollapse } from "@/components/ExpandCollapse/ExpandColl
 import { ControlledTouchpointFilter } from "@/components/TouchpointFilter/TouchpointFilter";
 import { ControlledGraphSearch } from "@/components/GraphSearch/GraphSearch";
 import { ControlledResetView } from "@/components/ResetView/ResetView";
+import { ControlledTreeLayout } from "@/components/TreeLayout/TreeLayout";
 
 export interface JourneyNavigationProps {
   readonly graph: JourneyGraph;
@@ -32,11 +33,6 @@ export interface JourneyNavigationProps {
   /** Trailing bar content, such as source links. */
   readonly end?: ReactNode;
 }
-
-const modes = [
-  { value: "tree", label: "Tree" },
-  { value: "columns", label: "Columns" },
-] as const;
 
 /**
  * Controlled explorer bar; every result and summary is derived from source on each render. It
@@ -69,12 +65,7 @@ export function JourneyNavigation({
           touchpointIds={navigation.touchpointIds}
         />
       )}
-      <SegmentedControl
-        label="View"
-        options={modes}
-        value={navigation.mode}
-        onChange={onMode}
-      />
+      <ControlledTreeLayout mode={navigation.mode} onChange={onMode} />
       {navigation.mode === "tree" && (
         <ControlledExpandCollapse
           onExpandAll={onExpandAll}

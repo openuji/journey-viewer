@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
-import styles from "@/browser/BrowserLightbox.module.css";
+import styles from "@/components/BrowserLightbox/BrowserLightbox.module.css";
 
 export interface BrowserLightboxProps {
   readonly onClose: () => void;

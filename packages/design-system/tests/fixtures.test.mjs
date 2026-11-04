@@ -43,6 +43,7 @@ for (const name of [
   "FlowKey",
   "CanvasHeader",
   "Tooltip",
+  "InsetMap",
 ]) {
   const { [`create${name}Fixture`]: generate } = await import(
     `../src/components/${name}/${name}.fixtures.ts`

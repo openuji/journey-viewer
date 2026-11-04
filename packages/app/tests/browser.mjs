@@ -176,10 +176,10 @@ try {
   const title = page.getByRole("heading", { level: 1 });
   const status = page.locator('[data-application-header] [role="status"]');
   const viewer = page.locator("[data-application-viewer]");
-  const view = page.getByRole("group", { name: "View" });
+  const view = page.getByRole("group", { name: "View", exact: true });
   const canvas = page.getByRole("region", { name: "Journey flow" });
 
-  await test("the served page shows Solid-OIDC in Tree, Columns and Flow under a sub-path", async () => {
+  await test("the served page offers Tree and Flow, with Rows and Columns inside Tree, under a sub-path", async () => {
     await page.goto(origin + mount);
     await viewer.locator("[data-explorer-bar]").waitFor();
     assert.equal(await title.textContent(), "solid-oidc.ujg.jsonld");
@@ -221,10 +221,57 @@ try {
     assert.equal(await viewer.locator("[data-state-ref]").count(), 47);
     await page.screenshot({ path: join(evidence, "tree-1440.png") });
 
-    await view.getByRole("button", { name: "Columns" }).click();
-    await page.locator('[data-view="columns"]').waitFor();
+    assert.deepEqual(await view.getByRole("button").allTextContents(), [
+      "Tree",
+      "Flow",
+    ]);
+    const layout = viewer
+      .locator("[data-explorer-bar]")
+      .getByRole("group", { name: "Tree layout", exact: true });
+    assert.equal(await viewer.locator("[data-canvas-header]").count(), 0);
+    assert.equal(await layout.locator('[data-icon="layout-rows"]').count(), 1);
+    assert.equal(
+      await layout.locator('[data-icon="layout-columns"]').count(),
+      1,
+    );
+    assert.equal(
+      await layout
+        .getByRole("button", { name: "Rows" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    const columns = layout.getByRole("button", { name: "Columns" });
+    await columns.focus();
+    await columns.press("Enter");
+    await viewer.getByRole("group", { name: "Journey columns" }).waitFor();
+    assert.equal(
+      await view
+        .getByRole("button", { name: "Tree" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(
+      await viewer.getByRole("button", { name: "Expand all" }).count(),
+      0,
+    );
     await page.screenshot({ path: join(evidence, "columns-1440.png") });
 
+    await view.getByRole("button", { name: "Flow" }).click();
+    await canvas.waitFor();
+    assert.equal(await layout.count(), 0);
+    await view.getByRole("button", { name: "Tree" }).click();
+    assert.equal(
+      await layout
+        .getByRole("button", { name: "Columns" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await layout.getByRole("button", { name: "Rows" }).click();
+    assert.equal(
+      await viewer.locator("[data-state-ref]").count(),
+      47,
+      "rows retain the expanded hierarchy",
+    );
     await view.getByRole("button", { name: "Flow" }).click();
     await canvas.waitFor();
     assert.ok(
@@ -408,25 +455,32 @@ try {
     assert.deepEqual(errors, []);
   });
 
-  await test("no page overflow at 320–1440 in Tree and Flow", async () => {
+  await test("no page overflow at 320–1440 in Tree Rows, Tree Columns and Flow", async () => {
     await page.goto(origin + mount);
     await viewer.locator("[data-explorer-bar]").waitFor();
-    for (const view of ["Tree", "Flow"]) {
+    for (const presentation of ["Rows", "Columns", "Flow"]) {
       for (const width of [320, 375, 859, 860, 1099, 1100, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page
-          .getByRole("group", { name: "View" })
-          .getByRole("button", { name: view })
+          .getByRole("group", { name: "View", exact: true })
+          .getByRole("button", {
+            name: presentation === "Flow" ? "Flow" : "Tree",
+          })
           .click();
+        if (presentation !== "Flow")
+          await viewer
+            .getByRole("group", { name: "Tree layout" })
+            .getByRole("button", { name: presentation })
+            .click();
         const overflow = await page.evaluate(
           () =>
             document.documentElement.scrollWidth -
             document.documentElement.clientWidth,
         );
-        assert.equal(overflow, 0, `${view} at ${width}px`);
+        assert.equal(overflow, 0, `${presentation} at ${width}px`);
         if (width === 375)
           await page.screenshot({
-            path: join(evidence, `${view.toLowerCase()}-375.png`),
+            path: join(evidence, `${presentation.toLowerCase()}-375.png`),
           });
       }
     }

@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  Columns3,
   Expand,
   File,
   Info,
@@ -31,6 +32,8 @@ export type IconName =
   | "close"
   | "check"
   | "file"
+  | "layout-rows"
+  | "layout-columns"
   | "align-median"
   | "align-centre"
   | "align-left"
@@ -56,6 +59,8 @@ const glyphs: Readonly<Record<IconName, LucideIcon>> = {
   close: X,
   check: Check,
   file: File,
+  "layout-rows": Rows3,
+  "layout-columns": Columns3,
   // Placement: states placed by their connections, centred on an axis, or flush left.
   "align-median": Workflow,
   "align-centre": AlignCenterVertical,
