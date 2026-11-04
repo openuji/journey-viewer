@@ -64,6 +64,7 @@ export { JourneyContractControls } from "@/components/JourneyContractControls/Jo
 export type {
   JourneyContractControlsProps,
   ContractSelection,
+  JourneyExitRouteMark,
 } from "@/components/JourneyContractControls/JourneyContractControls";
 export { JourneyContracts } from "@/components/JourneyContracts/JourneyContracts";
 export type {

@@ -8,6 +8,7 @@ import {
   oidcGraph,
   screensGraph,
   topologyGraph,
+  transitionAccountingGraph,
 } from "~/.storybook/documents";
 import {
   oidcScreenshots,
@@ -33,6 +34,9 @@ export const MultipleRootsAndRecursion: Story = {
 export const Empty: Story = { args: { graph: emptyGraph } };
 export const EmptyComposites: Story = {
   args: { graph: emptyCompositesGraph },
+};
+export const TransitionAccounting: Story = {
+  args: { graph: transitionAccountingGraph },
 };
 export const IndependentInstances: Story = {
   render: (args) => (

@@ -68,6 +68,8 @@ export interface ViewerRowHighlight {
   readonly tone: "active" | "incoming" | "outgoing" | "both" | "dim";
   /** Transitions from the row to the active state. */
   readonly incoming: number;
+  /** Transitions from the active state back to itself. */
+  readonly selfLoops?: number;
   /** Transitions from the active state to the row. */
   readonly outgoing: number;
 }
@@ -305,8 +307,17 @@ export function getRowHighlight(
     return undefined;
   const journey = resolveSelection(graph, active)?.journey;
   if (!journey) return undefined;
-  if (active.nodeId === stateId)
-    return { tone: "active", incoming: 0, outgoing: 0 };
+  if (active.nodeId === stateId) {
+    const selfLoops = journey.transitions.filter(
+      (edge) => edge.from === stateId && edge.to === stateId,
+    ).length;
+    return {
+      tone: "active",
+      incoming: 0,
+      ...(selfLoops ? { selfLoops } : {}),
+      outgoing: 0,
+    };
+  }
   const incoming = journey.transitions.filter(
     (edge) => edge.from === stateId && edge.to === active.nodeId,
   ).length;
@@ -345,6 +356,13 @@ export function getRouteDescription(
     graph.states.find((node) => node.id === id)?.label ?? id;
   const describe = (heading: string, edges: readonly Transition[]) =>
     edges.length ? [heading, ...edges.map((edge) => `• ${edge.label}`)] : [];
+  if (stateId === active.nodeId)
+    return describe(
+      `Self-loops on ${nodeLabel(stateId)}:`,
+      journey.transitions.filter(
+        (edge) => edge.from === stateId && edge.to === stateId,
+      ),
+    ).join("\n");
   return [
     ...describe(
       `${nodeLabel(stateId)} → ${nodeLabel(active.nodeId)}:`,

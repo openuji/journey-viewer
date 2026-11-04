@@ -131,7 +131,12 @@ test("search and row-relation fixtures distinguish valid empty text from malform
     checkStateRowFixture(
       freeze(
         createStateRowFixture({
-          marks: { incoming: 1, outgoing: 0, title: "Routes" },
+          marks: {
+            incoming: 1,
+            selfLoops: 2,
+            outgoing: 0,
+            title: "Routes",
+          },
         }),
       ),
     ),
@@ -139,6 +144,7 @@ test("search and row-relation fixtures distinguish valid empty text from malform
   );
   for (const marks of [
     { incoming: -1, outgoing: 0 },
+    { incoming: 0, selfLoops: -1, outgoing: 0 },
     { incoming: 1 },
     { incoming: 0, outgoing: 0, title: "" },
   ]) {
@@ -215,6 +221,33 @@ test("inspection and contract-control fixtures independently reject malformed ne
     assert.ok(
       checkJourneyContractControlsFixture(
         freeze(createJourneyContractControlsFixture({ selection })),
+      ).length > 0,
+    );
+  }
+  assert.deepEqual(
+    checkJourneyContractControlsFixture(
+      freeze(
+        createJourneyContractControlsFixture({
+          exitRoutes: [
+            { exitId: "exit:success", count: 2, title: "Two routes" },
+          ],
+        }),
+      ),
+    ),
+    [],
+  );
+  for (const exitRoutes of [
+    false,
+    [{ exitId: "missing", count: 1 }],
+    [{ exitId: "exit:success", count: -1 }],
+    [
+      { exitId: "exit:success", count: 1 },
+      { exitId: "exit:success", count: 2 },
+    ],
+  ]) {
+    assert.ok(
+      checkJourneyContractControlsFixture(
+        freeze(createJourneyContractControlsFixture({ exitRoutes })),
       ).length > 0,
     );
   }

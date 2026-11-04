@@ -21,6 +21,9 @@ export const checkStateRowFixture: FixtureCheck = (value) => [
     : []),
   ...nested(value, "marks", (marks) => [
     ...count(marks, "incoming"),
+    ...(object(marks) && marks.selfLoops !== undefined
+      ? count(marks, "selfLoops")
+      : []),
     ...count(marks, "outgoing"),
     ...(object(marks) && marks.title !== undefined ? text(marks, "title") : []),
   ]),

@@ -25,7 +25,8 @@ expansion, filtering, callback, or mode props. `StateRow` is the controlled row
 ported from the original hierarchy: a composite with `onToggle` renders a
 disclosure button, and a composite without it renders a decorative caret that is
 accented while `expanded` (columns use this). `tone` (`active`, `incoming`,
-`outgoing`, `both`, `dim`) and `marks` (`{ incoming, outgoing, title? }`) present
+`outgoing`, `both`, `dim`) and `marks`
+(`{ incoming, selfLoops?, outgoing, title? }`) present
 the caller's relation to the active state, with an accessible explanation of the
 marks; `selected` highlights the whole row. `description` shows faint secondary
 text (hidden below `md`), `crossing` a touchpoint dot, and `actions` caller
@@ -205,8 +206,10 @@ and mode properties, and checks both counts independently.
 `JourneyContractControls` is the interactive counterpart to `JourneyContracts`:
 it receives the same readonly items, an explicit `{ kind, id } | null` selection,
 a required `onSelect(kind, id)` callback, and an explicit `open` flag with
-`onToggle`. Closed, it shows only the “1 entry · 2 exits” summary toggle; open, it
-lists entry and exit chips (with a muted “default”). It composes `Button` and `Text`;
+`onToggle`. Optional `exitRoutes` add the active state's aggregate `→n` to the summary
+and the corresponding `→n` to each expanded exit chip. Closed, it shows only the
+“1 entry · 2 exits” summary toggle; open, it lists entry and exit chips (with a muted
+“default”). It composes `Button` and `Text`;
 static contract lists remain noninteractive. Fixture checks reject selections
 that do not name a listed contract of the same kind.
 

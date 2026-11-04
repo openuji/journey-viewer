@@ -5,6 +5,7 @@ import {
 } from "@journey-viewer/design-system";
 import type {
   HeadingLevel,
+  JourneyExitRouteMark,
   StateRowProps,
 } from "@journey-viewer/design-system";
 import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
@@ -77,6 +78,35 @@ const primaryTouchpoint = (
     label: touchpointLabel(touchpoint, presentation),
     ...(color ? { color } : {}),
   };
+};
+
+const exitRouteMarks = (
+  journey: Journey,
+  active: ViewerSelection | null,
+): readonly JourneyExitRouteMark[] => {
+  if (active?.kind !== "state" || active.journeyId !== journey.id) return [];
+  const state = journey.states.find((node) => node.id === active.nodeId);
+  if (!state) return [];
+  const seen = new Set<string>();
+  return journey.exits.flatMap((exit) => {
+    if (seen.has(exit.id)) return [];
+    seen.add(exit.id);
+    const edges = journey.transitions.filter(
+      (edge) => edge.from === active.nodeId && edge.to === exit.id,
+    );
+    return edges.length
+      ? [
+          {
+            exitId: exit.id,
+            count: edges.length,
+            title: [
+              `${state.label} → ${exit.label}:`,
+              ...edges.map((edge) => `• ${edge.label}`),
+            ].join("\n"),
+          },
+        ]
+      : [];
+  });
 };
 
 /** Controlled UJG composition; callers own the immutable snapshot and its transitions. */
@@ -226,6 +256,9 @@ export function JourneyExplorer({
                 tone: highlight.tone,
                 marks: {
                   incoming: highlight.incoming,
+                  ...(highlight.selfLoops
+                    ? { selfLoops: highlight.selfLoops }
+                    : {}),
                   outgoing: highlight.outgoing,
                   title: getRouteDescription(
                     graph,
@@ -311,6 +344,10 @@ export function JourneyExplorer({
       renderContracts={(journey, contracts, occurrence) => (
         <JourneyContractControls
           {...contracts}
+          exitRoutes={exitRouteMarks(
+            journey,
+            navigation?.hover ?? interaction.selection,
+          )}
           open={interaction.openContracts.includes(journey.id)}
           onToggle={() => onToggleContracts?.(journey.id)}
           filtered={filtered(journey)}

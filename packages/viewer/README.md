@@ -188,9 +188,13 @@ the tree, blank search, all touchpoints and no hover, and scrolls the viewer int
 
 Rows show relations to the selected state in the same journey: incoming rows are
 tinted green with ←n, outgoing rows purple with →n, both with a split stripe,
-unrelated rows are dimmed and the active row gets a dark stripe. The selected row is
-highlighted as a whole. Marks count explicit local transitions and their title lists
-them. Entry/exit counts are not shown on rows. `JourneyViewer` does not report row
+unrelated rows are dimmed and the active row gets a dark stripe with a neutral ↻n
+for explicit self-loops. The selected row is highlighted as a whole. Marks count
+explicit local transitions and their title lists them. Active-state routes to journey
+exits appear as an aggregate violet →n on the entry/exit summary and per exit when
+expanded. The inspector totals can therefore be reconstructed as incoming = row ←n
+plus ↻n, and outgoing = row →n plus ↻n plus exit-summary →n. Entry counts are not shown
+on rows. `JourneyViewer` does not report row
 hover, so hovering a row changes nothing (Stage 14). A controlled composition can still
 pass `JourneyExplorer.onHover` and `hoverNode`: `getRowHighlight` then relates rows to
 the hovered state, else the selection.

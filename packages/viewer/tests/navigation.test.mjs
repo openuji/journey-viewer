@@ -21,6 +21,7 @@ import {
   searchViewer,
   getNavigationItems,
   getRowHighlight,
+  getRouteDescription,
 } from "@journey-viewer/viewer";
 import { edContext, freeze, graphOf } from "~/tests/graphs.mjs";
 
@@ -451,6 +452,27 @@ test("hover overrides selection for row highlights relative to the active state;
         from: "urn:test:terminal",
         to: "urn:test:compose",
       },
+      {
+        "@id": "urn:test:self-1",
+        "@type": "Transition",
+        label: "Stay put",
+        from: "urn:test:terminal",
+        to: "urn:test:terminal",
+      },
+      {
+        "@id": "urn:test:self-2",
+        "@type": "Transition",
+        label: "Try again",
+        from: "urn:test:terminal",
+        to: "urn:test:terminal",
+      },
+      {
+        "@id": "urn:test:compose-self",
+        "@type": "Transition",
+        label: "Keep composing",
+        from: "urn:test:compose",
+        to: "urn:test:compose",
+      },
     ].map((node) =>
       node["@id"] === "urn:test:first"
         ? {
@@ -459,11 +481,34 @@ test("hover overrides selection for row highlights relative to the active state;
               "urn:test:back",
               "urn:test:forward",
               "urn:test:again",
+              "urn:test:self-1",
+              "urn:test:self-2",
+              "urn:test:compose-self",
             ],
           }
         : node,
     ),
   });
+  assert.deepEqual(
+    getRowHighlight(
+      graphOf(bidirectional),
+      selected.interaction,
+      selected.navigation,
+      "urn:test:first",
+      "urn:test:terminal",
+    ),
+    { tone: "active", incoming: 0, selfLoops: 2, outgoing: 0 },
+  );
+  const loopDescription = getRouteDescription(
+    graphOf(bidirectional),
+    selected.navigation,
+    selected.interaction,
+    "urn:test:first",
+    "urn:test:terminal",
+  );
+  assert.match(loopDescription, /^Self-loops on Averylong/);
+  assert.equal((loopDescription.match(/Stay put/g) ?? []).length, 1);
+  assert.equal((loopDescription.match(/Try again/g) ?? []).length, 1);
   assert.deepEqual(
     getRowHighlight(
       graphOf(bidirectional),
@@ -480,6 +525,16 @@ test("hover overrides selection for row highlights relative to the active state;
       journeyId: "urn:test:first",
       nodeId: "urn:test:compose",
     }),
+  );
+  assert.deepEqual(
+    getRowHighlight(
+      graphOf(bidirectional),
+      composeHover.interaction,
+      composeHover.navigation,
+      "urn:test:first",
+      "urn:test:compose",
+    ),
+    { tone: "active", incoming: 0, selfLoops: 1, outgoing: 0 },
   );
   assert.deepEqual(
     getRowHighlight(

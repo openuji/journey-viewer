@@ -13,6 +13,8 @@ export type StateRowTone = "active" | "incoming" | "outgoing" | "both" | "dim";
 export interface StateRowMarks {
   /** Transitions from this row to the active state. */
   readonly incoming: number;
+  /** Transitions from the active state back to itself. */
+  readonly selfLoops?: number;
   /** Transitions from the active state to this row. */
   readonly outgoing: number;
   readonly title?: string;
@@ -59,8 +61,10 @@ export function StateRow({
   notice,
   children,
 }: StateRowProps) {
+  const selfLoops = marks?.selfLoops ?? 0;
   const showMarks =
-    marks !== undefined && (marks.incoming > 0 || marks.outgoing > 0);
+    marks !== undefined &&
+    (marks.incoming > 0 || selfLoops > 0 || marks.outgoing > 0);
   return (
     <div className={styles.container} data-filtered={filtered || undefined}>
       <div
@@ -141,6 +145,11 @@ export function StateRow({
                 ←{marks.incoming}
               </Text>
             )}
+            {selfLoops > 0 && (
+              <Text variant="caption" tone="accent" weight="semibold" aria-hidden="true">
+                ↻{selfLoops}
+              </Text>
+            )}
             {marks.outgoing > 0 && (
               <Text
                 variant="caption"
@@ -155,6 +164,9 @@ export function StateRow({
               {[
                 marks.incoming > 0
                   ? `${marks.incoming} ${marks.incoming === 1 ? "transition" : "transitions"} into the active state`
+                  : "",
+                selfLoops > 0
+                  ? `${selfLoops} self-loop ${selfLoops === 1 ? "transition" : "transitions"} on the active state`
                   : "",
                 marks.outgoing > 0
                   ? `${marks.outgoing} ${marks.outgoing === 1 ? "transition" : "transitions"} from the active state`

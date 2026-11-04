@@ -36,6 +36,10 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   const props = {
     entries: [{ id: "e", label: "Begin", default: true }],
     exits: [{ id: "x", label: "Complete" }],
+    exitRoutes: [
+      { exitId: "x", count: 2, title: "Review → Complete" },
+      { exitId: "x", count: 9, title: "Duplicate is ignored" },
+    ],
     selection: { kind: "entry", id: "e" },
     onSelect: () => assert.fail("rendering does not invoke event callbacks"),
     onToggle: () => assert.fail("rendering does not invoke event callbacks"),
@@ -47,6 +51,10 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1);
   assert.match(html, /aria-expanded="true"/);
   assert.match(html, />1 entry · 1 exit</);
+  assert.equal((html.match(/→2/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /→9/);
+  assert.match(html, /2 transitions from the active state to journey exits/);
+  assert.match(html, /2 transitions from the active state to this exit/);
   assert.match(html, /Begin<span[^>]*>default<\/span>/);
   assert.match(html, /type="button"/);
   const closed = renderToStaticMarkup(
@@ -55,7 +63,29 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   assert.equal((closed.match(/<button/g) ?? []).length, 1);
   assert.match(closed, /aria-expanded="false"/);
   assert.match(closed, />1 entry · no exits</);
+  assert.doesNotMatch(closed, /→[0-9]/);
   assert.doesNotMatch(closed, /Begin/);
+  const repeatedExit = renderToStaticMarkup(
+    h(JourneyContractControls, {
+      ...props,
+      open: false,
+      exits: [props.exits[0], props.exits[0]],
+      exitRoutes: [{ exitId: "x", count: 2 }],
+    }),
+  );
+  assert.match(repeatedExit, />1 entry · 2 exits</);
+  assert.match(repeatedExit, /→2/);
+  assert.doesNotMatch(repeatedExit, /→4/);
+  assert.doesNotMatch(
+    renderToStaticMarkup(
+      h(JourneyContractControls, {
+        ...props,
+        open: false,
+        exitRoutes: [{ exitId: "x", count: 0 }],
+      }),
+    ),
+    /→0/,
+  );
 });
 
 test("inspector presentation uses shared semantics and safely renders readonly plain-text details", () => {
@@ -369,7 +399,7 @@ test("row tones and marks describe the active state's local transitions without 
     h(StateRow, {
       label: "Login",
       tone: "both",
-      marks: { incoming: 1, outgoing: 2, title: "Routes" },
+      marks: { incoming: 1, selfLoops: 3, outgoing: 2, title: "Routes" },
       crossing: { label: "Identity provider", color: "red" },
       description: "Nested journey",
     }),
@@ -377,10 +407,11 @@ test("row tones and marks describe the active state's local transitions without 
   assert.match(html, /data-tone="both"/);
   assert.match(html, /title="Routes"/);
   assert.match(html, /←1/);
+  assert.match(html, /↻3/);
   assert.match(html, /→2/);
   assert.match(
     html,
-    /1 transition into the active state, 2 transitions from the active state/,
+    /1 transition into the active state, 3 self-loop transitions on the active state, 2 transitions from the active state/,
   );
   assert.match(html, /aria-label="Crosses into Identity provider"/);
   assert.match(html, /Nested journey/);
@@ -388,7 +419,7 @@ test("row tones and marks describe the active state's local transitions without 
     renderToStaticMarkup(
       h(StateRow, { label: "Plain", marks: { incoming: 0, outgoing: 0 } }),
     ),
-    /←|→/,
+    /←|↻|→/,
   );
 });
 

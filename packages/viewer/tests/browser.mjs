@@ -191,7 +191,7 @@ try {
     const stories = Object.values(index.entries).filter(
       (entry) => entry.type === "story",
     );
-    assert.equal(stories.length, 53);
+    assert.equal(stories.length, 54);
     assert.ok(stories.every((entry) => entry.title.startsWith("Viewer/")));
     for (const story of stories) {
       await page.goto(`${url}/iframe.html?id=${story.id}&viewMode=story`);
@@ -1219,6 +1219,87 @@ try {
     await first().getByText("No journeys.", { exact: true }).waitFor();
     await mode(first(), "Columns").click();
     assert.equal(await first().locator("[data-journey-ref]").count(), 0);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("tree marks reconcile incoming and outgoing totals across state rows, self-loops and exits", async () => {
+    await page.goto(
+      `${url}/iframe.html?id=viewer-journeyviewer--transition-accounting&viewMode=story`,
+    );
+    const scope = page.locator("#storybook-root");
+    await scope
+      .getByRole("heading", { name: "Transition accounting", exact: true })
+      .waitFor();
+    await scope
+      .getByRole("heading", { name: "Incoming 23", exact: true })
+      .waitFor();
+    await scope
+      .getByRole("heading", { name: "Outgoing 27", exact: true })
+      .waitFor();
+
+    const active = row(scope, "urn:test:accounting:active");
+    assert.match(await active.textContent(), /↻20/);
+    assert.match(await active.ariaSnapshot(), /20 self-loop transitions/);
+
+    const contractToggle = scope.getByRole("button", {
+      name: "1 entry · 2 exits",
+      exact: true,
+    });
+    assert.match(await contractToggle.textContent(), /→5/);
+    assert.match(
+      await contractToggle.getAttribute("aria-describedby"),
+      /summary$/,
+    );
+    await contractToggle.click();
+    assert.match(
+      await scope
+        .locator('[data-contract-ref="urn:test:accounting:complete"]')
+        .getByRole("button")
+        .textContent(),
+      /→2/,
+    );
+    assert.match(
+      await scope
+        .locator('[data-contract-ref="urn:test:accounting:cancel"]')
+        .getByRole("button")
+        .textContent(),
+      /→3/,
+    );
+
+    const countMark = async (ids, mark) =>
+      (
+        await Promise.all(
+          ids.map(async (id) => {
+            const text = await row(scope, `urn:test:accounting:${id}`)
+              .locator('[data-role="caption"][aria-hidden="true"]')
+              .filter({ hasText: new RegExp(`^${mark}\\d+$`) })
+              .textContent();
+            return Number(text?.slice(1) ?? 0);
+          }),
+        )
+      ).reduce((total, count) => total + count, 0);
+    const marks = {
+      incoming: await countMark(["source-a", "source-b", "source-c"], "←"),
+      selfLoops: await countMark(["active"], "↻"),
+      outgoing: await countMark(["target-a", "target-b"], "→"),
+    };
+    assert.deepEqual(marks, { incoming: 3, selfLoops: 20, outgoing: 2 });
+    assert.equal(marks.incoming + marks.selfLoops, 23);
+    assert.equal(marks.outgoing + marks.selfLoops + 5, 27);
+
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth,
+        ),
+        false,
+        `transition accounting overflows at ${width}px`,
+      );
+      await scope.screenshot({
+        path: `${evidence}/transition-accounting-${width}.png`,
+      });
+    }
     assert.deepEqual(errors, []);
   });
 
@@ -2268,7 +2349,12 @@ try {
       .locator('[data-contract-kind="exit"]')
       .first()
       .getByRole("button");
-    const exitName = (await exit.textContent()).trim();
+    const exitName = await exit.evaluate((element) =>
+      [...element.childNodes]
+        .find((node) => node.nodeType === Node.TEXT_NODE)
+        ?.textContent?.trim(),
+    );
+    assert.ok(exitName);
     await exit.click();
     await inspector
       .getByRole("heading", { name: exitName, exact: true })

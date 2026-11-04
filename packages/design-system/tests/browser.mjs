@@ -213,8 +213,9 @@ try {
     const article = light().locator("article");
     await article.waitFor();
     const snapshot = await article.ariaSnapshot();
+    assert.match(snapshot, /1 self-loop transition on the active state/);
     assert.match(snapshot, /2 transitions from the active state/);
-    assert.doesNotMatch(snapshot, /←|→/);
+    assert.doesNotMatch(snapshot, /←|↻|→/);
     assert.equal((snapshot.match(/\bWeb\b/g) ?? []).length, 1);
     assert.equal(await article.getByRole("img", { name: "Web" }).count(), 0);
   });
