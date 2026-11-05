@@ -13,5 +13,7 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL("./dist/site", import.meta.url)),
     emptyOutDir: true,
+    // `generate --inline` can only be a single file when dynamic imports stay in the entry chunk.
+    rollupOptions: { output: { codeSplitting: false } },
   },
 });

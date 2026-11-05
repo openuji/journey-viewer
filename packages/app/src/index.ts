@@ -1,5 +1,8 @@
 export { Application } from "@/components/Application/Application";
-export type { ApplicationProps } from "@/components/Application/Application";
+export type {
+  ApplicationProps,
+  EmbeddedDocument,
+} from "@/components/Application/Application";
 export { ApplicationHeader } from "@/components/ApplicationHeader/ApplicationHeader";
 export type { ApplicationHeaderProps } from "@/components/ApplicationHeader/ApplicationHeader";
 export { ApplicationEmpty } from "@/components/ApplicationEmpty/ApplicationEmpty";

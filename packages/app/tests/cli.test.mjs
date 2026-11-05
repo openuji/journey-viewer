@@ -96,6 +96,64 @@ test("local screenshots are copied beside their map; remote ones stay where they
   );
 });
 
+test("--inline writes one self-contained index that embeds inputs and local screenshots", async () => {
+  await writeFile(
+    join(work, "maps", "inline-screenshots.json"),
+    JSON.stringify({
+      "urn:pay": "shots/pay.png?v=2",
+      "urn:pay-again": "./shots/pay.png",
+      "urn:remote": "https://images.example/remote.png",
+    }),
+  );
+  await writeFile(
+    join(work, "maps", "inline-touchpoints.json"),
+    JSON.stringify({ "urn:pay": { shortLabel: "Pay" } }),
+  );
+  const result = generate(
+    "checkout.json",
+    "--screenshots",
+    "maps/inline-screenshots.json",
+    "--touchpoints",
+    "maps/inline-touchpoints.json",
+    "--inline",
+    "--out",
+    "inline",
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Open inline\/index\.html directly/);
+  assert.deepEqual(await readdir(join(work, "inline")), ["index.html"]);
+  const html = await readFile(join(work, "inline", "index.html"), "utf8");
+  assert.match(html, /<script type="module"\s*>/);
+  const shell = html
+    .replace(/<script type="module"\s*>[\s\S]*?<\/script>/, "")
+    .replace(/<style>[\s\S]*?<\/style>/, "");
+  assert.doesNotMatch(
+    shell,
+    /<(?:script|link)\b[^<>]*(?:src|href)="\.\/assets\//,
+  );
+  assert.doesNotMatch(shell, /<link\b[^<>]+rel="stylesheet"/);
+  const payload =
+    /<script id="journey-viewer-source" type="application\/json">([\s\S]*?)<\/script>/.exec(
+      html,
+    )?.[1];
+  assert.ok(payload);
+  const embedded = JSON.parse(payload);
+  assert.equal(embedded.name, "checkout.json");
+  assert.equal(embedded.text, '{"@id":"urn:checkout"}');
+  assert.deepEqual(embedded.touchpoints, {
+    "urn:pay": { shortLabel: "Pay" },
+  });
+  assert.equal(embedded.screenshots["urn:pay"], "data:image/png;base64,cG5n");
+  assert.equal(
+    embedded.screenshots["urn:pay-again"],
+    embedded.screenshots["urn:pay"],
+  );
+  assert.equal(
+    embedded.screenshots["urn:remote"],
+    "https://images.example/remote.png",
+  );
+});
+
 test("a bad screenshot map, missing image or malformed presentation writes nothing; a retry succeeds", async () => {
   const cases = [
     [
@@ -192,6 +250,7 @@ test("usage mistakes print the usage and fail; --help succeeds", () => {
   const help = spawnSync("node", [cli, "--help"], { encoding: "utf8" });
   assert.equal(help.status, 0);
   assert.match(help.stdout, /--screenshots <file>/);
+  assert.match(help.stdout, /--inline/);
 });
 
 /** Starts `run` and resolves with its output once it serves. */

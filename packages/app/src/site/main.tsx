@@ -4,9 +4,16 @@ import "@journey-viewer/design-system/styles.css";
 import "@journey-viewer/viewer/styles.css";
 import "@/site/site.css";
 import { Application } from "@/components/Application/Application";
+import type { EmbeddedDocument } from "@/components/Application/Application";
 import { BrandLink } from "@/components/BrandLink/BrandLink";
 import type { DocumentSource } from "@/read-source";
+import {
+  isScreenshotMap,
+  isTouchpointPresentation,
+} from "@/presentation-input";
 import { VISUALISED_SOURCE } from "@/visualisation";
+
+const EMBEDDED_SOURCE_ID = "journey-viewer-source";
 
 const optionalText = (value: unknown) =>
   value === undefined || typeof value === "string";
@@ -21,6 +28,33 @@ function isDocumentSource(value: unknown): value is DocumentSource {
     optionalText(source.screenshots) &&
     optionalText(source.touchpoints)
   );
+}
+
+/** The source placed in a self-contained page by `journey-viewer generate --inline`. */
+function readEmbeddedSource(): EmbeddedDocument | undefined {
+  const element = document.getElementById(EMBEDDED_SOURCE_ID);
+  if (!element?.textContent) return undefined;
+  let value: unknown;
+  try {
+    value = JSON.parse(element.textContent);
+  } catch {
+    return undefined;
+  }
+  if (typeof value !== "object" || value === null) return undefined;
+  const embedded = value as Readonly<Record<string, unknown>>;
+  if (
+    typeof embedded.name !== "string" ||
+    typeof embedded.text !== "string" ||
+    !isScreenshotMap(embedded.screenshots) ||
+    !isTouchpointPresentation(embedded.touchpoints)
+  )
+    return undefined;
+  return {
+    name: embedded.name,
+    text: embedded.text,
+    screenshots: embedded.screenshots,
+    touchpoints: embedded.touchpoints,
+  };
 }
 
 /**
@@ -47,13 +81,15 @@ async function readVisualisedSource(): Promise<DocumentSource | undefined> {
   };
 }
 
-const source = await readVisualisedSource();
+const embedded = readEmbeddedSource();
+const source = embedded ? undefined : await readVisualisedSource();
 const root = document.getElementById("application-root");
 if (root)
   createRoot(root).render(
     // Home is this site's own folder, wherever it is deployed.
     <Application
       brand={<BrandLink href="./" />}
+      {...(embedded ? { embedded } : {})}
       {...(source ? { source } : {})}
     />,
   );

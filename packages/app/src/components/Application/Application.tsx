@@ -23,14 +23,23 @@ import styles from "@/components/Application/Application.module.css";
 export interface ApplicationProps {
   /** A document to open on mount, read by URL with its optional presentation inputs. */
   readonly source?: DocumentSource;
+  /** A document already present in the page, such as a self-contained generated site. */
+  readonly embedded?: EmbeddedDocument;
   /** Leading header content, such as a home link with a logo. */
   readonly brand?: ReactNode;
   /** Other ways to start while no journey is open, such as a link to an example. */
   readonly alternatives?: ReactNode;
 }
 
+export interface EmbeddedDocument extends SourceInput {
+  /** Shown while the document is checked and as the open journey's title. */
+  readonly name: string;
+}
+
 type ReadRequest = Readonly<
-  { kind: "file"; file: File } | { kind: "source"; source: DocumentSource }
+  | { kind: "file"; file: File }
+  | { kind: "source"; source: DocumentSource }
+  | { kind: "embedded"; embedded: EmbeddedDocument }
 >;
 interface LoadedDocument {
   readonly name: string;
@@ -44,9 +53,18 @@ interface LoadedDocument {
  * Reads a document, checks it with the application's policy and shows it in the viewer. Upload UJG
  * replaces it with a local one; a rejected replacement keeps the open journey.
  */
-export function Application({ source, brand, alternatives }: ApplicationProps) {
+export function Application({
+  source,
+  embedded,
+  brand,
+  alternatives,
+}: ApplicationProps) {
   const [request, setRequest] = useState<ReadRequest | null>(() =>
-    source ? { kind: "source", source } : null,
+    embedded
+      ? { kind: "embedded", embedded }
+      : source
+        ? { kind: "source", source }
+        : null,
   );
   const [loaded, setLoaded] = useState<LoadedDocument | null>(null);
   const [report, setReport] = useState<ApplicationReport>({ kind: "idle" });
@@ -109,7 +127,11 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
     // File.text cannot be aborted; this effect's lifetime guards late completions.
     let active = true;
     const name =
-      request.kind === "file" ? request.file.name : request.source.name;
+      request.kind === "file"
+        ? request.file.name
+        : request.kind === "source"
+          ? request.source.name
+          : request.embedded.name;
     setReport({ kind: "reading", name });
     async function open() {
       let input: SourceInput;
@@ -121,7 +143,9 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
                 screenshots: {},
                 touchpoints: {},
               }
-            : await readSource(currentRequest.source, controller.signal);
+            : currentRequest.kind === "source"
+              ? await readSource(currentRequest.source, controller.signal)
+              : currentRequest.embedded;
       } catch (error) {
         if (active)
           setReport({
@@ -172,7 +196,7 @@ export function Application({ source, brand, alternatives }: ApplicationProps) {
       {picker.input}
       <ApplicationHeader
         brand={brand}
-        placeholder={source?.name ?? "Open a journey"}
+        placeholder={embedded?.name ?? source?.name ?? "Open a journey"}
         report={report}
         onOpenFile={picker.open}
         onDownloadAssets={() => void downloadAssets()}

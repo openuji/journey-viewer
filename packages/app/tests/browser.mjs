@@ -15,7 +15,7 @@ import {
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { extname, join, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
 import { unzipSync, strFromU8 } from "fflate";
@@ -46,6 +46,7 @@ const run = (command, args, cwd) =>
 const work = await mkdtemp(join(tmpdir(), "journey-viewer-generate-"));
 const www = join(work, "www");
 const out = join(www, ...mount.split("/").filter(Boolean));
+const inlineOut = join(work, "inline");
 const served = [];
 let server, browser;
 try {
@@ -74,6 +75,22 @@ try {
       "inputs/touchpoints.json",
       "--out",
       `www${mount}`,
+    ],
+    work,
+  );
+  const inlineWritten = run(
+    "node",
+    [
+      join(work, "package", "dist", "cli", "cli.js"),
+      "generate",
+      "inputs/solid-oidc.ujg.jsonld",
+      "--screenshots",
+      "inputs/screenshots.json",
+      "--touchpoints",
+      "inputs/touchpoints.json",
+      "--inline",
+      "--out",
+      "inline",
     ],
     work,
   );
@@ -158,6 +175,48 @@ try {
     ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
       : {}),
+  });
+  await test("the inline page opens from file:// with its code, document and screenshots embedded", async () => {
+    assert.match(inlineWritten, /Open inline\/index\.html directly/);
+    assert.deepEqual(await readdir(inlineOut), ["index.html"]);
+    const inlinePage = await browser.newPage({
+      viewport: { width: 1440, height: 1000 },
+      reducedMotion: "reduce",
+    });
+    const inlineErrors = [];
+    inlinePage.on("pageerror", (error) => inlineErrors.push(error.message));
+    await inlinePage.goto(pathToFileURL(join(inlineOut, "index.html")).href);
+    const inlineViewer = inlinePage.locator("[data-application-viewer]");
+    await inlineViewer.waitFor();
+    assert.equal(
+      await inlinePage.getByRole("heading", { level: 1 }).textContent(),
+      "solid-oidc.ujg.jsonld",
+    );
+    await inlineViewer
+      .getByText("10 journeys · 47 states · 120 transitions · 37 screens", {
+        exact: true,
+      })
+      .waitFor();
+    const icon = inlinePage
+      .getByRole("link", { name: "Journey Viewer home", exact: true })
+      .locator("img");
+    assert.match(
+      await icon.getAttribute("src"),
+      /^data:image\/svg\+xml;base64,/,
+    );
+    await inlinePage
+      .getByRole("group", { name: "View", exact: true })
+      .getByRole("button", { name: "Flow" })
+      .click();
+    await inlineViewer
+      .getByRole("button", { name: "Screen: Sign-in required", exact: true })
+      .first()
+      .click();
+    const image = inlinePage.getByRole("dialog").locator("img").first();
+    await image.waitFor();
+    assert.match(await image.getAttribute("src"), /^data:image\/png;base64,/);
+    assert.deepEqual(inlineErrors, []);
+    await inlinePage.close();
   });
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1000 },

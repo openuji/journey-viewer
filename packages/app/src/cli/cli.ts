@@ -10,17 +10,18 @@ const usage = `Usage:
   journey-viewer run <document.jsonld> [options]
 
 Commands:
-  generate  Write a static Journey Viewer site for a UJG JSON-LD document into
-            a folder. The browser reads and draws the document; deploy the
-            folder to any static host, at any path.
+  generate  Write a Journey Viewer site for a UJG JSON-LD document. The default
+            output runs on a static host; --inline writes one local HTML file.
   run       Generate the site and serve it locally with Vite until stopped.
 
 Options:
   --screenshots <file>  Screenshot map (Surface ID -> image path); the local
-                        images it names are copied with it
+                        images it names are copied or embedded with it
   --touchpoints <file>  Touchpoint short labels and colors
   --out <folder>        New or empty folder to write (generate: journey-viewer;
                         run: a temporary folder, removed when it stops)
+  --inline              Put the app, inputs and local screenshots in index.html
+                        so it can be opened directly from the file system
   -h, --help            Show this help`;
 
 /** A mistake in the command line, answered with the usage. */
@@ -36,6 +37,7 @@ function parse(args: readonly string[]) {
         screenshots: { type: "string" },
         touchpoints: { type: "string" },
         out: { type: "string" },
+        inline: { type: "boolean" },
         help: { type: "boolean", short: "h" },
       },
     });
@@ -49,6 +51,7 @@ function parse(args: readonly string[]) {
   return {
     help: values.help === true,
     out: values.out,
+    inline: values.inline === true,
     inputs: {
       document: document ?? "",
       ...(values.screenshots ? { screenshots: values.screenshots } : {}),
@@ -70,18 +73,25 @@ async function main(argv: readonly string[]): Promise<void> {
     throw new UsageError(
       command ? `Unknown command: ${command}` : "Missing command.",
     );
-  const { help, out, inputs } = parse(args);
+  const { help, out, inline, inputs } = parse(args);
   if (help) return console.log(usage);
   if (command === "generate") {
     const generated = await generate({
       ...inputs,
       out: out ?? "journey-viewer",
+      inline,
     });
     return console.log(
-      `${wrote(generated)} Deploy the folder to any static host, or try it with \`journey-viewer run\`.`,
+      inline
+        ? `${wrote(generated)} Open ${relative(process.cwd(), generated.out) || "."}/index.html directly in a browser.`
+        : `${wrote(generated)} Deploy the folder to any static host, or try it with \`journey-viewer run\`.`,
     );
   }
-  const running = await run({ ...inputs, ...(out ? { out } : {}) });
+  const running = await run({
+    ...inputs,
+    ...(out ? { out } : {}),
+    inline,
+  });
   console.log(
     `${wrote(running.generated)}${running.temporary ? " It is removed when you stop." : ""}`,
   );

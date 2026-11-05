@@ -14,8 +14,8 @@ local-file reading and application-owned findings. Stage 10D restores the origin
 `pnpm test:parity` compares the two side by side while both dev servers run.
 Stage 15 turns the viewer into a composition kit; Stage 16 adds the portable
 application, `@journey-viewer/app`, whose `journey-viewer generate` command
-writes a static site for a document that runs on any static host, and whose
-`journey-viewer run` serves it locally with Vite.
+writes either a static-host folder or a self-contained `index.html` that opens
+directly from disk, and whose `journey-viewer run` serves it locally with Vite.
 
 ## Run
 
@@ -64,8 +64,9 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 - `packages/app`: the application (reading, check policy, findings header, empty
   state and its Tree/Flow arrangement), a prebuilt static site with a
   relative base, and the `journey-viewer` commands: `generate` copies the site
-  and a document into a folder, `run` also serves it with Vite. Its internal
-  component Storybook runs on port 6009. See [its README](packages/app/README.md).
+  and a document into a folder or inlines both into one double-clickable HTML
+  file, while `run` also serves it with Vite. Its internal component Storybook
+  runs on port 6009. See [its README](packages/app/README.md).
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export, the source layout check and the
   external-consumer smoke check with its fixture.

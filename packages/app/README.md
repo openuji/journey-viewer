@@ -15,6 +15,13 @@ journey-viewer generate checkout.jsonld \
   --touchpoints touchpoints.json \
   --out public/checkout
 
+# Or write one self-contained file that opens directly from disk.
+journey-viewer generate checkout.jsonld \
+  --screenshots screenshots.json \
+  --touchpoints touchpoints.json \
+  --inline \
+  --out portable/checkout
+
 # Generate it and serve it locally with Vite until Ctrl+C.
 journey-viewer run checkout.jsonld --screenshots screenshots.json
 ```
@@ -58,16 +65,24 @@ public/checkout/
     touchpoints.json    the touchpoint presentation, unchanged (optional)
 ```
 
+With `--inline`, it writes only `index.html`. The application code, CSS, icon,
+document, presentation maps and every local screenshot are embedded in that
+file. It can be opened directly with `file://` by double-clicking it; no local
+server or other runtime is needed. Screenshot URLs with a non-file scheme such
+as `https:` remain URLs, so those resources still require their original
+network access.
+
 `run` takes the same options. It generates into a temporary folder, removed when
 it stops, unless `--out` names one to keep, and serves it with Vite's preview
 server like a static host: a missing file answers 404. It prints the address
 (`http://localhost:4173/`, or the next free port).
 
-Nothing is rendered ahead of time. The browser reads `journey/source.json`, then
-the document, parses and checks it, and derives the graph in memory. Every URL is
-relative, so the folder works on any static host and under any path. Opening
-`index.html` from the file system does not work, because browsers do not let
-module scripts and `fetch` read local files; use `run` for a local look.
+Nothing is rendered ahead of time. In the default output, the browser reads
+`journey/source.json`, then the document, parses and checks it, and derives the
+graph in memory. Every URL is relative, so the folder works on any static host
+and under any path. Browsers do not let that default output's module script and
+`fetch` calls read local files; use `--inline` for a double-clickable page or
+`run` for a local server.
 
 - Screenshot paths resolve against the map's own folder, as in the browser. Local
   paths must stay inside that folder; URLs with a scheme (`https:`, `data:`) are
