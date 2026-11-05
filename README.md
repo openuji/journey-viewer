@@ -1,198 +1,71 @@
-# Journey Viewer
+<p align="center">
+  <a href="https://journey-viewer.openuji.org/">
+    <img
+      src="https://journey-viewer.openuji.org/brand/logo.svg"
+      alt="Journey Viewer"
+      width="420"
+    />
+  </a>
+</p>
 
-A standalone library workspace for viewing User Journey Graph documents, with
-an independent Astro landing site and Storybook nested at `apps/web`. The libraries include a captured Solid-OIDC baseline,
-readonly document types/pure queries, independently selected lint rules, a
-DTCG-driven design system with internal Storybook, static and interactive hierarchy
-components, immutable selection/navigation snapshots, an inspector, and controls
-for the tree and occurrence-aware columns, search, touchpoint filtering and graph
-navigation, screenshot previews/lightbox, and explicit readonly extension descriptors.
-Stage 10A adds the site's eye system and animation studies; Stage 10B composes the
-landing at `/`. Stage 10C adds the application at `/app/`, the Solid-OIDC route,
-local-file reading and application-owned findings. Stage 10D restores the original
-`journey-graph` hierarchy layout and behavior in the viewer and design system;
-`pnpm test:parity` compares the two side by side while both dev servers run.
-Stage 15 turns the viewer into a composition kit; Stage 16 adds the portable
-application, `@journey-viewer/app`, whose `journey-viewer generate` command
-writes either a static-host folder or a self-contained `index.html` that opens
-directly from disk, and whose `journey-viewer run` serves it locally with Vite.
+<p align="center">
+  <a href="https://github.com/openuji/journey-viewer/actions/workflows/tests.yml">
+    <img
+      src="https://github.com/openuji/journey-viewer/actions/workflows/tests.yml/badge.svg?branch=main"
+      alt="Tests"
+    />
+  </a>
+</p>
 
-## Run
+Journey Viewer is an open-source web application for exploring
+[User Journey Graph](https://ujg.specs.openuji.org/) documents. It turns canonical
+UJG JSON-LD into navigable tree and flow views, making journeys, states,
+transitions, touchpoints, screenshots, and nested paths easier to understand.
 
-Use Node.js 22.13 or newer and pnpm 11.9.0.
+Documents are read and visualised in the browser. Journey Viewer does not rewrite
+the source graph, fetch remote JSON-LD contexts, or upload local files to a server.
+
+[Open Journey Viewer](https://journey-viewer.openuji.org/app/)
+
+## Examples
+
+- [Solid-OIDC](https://journey-viewer.openuji.org/app/examples/solid-oidc/) — an
+  authentication journey with nested paths, touchpoints, and 37 interface
+  screenshots. [View the source](examples/solid-oidc/solid-oidc.ujg.jsonld).
+
+## Development
+
+Journey Viewer is a pnpm workspace and requires Node.js 22.13 or newer and
+pnpm 11.9.0.
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm test
 pnpm build
-pnpm format
-pnpm test:consumer
-pnpm test:visualise
 ```
 
-
-
-`pnpm build` builds the six parent library packages; `pnpm test` checks the
-formatting and source layout and verifies the packages and the captured baseline.
-`pnpm format` applies Prettier. `pnpm test:consumer` installs the packed libraries
-in a temporary project (see Distribution). `pnpm test:visualise` runs the packed
-`journey-viewer generate` on Solid-OIDC outside the workspace and checks the
-served output in Chromium. None of them includes `apps/web`. The web convenience
-commands delegate into that independent project: `pnpm build:app` builds its
-Astro landing to `apps/web/dist`; `pnpm build:storybook:web` builds its 45-story
-native Astro catalog. See [its README](apps/web/README.md) for all commands.
-
-## Layout
-
-- `apps/web`: independent nested Git/pnpm repository; Astro landing and application,
-  local brand tokens/primitives and native Astro Storybook on port 6008. Its `/app/`
-  routes mount the built `@journey-viewer/app` with the site's brand and example
-  (Stage 17), linking the app, design-system and viewer packages.
-- `packages/ujg-jsonld`: reads UJG: version detection, the readonly Editor's Draft
-  types and queries (`/ed`) and the projection to `JourneyGraph`, the
-  version-independent graph every view renders.
-- `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
-- `packages/design-system`: tokens, shared primitives, hierarchy compositions,
-  readonly presentation contracts, independent fixture checks, and Storybook.
-- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree (Rows or
-  Columns) and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
-  explicit occurrence paths and an instance-local React boundary with document-replacement reset.
-- `packages/flow-layout`: dependency-free layered layout of one flow-chart level
-  (positions and orthogonal metro-style routes for sized nodes and fixed-port
-  frames), with drawn sizes and spacing as options. It knows nothing of UJG;
-  `flow-spike/` composes it into nested journey frames.
-- `packages/app`: the application (reading, check policy, findings header, empty
-  state and its Tree/Flow arrangement), a prebuilt static site with a
-  relative base, and the `journey-viewer` commands: `generate` copies the site
-  and a document into a folder or inlines both into one double-clickable HTML
-  file, while `run` also serves it with Vite. Its internal component Storybook
-  runs on port 6009. See [its README](packages/app/README.md).
-- `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
-- `tests`: checks protecting the captured export, the source layout check and the
-  external-consumer smoke check with its fixture.
-- `PLAN.md`: agreed architecture, stage boundaries, and verification evidence.
-
-There are no placeholder packages. Open `/app/` to choose a local `.jsonld` or
-`.json` document, or `/app/examples/solid-oidc/` for the captured example with all
-37 screens. Local files stay in tab memory; there is no upload or persistence.
-JSON syntax failures are separate from findings. Shape errors and duplicate IDs
-block opening; unresolved references are warnings. Rejected replacements leave
-the current viewer and its interaction intact. A successful replacement resets
-the viewer, including when the document ID is unchanged. The example has explicit
-screenshot/presentation inputs; local documents do not inherit them.
-
-The new workspace does not import or link to the source repository. No YAML
-compiler, graph store, or deployment tooling is installed at
-this checkpoint. The library Storybooks stay internal to the app, viewer and design-system
-packages; the independent site owns its native Astro catalog. The query
-and lint packages have no runtime dependencies. Native
-JSON parsing, rule selection, and reporting remain separate application operations.
-No remote contexts or imports are fetched, and no findings from the selected
-checks is not a claim of full UJG conformance.
-
-Read [PLAN.md](PLAN.md) before continuing implementation and
-[the baseline notes](examples/solid-oidc/BASELINE.md) before changing the example.
-All workspaces are private; publication and deployment are separate later work.
-
-The design system starts with shared `Button`, `IconButton`, `Heading`, `Text`,
-`Badge`, and `Surface` primitives. Hierarchy compositions reuse them. DTCG is the
-source for namespaced CSS variables and Tailwind utilities; light and dark themes
-are selected with scoped `data-jv-theme` attributes.
+The component catalogues are available through Storybook:
 
 ```sh
-pnpm check:tokens
-pnpm check:fixtures
-pnpm build:design-system
-pnpm storybook
-pnpm build:storybook
-pnpm storybook:app
-pnpm build:storybook:app
-pnpm test:app:storybook
-pnpm test:design-system:browser
+pnpm storybook          # design system
+pnpm storybook:viewer   # viewer
+pnpm storybook:app      # complete application
 ```
 
-See [the design-system documentation](packages/design-system/README.md) for exports,
-primitive ownership, token authoring, theming, and browser-test setup. The site
-owns a separate local landing UI. Its application composes the built
-`@journey-viewer/app` and its CSS inside a scoped theme without changing the landing.
+## Packages
 
-The viewer has its own Storybook on port 6007 with its own light/dark theme
-toolbar, decorator and Vite setup; it imports only the design system's public
-exports and shows only viewer stories. It includes
-Solid-OIDC, multiple roots/recursion, empty documents, independent interactive
-instances, document replacement, and a compiled-consumer iframe for package/CSS
-verification. Run:
+- `@journey-viewer/app` — document loading, validation, application shell, and
+  static-site generation.
+- `@journey-viewer/viewer` — interactive Tree and Flow presentations.
+- `@journey-viewer/design-system` — shared tokens, primitives, and journey
+  components.
+- `@journey-viewer/ujg-jsonld` — readonly UJG types, queries, and graph projection.
+- `@journey-viewer/lint` — independently selectable UJG checks.
+- `@journey-viewer/flow-layout` — dependency-free layered flow layout.
 
-```sh
-pnpm storybook:viewer
-pnpm build:storybook:viewer
-pnpm test:viewer:browser
-```
+Package-specific usage and APIs are documented in each package directory.
 
-See [the viewer documentation](packages/viewer/README.md) for its readonly input
-contract and root/recursion presentation. `pnpm storybook` still runs the independent
-design-system catalog on port 6006. Navigation controls are available in the viewer
-stories and compiled consumer. Stage 8 adds screenshot previews, a keyboard
-lightbox, and live screenshot-map replacement. The example's
-[screenshots.json](examples/solid-oidc/screenshots.json) maps exact UJG Surface IDs
-to independent image paths; [touchpoints.json](examples/solid-oidc/touchpoints.json)
-supplies separate short labels and token colors. Callers can replace the screenshot
-map while retaining the loaded UJG object and its interaction state.
-Stage 9 adds caller-supplied inspector panels, annotations and state-row rendering
-overrides. Replacing/removing descriptors preserves interaction; removal restores
-built-ins. Examples live in the viewer Storybook and compiled consumer. Parsing
-and view selection stay explicit in the caller. The application package imports native
-JSON parsing, independently selected lint rules and the viewer's views explicitly;
-`apps/web` composes it (Stage 17). The site's browser acceptance suite is `pnpm --dir apps/web test:app:browser` after building.
+## License
 
-## Source conventions
-
-- Imports never use relative paths. Each package's `tsconfig.json` declares
-  `@/*` → `./src/*` and, for files outside `src` (Storybook, tests, scripts,
-  tokens), `~/*` → the package root. The viewer adds `~/examples/*` for the shared
-  example. A package's own `dist` is imported by its package name.
-- TypeScript modules are imported without `.js`/`.ts` (`@/components/Button/Button`);
-  real file names keep theirs (`.module.css`, `.json`, `.mjs`). All six packages
-  use TypeScript's `Bundler` resolution.
-- Tools read the same aliases: `tsc-alias --resolve-full-paths` turns them into
-  full `./module.js` paths in each package's tsc output, so published JavaScript
-  and declarations work in Node and under `nodenext`; Vite configs mirror them in
-  `resolve.alias` (which also serves Tailwind's CSS `@import`/`@reference`); the
-  design system and flow layout run their Node checks and tests with `tsx`, which
-  reads tsconfig paths.
-- Prettier formats the repository with default options; Markdown, the lockfile
-  and `examples/` are excluded. `tests/source-layout.test.mjs` rejects relative
-  imports, `.js`/`.ts` module extensions, and aliases or extensionless paths left
-  in built output.
-
-## Distribution
-
-The packages stay private and unpublished, but each one packs into a
-self-contained tarball (`pnpm --filter @journey-viewer/viewer pack`) holding only
-its manifest, README and `dist`.
-
-- ESM only, with declarations and compiled CSS. Consumers resolve the packages'
-  `exports` with TypeScript's `bundler`, `node16` or `nodenext` resolution.
-- Dependencies: `@journey-viewer/flow-layout`, `ujg-jsonld` and `lint` have none.
-  `@journey-viewer/app` depends on the viewer, design system, lint and
-  `ujg-jsonld`, on `vite` for `journey-viewer run`, and peers on `react`; its
-  `journey-viewer` bin runs on Node 22.13 or newer with the prebuilt site in its
-  own `dist`.
-  Peers: `react` ^19.2 for the design system and viewer; `@types/react` is an
-  optional peer for TypeScript consumers. The viewer depends on
-  `@journey-viewer/ujg-jsonld` and `@journey-viewer/design-system`; their packed
-  version is `0.0.0`, so install the tarballs together (with overrides if your
-  package manager resolves them from a registry).
-- CSS: import `@journey-viewer/design-system/styles.css`, then
-  `@journey-viewer/viewer/styles.css` (and `@journey-viewer/app/styles.css` for the
-  application's components). Both contain only CSS-module classes and
-  scoped `data-jv-theme` tokens. `reset.css` is an opt-in global reset;
-  `tokens.css` and `tailwind.css` serve consumers that build their own styles on
-  the tokens. Typing CSS side-effect imports is the consumer bundler's job (for
-  example `vite/client`).
-- `pnpm test:consumer` packs all six libraries, installs the tarballs in a
-  temporary project outside the workspace, type-checks them without Vite types
-  under `bundler` and `nodenext` resolution, server-renders `JourneyViewer`, a
-  composition and `Application`, lays out a flow level, resolves every CSS export
-  and runs the installed `journey-viewer generate` and `run`. It needs registry access or a warm pnpm store.
-
+Journey Viewer is available under the [MIT License](LICENSE), copyright 2026
+Open User Journey Initiative.

@@ -110,6 +110,14 @@ try {
   await test("the full application story supports keyboard ZIP export and a real local upload", async () => {
     await story("app-application--solid-oidc");
     await page.locator("[data-application-viewer]").waitFor();
+    await page.getByRole("contentinfo").waitFor();
+    assert.equal(
+      await page
+        .getByRole("contentinfo")
+        .getByRole("link", { name: "MIT", exact: true })
+        .getAttribute("href"),
+      "https://github.com/openuji/journey-viewer/blob/main/LICENSE",
+    );
     await download().focus();
     await page
       .getByText("Download UJG assets", { exact: true })

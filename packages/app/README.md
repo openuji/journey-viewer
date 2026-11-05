@@ -144,8 +144,10 @@ import "@journey-viewer/app/styles.css";
 - `brand` leads the header, followed by a divider; `alternatives` sits below the
   empty state's file button. Both are optional and style themselves.
 - The application sets the light theme on its root and renders the header (with
-  the page's `h1`) and the `main` landmark `#application`, so a page can offer a
-  "Skip to viewer" link.
+  the page's `h1`), the `main` landmark `#application` and a compact project footer,
+  so a page can offer a "Skip to viewer" link. The footer links to the MIT license,
+  the Journey Viewer repository and the Open User Journey Initiative; it stays in
+  normal document flow and does not cover the viewer.
 
 The viewer arrangement lives in one file,
 `src/components/ApplicationViewer/ApplicationViewer.tsx`: the explorer bar with

@@ -146,7 +146,12 @@ export function StateRow({
               </Text>
             )}
             {selfLoops > 0 && (
-              <Text variant="caption" tone="accent" weight="semibold" aria-hidden="true">
+              <Text
+                variant="caption"
+                tone="accent"
+                weight="semibold"
+                aria-hidden="true"
+              >
                 ↻{selfLoops}
               </Text>
             )}

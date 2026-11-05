@@ -10,6 +10,7 @@ import { readSource } from "@/read-source";
 import type { DocumentSource, SourceInput } from "@/read-source";
 import { ApplicationHeader } from "@/components/ApplicationHeader/ApplicationHeader";
 import { ApplicationEmpty } from "@/components/ApplicationEmpty/ApplicationEmpty";
+import { ApplicationFooter } from "@/components/ApplicationFooter/ApplicationFooter";
 import { ApplicationViewer } from "@/components/ApplicationViewer/ApplicationViewer";
 import { useFilePicker } from "@/file-picker";
 import {
@@ -221,6 +222,7 @@ export function Application({
           </ApplicationEmpty>
         )}
       </main>
+      <ApplicationFooter />
     </div>
   );
 }

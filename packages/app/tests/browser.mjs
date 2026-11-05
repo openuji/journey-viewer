@@ -36,6 +36,39 @@ const types = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
 };
+const footerCopy =
+  "Journey Viewer Community — MIT · GitHub · © Open User Journey Initiative";
+const footerLinks = [
+  ["MIT", "https://github.com/openuji/journey-viewer/blob/main/LICENSE"],
+  ["GitHub", "https://github.com/openuji/journey-viewer"],
+  ["Open User Journey Initiative", "https://openuji.org/"],
+];
+const assertFooter = async (page) => {
+  const footer = page.getByRole("contentinfo");
+  await footer.waitFor();
+  assert.equal(
+    await footer.locator("p").evaluate((element) =>
+      element.innerText
+        .replace(/\s+/g, " ")
+        .replace(/\s*—\s*/g, " — ")
+        .replace(/\s*·\s*/g, " · ")
+        .replace(/\s*©\s*/g, " © ")
+        .trim(),
+    ),
+    footerCopy,
+  );
+  assert.equal(
+    await footer.evaluate((element) => getComputedStyle(element).position),
+    "static",
+  );
+  for (const [name, href] of footerLinks) {
+    const link = footer.getByRole("link", { name, exact: true });
+    assert.equal(await link.getAttribute("href"), href);
+    assert.equal(await link.getAttribute("target"), "_blank");
+    assert.equal(await link.getAttribute("rel"), "noreferrer");
+  }
+  return footer;
+};
 const run = (command, args, cwd) =>
   execFileSync(command, args, {
     cwd,
@@ -188,6 +221,7 @@ try {
     await inlinePage.goto(pathToFileURL(join(inlineOut, "index.html")).href);
     const inlineViewer = inlinePage.locator("[data-application-viewer]");
     await inlineViewer.waitFor();
+    await assertFooter(inlinePage);
     assert.equal(
       await inlinePage.getByRole("heading", { level: 1 }).textContent(),
       "solid-oidc.ujg.jsonld",
@@ -274,6 +308,7 @@ try {
   await test("the served page offers Tree and Flow, with Rows and Columns inside Tree, under a sub-path", async () => {
     await page.goto(origin + mount);
     await viewer.locator("[data-explorer-bar]").waitFor();
+    await assertFooter(page);
     assert.equal(await title.textContent(), "solid-oidc.ujg.jsonld");
     assert.equal((await status.textContent()).trim(), "No findings");
     // The brand icon leads the header and links home: this site's own folder.
@@ -690,6 +725,32 @@ try {
       .waitFor();
     assert.equal(await title.textContent(), "Open a journey");
     assert.equal(await page.getByText("Loading viewer…").count(), 0);
+    const footer = await assertFooter(page);
+    assert.equal(
+      await footer.evaluate(
+        (element) =>
+          Math.round(element.getBoundingClientRect().bottom) === innerHeight,
+      ),
+      true,
+      "the empty application's footer rests at the viewport bottom",
+    );
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(
+        await footer.evaluate(
+          (element) =>
+            Math.round(element.getBoundingClientRect().bottom) === innerHeight,
+        ),
+        true,
+        `the empty footer rests at the viewport bottom at ${width}px`,
+      );
+      await footer.screenshot({
+        path: join(evidence, `footer-empty-${width}.png`),
+      });
+      await page.screenshot({
+        path: join(evidence, `application-empty-${width}.png`),
+      });
+    }
     assert.ok(
       served.includes(`${fallback}journey/source.json`),
       "the source was requested and answered with the page",
@@ -748,6 +809,56 @@ try {
           tip.x >= 0 && tip.x + tip.width <= width,
           `download tooltip fits ${width}`,
         );
+        const footer = page.getByRole("contentinfo");
+        await footer.scrollIntoViewIfNeeded();
+        for (const [name] of footerLinks) {
+          const link = footer.getByRole("link", { name, exact: true });
+          await link.focus();
+          assert.equal(
+            await link.evaluate(
+              (element, min) =>
+                document.activeElement === element &&
+                getComputedStyle(element).outlineStyle !== "none" &&
+                element.getBoundingClientRect().height >= min,
+              width < 860 ? 44 : 30,
+            ),
+            true,
+            `${name} focus and target at ${width}`,
+          );
+        }
+        await page.evaluate(() => {
+          if (document.activeElement instanceof HTMLElement)
+            document.activeElement.blur();
+        });
+        if ([320, 1440].includes(width)) {
+          const rows = await footer
+            .getByRole("link")
+            .evaluateAll(
+              (links) =>
+                new Set(
+                  links.map((link) =>
+                    Math.round(link.getBoundingClientRect().top),
+                  ),
+                ).size,
+            );
+          assert.equal(
+            width === 320 ? rows > 1 : rows === 1,
+            true,
+            `footer wraps only when needed at ${width}px`,
+          );
+          await footer.screenshot({
+            path: join(
+              evidence,
+              `footer-${presentation.toLowerCase()}-${width}.png`,
+            ),
+          });
+          await page.screenshot({
+            path: join(
+              evidence,
+              `application-footer-${presentation.toLowerCase()}-${width}.png`,
+            ),
+          });
+        }
         if (width === 375)
           await page.screenshot({
             path: join(evidence, `${presentation.toLowerCase()}-375.png`),

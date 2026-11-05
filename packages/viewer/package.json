@@ -10,6 +10,9 @@
     },
     "./styles.css": "./dist/styles.css"
   },
+  "imports": {
+    "#tests/*": "./tests/*"
+  },
   "files": [
     "dist"
   ],
