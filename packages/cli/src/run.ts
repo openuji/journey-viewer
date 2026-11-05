@@ -2,8 +2,8 @@ import { rmSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { generate } from "@/cli/generate";
-import type { GenerateOptions, Generated } from "@/cli/generate";
+import { generate } from "@/generate";
+import type { GenerateOptions, Generated } from "@/generate";
 
 export interface RunOptions extends Omit<GenerateOptions, "out"> {
   /** Where to generate the site; a temporary folder, removed on exit, by default. */

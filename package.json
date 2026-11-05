@@ -1,5 +1,5 @@
 {
-  "name": "journey-viewer",
+  "name": "journey-viewer-workspace",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -35,7 +35,7 @@
     "build:storybook": "pnpm --filter @journey-viewer/design-system build:storybook",
     "test:design-system:browser": "pnpm --filter @journey-viewer/design-system test:browser",
     "test:parity": "pnpm --filter @journey-viewer/viewer test:parity",
-    "test:visualise": "pnpm --filter @journey-viewer/app... build && pnpm --filter @journey-viewer/app test:browser"
+    "test:visualise": "pnpm --filter journey-viewer... build && pnpm --filter journey-viewer test:browser"
   },
   "devDependencies": {
     "prettier": "catalog:"

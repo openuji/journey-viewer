@@ -89,9 +89,6 @@ importers:
       fflate:
         specifier: 0.8.3
         version: 0.8.3
-      vite:
-        specifier: 'catalog:'
-        version: 8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
     devDependencies:
       '@storybook/addon-a11y':
         specifier: 'catalog:'
@@ -132,6 +129,31 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.23.15
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
+
+  packages/cli:
+    dependencies:
+      '@journey-viewer/app':
+        specifier: workspace:^0.2.0
+        version: link:../app
+      vite:
+        specifier: 'catalog:'
+        version: 8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.2
+      playwright:
+        specifier: 'catalog:'
+        version: 1.61.1
+      tsc-alias:
+        specifier: 'catalog:'
+        version: 1.9.7
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

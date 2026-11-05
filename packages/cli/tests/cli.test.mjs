@@ -16,8 +16,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const cli = fileURLToPath(new URL("../dist/cli/cli.js", import.meta.url));
-const site = fileURLToPath(new URL("../dist/site/", import.meta.url));
+const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+const site = fileURLToPath(
+  new URL("./", import.meta.resolve("@journey-viewer/app/site/index.html")),
+);
 const work = await mkdtemp(join(tmpdir(), "journey-viewer-cli-"));
 test.after(() => rm(work, { recursive: true, force: true }));
 const journey = (out) => join(work, out, "journey");

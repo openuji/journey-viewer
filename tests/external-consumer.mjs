@@ -1,4 +1,4 @@
-// Packs the six packages, installs the tarballs in a temporary project outside the
+// Packs the seven packages, installs the tarballs in a temporary project outside the
 // workspace and uses them there the way an external consumer would. Run after `pnpm build`.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -23,6 +23,7 @@ const names = [
   "viewer",
   "flow-layout",
   "app",
+  "cli",
 ];
 const repositoryUrl = "git+https://github.com/openuji/journey-viewer.git";
 const registry = "https://registry.npmjs.org/";
@@ -127,7 +128,16 @@ try {
         { access: "public", registry },
         name,
       );
-      if (name === "app") assert.equal(manifest.engines?.node, ">=22.13.0");
+      if (name === "cli") {
+        assert.equal(manifest.name, "journey-viewer");
+        assert.equal(manifest.engines?.node, ">=22.13.0");
+        // The command only launches: the application's package carries the prebuilt site and
+        // Vite serves it.
+        assert.deepEqual(Object.keys(manifest.dependencies ?? {}).sort(), [
+          "@journey-viewer/app",
+          "vite",
+        ]);
+      }
       assert.equal(
         Object.keys(manifest.imports ?? {}).some((key) =>
           key.startsWith("#tests"),
@@ -219,10 +229,8 @@ try {
     const cli = join(
       consumer,
       "node_modules",
-      "@journey-viewer",
-      "app",
+      "journey-viewer",
       "dist",
-      "cli",
       "cli.js",
     );
     // A piped stdin stays open: Vite's preview exits when stdin ends outside CI.

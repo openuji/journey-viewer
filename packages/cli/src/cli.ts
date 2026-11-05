@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { relative } from "node:path";
 import { parseArgs } from "node:util";
-import { generate } from "@/cli/generate";
-import type { Generated } from "@/cli/generate";
-import { run } from "@/cli/run";
+import { generate } from "@/generate";
+import type { Generated } from "@/generate";
+import { run } from "@/run";
 
 const usage = `Usage:
   journey-viewer generate <document.jsonld> [options]

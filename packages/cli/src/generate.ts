@@ -21,10 +21,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   SCREENSHOT_MAP_SHAPE,
   TOUCHPOINT_PRESENTATION_SHAPE,
+  VISUALISED_SOURCE,
   isScreenshotMap,
   isTouchpointPresentation,
-} from "@/presentation-input";
-import { VISUALISED_SOURCE } from "@/visualisation";
+} from "@journey-viewer/app/generated-site";
 
 export interface GenerateOptions {
   /** The UJG JSON-LD document; it is copied unchanged and checked in the browser. */
@@ -46,8 +46,10 @@ export interface Generated {
   readonly images: number;
 }
 
-/** The prebuilt site, beside this module in the package's dist. */
-const site = fileURLToPath(new URL("../site/", import.meta.url));
+/** The application's prebuilt site, which `@journey-viewer/app` ships. */
+const site = fileURLToPath(
+  new URL("./", import.meta.resolve("@journey-viewer/app/site/index.html")),
+);
 
 const mediaTypes: Readonly<Record<string, string>> = {
   ".avif": "image/avif",

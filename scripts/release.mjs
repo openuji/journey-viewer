@@ -15,6 +15,8 @@ const bugsUrl = "https://github.com/openuji/journey-viewer/issues";
 const publishVisibilityTimeout = 20 * 60 * 1_000;
 const publishVisibilityPoll = 10_000;
 
+// Dependency order. The command-line tool is the one unscoped package, so that
+// `npx journey-viewer` works; every other package lives in the @journey-viewer scope.
 export const packages = [
   "flow-layout",
   "lint",
@@ -22,9 +24,10 @@ export const packages = [
   "design-system",
   "viewer",
   "app",
+  "cli",
 ].map((shortName) => ({
   shortName,
-  name: `@journey-viewer/${shortName}`,
+  name: shortName === "cli" ? "journey-viewer" : `@journey-viewer/${shortName}`,
   directory: `packages/${shortName}`,
 }));
 
@@ -185,7 +188,7 @@ const validateManifest = (definition, manifest, manifests, expectedVersion) => {
     false,
     `${definition.name}: test imports must not be published`,
   );
-  if (definition.shortName === "app")
+  if (definition.shortName === "cli")
     assert.equal(
       manifest.engines?.node,
       ">=22.13.0",

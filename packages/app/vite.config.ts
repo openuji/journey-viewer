@@ -11,9 +11,13 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: "src/index.ts",
+      // `generated-site` is the Node-safe part the `journey-viewer` command reads.
+      entry: {
+        index: "src/index.ts",
+        "generated-site": "src/generated-site.ts",
+      },
       formats: ["es"],
-      fileName: "index",
+      fileName: (_format, name) => `${name}.js`,
       cssFileName: "styles",
     },
     rolldownOptions: {

@@ -27,13 +27,21 @@ the source graph, fetch remote JSON-LD contexts, or upload local files to a serv
 
 [Open Journey Viewer](https://journey-viewer.openuji.org/app/)
 
-## Install
+## Use
 
-Install the application package and its React peers:
+Turn a document into a site you can serve locally or deploy to any static host.
+Nothing needs installing first:
+
+```sh
+npx journey-viewer run checkout.jsonld
+npx journey-viewer generate checkout.jsonld --out public/checkout
+```
+
+To embed the application in your own React page, install the application package
+and its React peers:
 
 ```sh
 pnpm add @journey-viewer/app react react-dom
-pnpm exec journey-viewer --help
 ```
 
 The renderer, design system, JSON-LD utilities, lint checks, and flow layout are
@@ -66,8 +74,10 @@ pnpm storybook:app      # complete application
 
 ## Packages
 
-- `@journey-viewer/app` — document loading, validation, application shell, and
-  static-site generation.
+- `journey-viewer` — the command (`npx journey-viewer`) that writes or serves a
+  Journey Viewer site for a document.
+- `@journey-viewer/app` — document loading, validation, the application shell as
+  React components, and the prebuilt site the command launches.
 - `@journey-viewer/viewer` — interactive Tree and Flow presentations.
 - `@journey-viewer/design-system` — shared tokens, primitives, and journey
   components.

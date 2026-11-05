@@ -1,7 +1,7 @@
 {
   "name": "@journey-viewer/app",
-  "version": "0.1.0",
-  "description": "Application shell and static-site CLI for viewing User Journey Graph documents.",
+  "version": "0.2.0",
+  "description": "Application shell for viewing User Journey Graph documents: reading, checks, header and the Tree and Flow viewer.",
   "license": "MIT",
   "author": "Open User Journey Initiative",
   "homepage": "https://journey-viewer.openuji.org/",
@@ -18,24 +18,23 @@
     "user-journey-graph",
     "json-ld",
     "viewer",
-    "cli"
+    "react"
   ],
   "type": "module",
-  "engines": {
-    "node": ">=22.13.0"
-  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  },
-  "bin": {
-    "journey-viewer": "./dist/cli/cli.js"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./generated-site": {
+      "types": "./dist/generated-site.d.ts",
+      "import": "./dist/generated-site.js"
+    },
+    "./site/*": "./dist/site/*",
     "./styles.css": "./dist/styles.css"
   },
   "files": [
@@ -45,9 +44,8 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.site.config.ts && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && tsc -p tsconfig.cli.json && tsc-alias -p tsconfig.cli.json --resolve-full-paths",
+    "build": "vite build && vite build --config vite.site.config.ts && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths",
     "test": "pnpm build && tsc -p tsconfig.json && tsx --test tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs",
     "storybook": "pnpm --filter @journey-viewer/app... build && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev --no-open",
     "build:storybook": "pnpm --filter @journey-viewer/app... build && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
     "test:storybook": "node tests/storybook.mjs"
@@ -57,8 +55,7 @@
     "@journey-viewer/lint": "workspace:^0.1.0",
     "@journey-viewer/ujg-jsonld": "workspace:^0.1.0",
     "@journey-viewer/viewer": "workspace:^0.1.0",
-    "fflate": "0.8.3",
-    "vite": "catalog:"
+    "fflate": "0.8.3"
   },
   "peerDependencies": {
     "react": "^19.2.0",
@@ -76,6 +73,7 @@
     "@types/react-dom": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "playwright": "catalog:",
     "tsc-alias": "catalog:",

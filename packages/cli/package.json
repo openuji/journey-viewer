@@ -1,0 +1,52 @@
+{
+  "name": "journey-viewer",
+  "version": "0.1.0",
+  "description": "Command-line tool that turns a User Journey Graph JSON-LD document into a Journey Viewer site to open, serve or deploy.",
+  "license": "MIT",
+  "author": "Open User Journey Initiative",
+  "homepage": "https://journey-viewer.openuji.org/",
+  "bugs": {
+    "url": "https://github.com/openuji/journey-viewer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openuji/journey-viewer.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "user-journey",
+    "user-journey-graph",
+    "json-ld",
+    "viewer",
+    "cli"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "bin": {
+    "journey-viewer": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths",
+    "test": "pnpm build && tsc -p tsconfig.json && node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "dependencies": {
+    "@journey-viewer/app": "workspace:^0.2.0",
+    "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "playwright": "catalog:",
+    "tsc-alias": "catalog:",
+    "typescript": "catalog:"
+  }
+}
