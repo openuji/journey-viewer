@@ -30,12 +30,7 @@ pnpm test:consumer
 pnpm test:visualise
 ```
 
-```sh
-ln -s ../.. apps/web/.journey-viewer
-pnpm --dir apps/web install --frozen-lockfile
-pnpm dev
-pnpm storybook:web
-```
+
 
 `pnpm build` builds the six parent library packages; `pnpm test` checks the
 formatting and source layout and verifies the packages and the captured baseline.
@@ -59,17 +54,18 @@ native Astro catalog. See [its README](apps/web/README.md) for all commands.
 - `packages/lint`: pure rule runner, with UJG checks in a separate `/ujg` export.
 - `packages/design-system`: tokens, shared primitives, hierarchy compositions,
   readonly presentation contracts, independent fixture checks, and Storybook.
-- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree,
-  Columns and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
+- `packages/viewer`: static/controlled rendering of a `JourneyGraph` in Tree (Rows or
+  Columns) and Flow, without any UJG source knowledge, immutable interaction/navigation, derived inspection/highlights,
   explicit occurrence paths and an instance-local React boundary with document-replacement reset.
 - `packages/flow-layout`: dependency-free layered layout of one flow-chart level
   (positions and orthogonal metro-style routes for sized nodes and fixed-port
   frames), with drawn sizes and spacing as options. It knows nothing of UJG;
   `flow-spike/` composes it into nested journey frames.
 - `packages/app`: the application (reading, check policy, findings header, empty
-  state and its Tree/Columns/Flow arrangement), a prebuilt static site with a
+  state and its Tree/Flow arrangement), a prebuilt static site with a
   relative base, and the `journey-viewer` commands: `generate` copies the site
-  and a document into a folder, `run` also serves it with Vite. See [its README](packages/app/README.md).
+  and a document into a folder, `run` also serves it with Vite. Its internal
+  component Storybook runs on port 6009. See [its README](packages/app/README.md).
 - `examples/solid-oidc`: exported JSON-LD, provenance, and the behavior baseline.
 - `tests`: checks protecting the captured export, the source layout check and the
   external-consumer smoke check with its fixture.
@@ -86,7 +82,7 @@ screenshot/presentation inputs; local documents do not inherit them.
 
 The new workspace does not import or link to the source repository. No YAML
 compiler, graph store, or deployment tooling is installed at
-this checkpoint. The library Storybooks stay internal to the viewer and design-system
+this checkpoint. The library Storybooks stay internal to the app, viewer and design-system
 packages; the independent site owns its native Astro catalog. The query
 and lint packages have no runtime dependencies. Native
 JSON parsing, rule selection, and reporting remain separate application operations.
@@ -108,6 +104,9 @@ pnpm check:fixtures
 pnpm build:design-system
 pnpm storybook
 pnpm build:storybook
+pnpm storybook:app
+pnpm build:storybook:app
+pnpm test:app:storybook
 pnpm test:design-system:browser
 ```
 
@@ -196,28 +195,3 @@ its manifest, README and `dist`.
   composition and `Application`, lays out a flow level, resolves every CSS export
   and runs the installed `journey-viewer generate` and `run`. It needs registry access or a warm pnpm store.
 
-## Nested repository ownership
-
-`apps/web` is ignored by this parent and excluded from its pnpm workspace. It has
-its own Git metadata, lockfile and dependency versions. Since Stage 11A it reaches
-this repository only through its git-ignored `.journey-viewer` alias:
-`link:.journey-viewer/packages/...` dependencies on four built public libraries (all but flow-layout)
-and `.journey-viewer/examples/`. Locally the alias is a symlink to this checkout;
-Cloudflare's build clones this repository there (see the app README). It does not
-rejoin the parent workspace or alias library source. Run the parent install/build
-before app checks or development. A fresh parent clone needs that independent
-checkout supplied separately before the web convenience commands can run; library
-builds/tests require no site checkout.
-
-Six old web files remain tracked in the parent index until you finish the agreed
-ownership transfer. From this parent directory, run:
-
-```sh
-git rm -r --cached -- apps/web
-```
-
-This preserves the files and nested repository on disk. The command is left to
-you under the no-staging agreement. No gitlink/submodule, remote or commit was
-created. Review parent changes and `git -C apps/web status` independently.
-
-Only the user may commit. Agent changes remain uncommitted for review.

@@ -1,0 +1,60 @@
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-inline-size: 0;
+}
+/* Below the trigger, centred; it floats, so it takes the popover's shadow. */
+.tip {
+  position: absolute;
+  inset-block-start: calc(100% + var(--jv-space-xs));
+  inset-inline-start: 50%;
+  z-index: 30;
+  box-sizing: border-box;
+  max-inline-size: 16rem;
+  padding: var(--jv-space-2xs) var(--jv-space-sm);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-sm);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+  box-shadow: var(--jv-shadow-popover);
+  white-space: nowrap;
+  translate: -50% 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--jv-duration-fast) ease-out,
+    visibility 0s linear var(--jv-duration-fast);
+}
+/* Centred below the trigger, a gutter away from the window's edges, and above it when there is no
+   room below. A bar with a backdrop filter contains fixed descendants; unsafe alignment lets the
+   tip hang below such a bar instead of being pushed back over its trigger. */
+@supports (position-area: bottom) {
+  .tip {
+    position: fixed;
+    inset: auto;
+    margin: var(--jv-space-xs) var(--jv-space-sm);
+    translate: none;
+    position-area: bottom;
+    position-try-fallbacks: flip-block;
+    align-self: unsafe start;
+  }
+}
+@media (hover: hover) {
+  .tooltip:hover > .tip {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 400ms;
+  }
+}
+.tooltip:has(:focus-visible) > .tip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tip {
+    transition-duration: 0s;
+  }
+}

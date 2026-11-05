@@ -5,8 +5,9 @@ import {
   createViewerSnapshot,
   selectTouchpoint,
   setSearchQuery,
+  setViewMode,
 } from "@/navigation";
-import type { ViewerSnapshot, ViewerTarget } from "@/navigation";
+import type { ViewerMode, ViewerSnapshot, ViewerTarget } from "@/navigation";
 import { occurrenceKey } from "@/occurrence";
 import { closeScreenshot } from "@/screens";
 import type { ScreenshotMap } from "@/screens";
@@ -85,6 +86,8 @@ export type ViewerCommand =
       readonly reveal?: boolean;
     }
   | { readonly type: "view"; readonly id: string }
+  /** Rows or columns within Tree; retained when switching to Flow. */
+  | { readonly type: "treeLayout"; readonly mode: ViewerMode }
   /** Opens the search results. */
   | { readonly type: "query"; readonly query: string }
   | { readonly type: "searchFocus" }
@@ -202,6 +205,8 @@ export function reduceViewer(
         view: view.id,
       };
     }
+    case "treeLayout":
+      return withSnapshot(setViewMode(graph, snapshot, command.mode));
     case "query": {
       const next = setSearchQuery(snapshot, command.query);
       return next === snapshot && state.searchOpen

@@ -1,11 +1,14 @@
 @reference "@journey-viewer/design-system/tailwind.css";
-/* The canvas fills the window below the explorer bar; without a bar the offset is 0. */
+/*
+ * The canvas fills the window below the explorer bar; without a bar the offset is 0. It clips
+ * rather than hides its overflow, so the inset map inside can stick to the window's edge.
+ */
 .stage {
   box-sizing: border-box;
   block-size: 70dvh;
   border: var(--jv-border-thin) solid var(--jv-color-border);
   border-radius: var(--jv-radius-lg);
-  overflow: hidden;
+  overflow: clip;
   @variant md {
     position: sticky;
     inset-block-start: calc(var(--jv-explorer-offset) + var(--jv-space-lg));

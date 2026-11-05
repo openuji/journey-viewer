@@ -1,0 +1,81 @@
+@reference "@/styles/tailwind.css";
+
+/*
+ * The canvas in miniature, on its own ground. It floats over the chart, so it is one of the
+ * overlays the Paper Map Rule lets cast a shadow. Its size follows the chart's proportions inside a
+ * cap; `meet` letterboxes charts that are more extreme than the cap.
+ */
+.map {
+  --inset-inline: 8rem;
+  --inset-block: 6rem;
+  box-sizing: content-box;
+  inline-size: clamp(
+    3rem,
+    var(--inset-block) * var(--inset-ratio),
+    var(--inset-inline)
+  );
+  aspect-ratio: var(--inset-ratio);
+  min-block-size: 3rem;
+  max-block-size: var(--inset-block);
+  padding: var(--jv-space-xs);
+  border: var(--jv-border-thin) solid var(--jv-color-border);
+  border-radius: var(--jv-radius-md);
+  background: var(--jv-color-background);
+  box-shadow: var(--jv-shadow-raised);
+  @variant md {
+    --inset-inline: 12rem;
+    --inset-block: 9rem;
+  }
+}
+.chart {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+}
+.frame {
+  fill: var(--jv-color-background);
+  stroke: var(--jv-color-border-strong);
+  stroke-width: var(--jv-border-thin);
+  vector-effect: non-scaling-stroke;
+  rx: var(--jv-radius-md);
+}
+.frame[data-context="current"] {
+  fill: var(--jv-color-surface);
+}
+.block {
+  fill: var(--jv-color-connector);
+  rx: var(--jv-radius-sm);
+}
+/* A zero-length line with round caps: a dot whose size does not follow the chart's scale. */
+.dot {
+  fill: none;
+  stroke: var(--jv-color-connector);
+  stroke-width: calc(1.5 * var(--jv-border-focus));
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.block[data-receded],
+.dot[data-receded] {
+  opacity: var(--jv-opacity-filtered);
+}
+.block[data-selected] {
+  fill: var(--jv-color-accent);
+  opacity: 1;
+}
+.dot[data-selected] {
+  stroke: var(--jv-color-accent);
+  opacity: 1;
+}
+/* What the canvas does not show washes toward the ground; what it shows stays crisp. */
+.veil {
+  fill: var(--jv-color-background);
+  opacity: 0.6;
+}
+.view {
+  fill: none;
+  stroke: var(--jv-color-accent);
+  stroke-width: var(--jv-border-focus);
+  vector-effect: non-scaling-stroke;
+  rx: var(--jv-radius-sm);
+}

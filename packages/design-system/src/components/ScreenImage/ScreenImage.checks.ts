@@ -4,7 +4,7 @@ export const checkScreenImageFixture: FixtureCheck = (value) => [
   ...text(value, "label"),
   ...choice(value, "status", ["loading", "ready", "unavailable"]),
   ...(object(value) && value.fit !== undefined
-    ? choice(value, "fit", ["width", "height"])
+    ? choice(value, "fit", ["width", "height", "contain", "original"])
     : []),
   ...(object(value) && value.source === undefined ? [] : text(value, "source")),
   ...(object(value) &&

@@ -22,13 +22,17 @@
   "scripts": {
     "build": "vite build && vite build --config vite.site.config.ts && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths && tsc -p tsconfig.cli.json && tsc-alias -p tsconfig.cli.json --resolve-full-paths",
     "test": "pnpm build && tsc -p tsconfig.json && tsx --test tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "storybook": "pnpm --filter @journey-viewer/app... build && STORYBOOK_DISABLE_TELEMETRY=1 storybook dev --no-open",
+    "build:storybook": "pnpm --filter @journey-viewer/app... build && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
+    "test:storybook": "node tests/storybook.mjs"
   },
   "dependencies": {
     "@journey-viewer/design-system": "workspace:*",
     "@journey-viewer/lint": "workspace:*",
     "@journey-viewer/ujg-jsonld": "workspace:*",
     "@journey-viewer/viewer": "workspace:*",
+    "fflate": "0.8.3",
     "vite": "catalog:"
   },
   "peerDependencies": {
@@ -50,6 +54,10 @@
     "@vitejs/plugin-react": "catalog:",
     "playwright": "catalog:",
     "tsc-alias": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "storybook": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/addon-a11y": "catalog:"
   }
 }

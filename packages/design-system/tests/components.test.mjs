@@ -21,6 +21,11 @@ import {
   StateNode,
   ContractGlyph,
   JourneyPath,
+  CanvasHeader,
+  SegmentedControl,
+  Tooltip,
+  FlowKey,
+  InsetMap,
   Connector,
   RouteOverlay,
   parallel,
@@ -31,6 +36,10 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   const props = {
     entries: [{ id: "e", label: "Begin", default: true }],
     exits: [{ id: "x", label: "Complete" }],
+    exitRoutes: [
+      { exitId: "x", count: 2, title: "Review → Complete" },
+      { exitId: "x", count: 9, title: "Duplicate is ignored" },
+    ],
     selection: { kind: "entry", id: "e" },
     onSelect: () => assert.fail("rendering does not invoke event callbacks"),
     onToggle: () => assert.fail("rendering does not invoke event callbacks"),
@@ -42,6 +51,10 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1);
   assert.match(html, /aria-expanded="true"/);
   assert.match(html, />1 entry · 1 exit</);
+  assert.equal((html.match(/→2/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /→9/);
+  assert.match(html, /2 transitions from the active state to journey exits/);
+  assert.match(html, /2 transitions from the active state to this exit/);
   assert.match(html, /Begin<span[^>]*>default<\/span>/);
   assert.match(html, /type="button"/);
   const closed = renderToStaticMarkup(
@@ -50,7 +63,29 @@ test("contract controls compose native buttons with explicit disclosure, selecti
   assert.equal((closed.match(/<button/g) ?? []).length, 1);
   assert.match(closed, /aria-expanded="false"/);
   assert.match(closed, />1 entry · no exits</);
+  assert.doesNotMatch(closed, /→[0-9]/);
   assert.doesNotMatch(closed, /Begin/);
+  const repeatedExit = renderToStaticMarkup(
+    h(JourneyContractControls, {
+      ...props,
+      open: false,
+      exits: [props.exits[0], props.exits[0]],
+      exitRoutes: [{ exitId: "x", count: 2 }],
+    }),
+  );
+  assert.match(repeatedExit, />1 entry · 2 exits</);
+  assert.match(repeatedExit, /→2/);
+  assert.doesNotMatch(repeatedExit, /→4/);
+  assert.doesNotMatch(
+    renderToStaticMarkup(
+      h(JourneyContractControls, {
+        ...props,
+        open: false,
+        exitRoutes: [{ exitId: "x", count: 0 }],
+      }),
+    ),
+    /→0/,
+  );
 });
 
 test("inspector presentation uses shared semantics and safely renders readonly plain-text details", () => {
@@ -364,7 +399,7 @@ test("row tones and marks describe the active state's local transitions without 
     h(StateRow, {
       label: "Login",
       tone: "both",
-      marks: { incoming: 1, outgoing: 2, title: "Routes" },
+      marks: { incoming: 1, selfLoops: 3, outgoing: 2, title: "Routes" },
       crossing: { label: "Identity provider", color: "red" },
       description: "Nested journey",
     }),
@@ -372,10 +407,11 @@ test("row tones and marks describe the active state's local transitions without 
   assert.match(html, /data-tone="both"/);
   assert.match(html, /title="Routes"/);
   assert.match(html, /←1/);
+  assert.match(html, /↻3/);
   assert.match(html, /→2/);
   assert.match(
     html,
-    /1 transition into the active state, 2 transitions from the active state/,
+    /1 transition into the active state, 3 self-loop transitions on the active state, 2 transitions from the active state/,
   );
   assert.match(html, /aria-label="Crosses into Identity provider"/);
   assert.match(html, /Nested journey/);
@@ -383,7 +419,7 @@ test("row tones and marks describe the active state's local transitions without 
     renderToStaticMarkup(
       h(StateRow, { label: "Plain", marks: { incoming: 0, outgoing: 0 } }),
     ),
-    /←|→/,
+    /←|↻|→/,
   );
 });
 
@@ -470,6 +506,130 @@ test("the journey path marks its last step as the current location", () => {
   assert.equal((html.match(/aria-current="location"/g) ?? []).length, 1);
   assert.match(html, /aria-current="location"[^>]*>.*IdP auth flow/);
   assert.equal(renderToStaticMarkup(h(JourneyPath, { items: [] })), "");
+  assert.doesNotMatch(html, /data-canvas-header/);
+});
+
+test("the canvas header holds the path and a named command plane, and nothing when both are empty", () => {
+  const html = renderToStaticMarkup(
+    h(CanvasHeader, {
+      path: h("nav", { "aria-label": "Journey path" }),
+      commands: h(FlowKey),
+    }),
+  );
+  assert.match(html, /data-canvas-header/);
+  assert.match(
+    html,
+    /<nav aria-label="Journey path"><\/nav>.*role="group" aria-label="Canvas commands"/,
+  );
+  assert.match(html, /popovertarget="[^"]+"[^>]*aria-label="Key"/i);
+  assert.equal(renderToStaticMarkup(h(CanvasHeader, {})), "");
+  assert.doesNotMatch(
+    renderToStaticMarkup(h(CanvasHeader, { path: h("nav") })),
+    /role="group"/,
+  );
+});
+
+test("a glyph option is a named, pressed icon button with its label as a hidden tooltip", () => {
+  const html = renderToStaticMarkup(
+    h(SegmentedControl, {
+      label: "Zoom",
+      value: "fit",
+      onChange: () => assert.fail("rendering does not invoke callbacks"),
+      options: [
+        { value: "actual", label: "100%" },
+        { value: "fit", label: "Fit", icon: h("svg", { "data-glyph": "" }) },
+      ],
+    }),
+  );
+  assert.match(html, /aria-pressed="false"[^>]*>100%<\/button>/);
+  assert.match(
+    html,
+    /<button(?=[^>]*aria-label="Fit")(?=[^>]*aria-pressed="true")[^>]*data-icon-only="true"><span[^>]*aria-hidden="true"><svg data-glyph=""><\/svg><\/span><\/button><span[^>]*aria-hidden="true"><span[^>]*>Fit<\/span><\/span>/,
+  );
+  const tip = renderToStaticMarkup(
+    h(
+      Tooltip,
+      { label: "Reset view" },
+      h("button", { "aria-label": "Reset view" }),
+    ),
+  );
+  assert.match(tip, /anchor-name:--tooltip-/);
+  assert.match(tip, /position-anchor:--tooltip-/);
+  assert.match(tip, /aria-hidden="true"><span[^>]*>Reset view<\/span>/);
+});
+
+test("the inset map draws frames and blocks, veils what the view leaves out, and clips the view to the chart", () => {
+  const props = {
+    width: 400,
+    height: 600,
+    frames: [
+      {
+        id: "frame:root",
+        rect: { x: 0, y: 0, width: 400, height: 600 },
+        context: "outside",
+      },
+      {
+        id: "frame:child",
+        rect: { x: 100, y: 200, width: 280, height: 300 },
+        context: "current",
+      },
+    ],
+    blocks: [
+      { id: "state:a", rect: { x: 20, y: 20, width: 120, height: 40 } },
+      {
+        id: "state:b",
+        rect: { x: 140, y: 240, width: 120, height: 40 },
+        selected: true,
+      },
+      {
+        id: "state:c",
+        rect: { x: 20, y: 400, width: 120, height: 40 },
+        receded: true,
+      },
+      {
+        id: "contract:in",
+        rect: { x: 240, y: 200, width: 0, height: 0 },
+        dot: true,
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    h(InsetMap, {
+      ...props,
+      view: { x: -50, y: 450, width: 300, height: 400 },
+    }),
+  );
+  assert.match(
+    html,
+    /^<div(?=[^>]*data-inset-map="")(?=[^>]*aria-hidden="true")/,
+  );
+  assert.match(html, /--inset-ratio:0\.666/);
+  assert.match(html, /viewBox="0 0 400 600"/);
+  assert.equal((html.match(/data-context=/g) ?? []).length, 2);
+  assert.equal((html.match(/data-selected="true"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-receded="true"/g) ?? []).length, 1);
+  assert.match(
+    html,
+    /<rect[^>]*data-inset-view=""[^>]*x="0" y="450" width="250" height="150"/,
+  );
+  assert.match(html, /fill-rule="evenodd"/);
+  assert.match(html, /<path[^>]*d="M240 200h0"/, "a contract is a dot");
+  const chartOnly = renderToStaticMarkup(h(InsetMap, { ...props, view: null }));
+  assert.doesNotMatch(chartOnly, /data-inset-view|evenodd/);
+  assert.doesNotMatch(
+    renderToStaticMarkup(
+      h(InsetMap, {
+        ...props,
+        view: { x: 500, y: 0, width: 100, height: 100 },
+      }),
+    ),
+    /data-inset-view/,
+    "a view beside the chart draws nothing",
+  );
+  assert.equal(
+    renderToStaticMarkup(h(InsetMap, { ...props, width: 0, view: null })),
+    "",
+  );
 });
 
 test("connectors and routes draw rounded orthogonal paths with arrowheads only on routes", () => {

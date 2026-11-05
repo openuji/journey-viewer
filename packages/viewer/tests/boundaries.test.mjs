@@ -41,12 +41,16 @@ test("the public build keeps package boundaries and excludes development data an
 });
 
 // The viewer root owns the graph state and shares it through context; the flow's settings and
-// its canvas's own hover and anchor are the only other state.
+// its canvas's own hover/anchor and the open lightbox's sizing mode are local UI state.
 const contextOwners = [
   "components/Viewer/Viewer.tsx",
   "components/FlowSettings/FlowSettings.tsx",
 ];
-const stateOwners = [...contextOwners, "components/FlowView/FlowView.tsx"];
+const stateOwners = [
+  ...contextOwners,
+  "components/FlowView/FlowView.tsx",
+  "components/JourneyLightbox/JourneyLightbox.tsx",
+];
 
 test("graph state stays at the viewer boundary; browser-only effects/loading stay in named adapters", async () => {
   const root = new URL("../src/", import.meta.url);
@@ -54,8 +58,11 @@ test("graph state stays at the viewer boundary; browser-only effects/loading sta
     if (!/\.tsx?$/.test(file) || /stories/.test(file)) continue;
     const source = await readFile(new URL(file, root), "utf8");
     // Named browser adapters own DOM effects, measurement and listeners, reaching the page only
-    // through their own elements' ownerDocument/defaultView, never through globals.
-    const browser = file.startsWith("browser/");
+    // through their own elements' ownerDocument/defaultView, never through globals. They live in
+    // `browser/`, or in a folder of their own beside the other components when they bring styles.
+    const browser =
+      file.startsWith("browser/") ||
+      /^components\/Browser[A-Z]\w*\//.test(file);
     assert.doesNotMatch(source, /window\.|document\./, file);
     if (!contextOwners.includes(file))
       assert.doesNotMatch(source, /useContext|createContext/, file);

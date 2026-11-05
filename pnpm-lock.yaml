@@ -30,6 +30,9 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: 6.0.3
       version: 6.0.3
+    lucide-react:
+      specifier: 1.59.0
+      version: 1.59.0
     playwright:
       specifier: 1.61.1
       version: 1.61.1
@@ -83,10 +86,22 @@ importers:
       '@journey-viewer/viewer':
         specifier: workspace:*
         version: link:../viewer
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       vite:
         specifier: 'catalog:'
         version: 8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
     devDependencies:
+      '@storybook/addon-a11y':
+        specifier: 'catalog:'
+        version: 10.4.6(storybook@10.4.6(@testing-library/dom@10.4.2)(@types/react@19.2.17)(prettier@3.9.10)(react@19.2.7))
+      '@storybook/addon-docs':
+        specifier: 'catalog:'
+        version: 10.4.6(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(storybook@10.4.6(@testing-library/dom@10.4.2)(@types/react@19.2.17)(prettier@3.9.10)(react@19.2.7))(vite@8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+      '@storybook/react-vite':
+        specifier: 'catalog:'
+        version: 10.4.6(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.6(@testing-library/dom@10.4.2)(@types/react@19.2.17)(prettier@3.9.10)(react@19.2.7))(typescript@6.0.3)(vite@8.1.0(@types/node@24.13.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
@@ -108,6 +123,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
+      storybook:
+        specifier: 'catalog:'
+        version: 10.4.6(@testing-library/dom@10.4.2)(@types/react@19.2.17)(prettier@3.9.10)(react@19.2.7)
       tsc-alias:
         specifier: 'catalog:'
         version: 1.9.7
@@ -119,6 +137,10 @@ importers:
         version: 6.0.3
 
   packages/design-system:
+    dependencies:
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.59.0(@types/react@19.2.17)(react@19.2.7)
     devDependencies:
       '@storybook/addon-a11y':
         specifier: 'catalog:'
@@ -1377,6 +1399,9 @@ packages:
       picomatch:
         optional: true
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
@@ -1636,6 +1661,15 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-react@1.59.0:
+    resolution: {integrity: sha512-5qgMyyCPU6OvnKpLS2t693+ZtiqA8oaSweWoUows0BLFKFf6V75m4+CptpmohZHpD5IuOVIBXHBBiv2vpLJmtw==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -2939,6 +2973,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
+  fflate@0.8.3: {}
+
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
@@ -3125,6 +3161,12 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-react@1.59.0(@types/react@19.2.17)(react@19.2.7):
+    dependencies:
+      react: 19.2.7
+    optionalDependencies:
+      '@types/react': 19.2.17
 
   lz-string@1.5.0: {}
 

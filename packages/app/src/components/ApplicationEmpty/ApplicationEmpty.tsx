@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { Button, Heading, Text } from "@journey-viewer/design-system";
-import { FileGlyph } from "@/components/Glyphs/Glyphs";
+import { Button, Heading, Icon, Text } from "@journey-viewer/design-system";
 import styles from "@/components/ApplicationEmpty/ApplicationEmpty.module.css";
 
 export interface ApplicationEmptyProps {
@@ -29,8 +28,8 @@ export function ApplicationEmpty({
         className={styles.open}
         onClick={onOpenFile}
       >
-        <FileGlyph />
-        Open file…
+        <Icon name="upload" />
+        Upload UJG
       </Button>
       {children && (
         <Text as="p" variant="caption" tone="muted">

@@ -6,17 +6,20 @@ import { ViewerBar } from "@/components/ViewerBar/ViewerBar";
 import { DocumentSummary } from "@/components/DocumentSummary/DocumentSummary";
 import { ViewSwitch } from "@/components/ViewSwitch/ViewSwitch";
 import { WhenView } from "@/components/WhenView/WhenView";
+import { WhenTreeLayout } from "@/components/WhenTreeLayout/WhenTreeLayout";
+import { TreeLayout } from "@/components/TreeLayout/TreeLayout";
 import { ExpandCollapse } from "@/components/ExpandCollapse/ExpandCollapse";
 import { TouchpointFilter } from "@/components/TouchpointFilter/TouchpointFilter";
 import { GraphSearch } from "@/components/GraphSearch/GraphSearch";
 import { ResetView } from "@/components/ResetView/ResetView";
 import { ViewerMain } from "@/components/ViewerMain/ViewerMain";
-import { columnsView, treeView } from "@/components/ExplorerView/ExplorerView";
+import { treeView } from "@/components/ExplorerView/ExplorerView";
 import { flowView } from "@/components/FlowView/FlowView";
 import { FlowSettings } from "@/components/FlowSettings/FlowSettings";
 import { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
+import { FlowRoots } from "@/components/FlowRoots/FlowRoots";
 import { FlowZoom } from "@/components/FlowZoom/FlowZoom";
-import { oidcGraph } from "~/.storybook/documents";
+import { oidcGraph, topologyGraph } from "~/.storybook/documents";
 import { oidcScreenshots, oidcTouchpoints } from "~/.storybook/screenshots";
 
 /** The spike's main scope: the app journey with the identity provider's flow open inside it. */
@@ -37,10 +40,19 @@ const inputs = {
   initialCommands: appWithIdpOpen,
 };
 
+const treeControls = (
+  <WhenView id="tree">
+    <TreeLayout />
+    <WhenTreeLayout mode="tree">
+      <ExpandCollapse />
+    </WhenTreeLayout>
+  </WhenView>
+);
+
 /** The explorer bar's other tools, after the view switch and anything placed beside it. */
 const tools = (
   <>
-    <WhenView id={["tree", "flow"]}>
+    <WhenView id="flow">
       <ExpandCollapse />
     </WhenView>
     <TouchpointFilter />
@@ -56,9 +68,17 @@ const flowControls = (
     <FlowKey />
   </>
 );
+const rootControls = (
+  <>
+    <FlowPlacement />
+    <FlowZoom />
+    <FlowRoots />
+    <FlowKey />
+  </>
+);
 
 /**
- * Toolbar arrangements for a Flow view beside Tree and Columns. Each story is a plain composition
+ * Toolbar arrangements for a Flow view beside Tree. Each story is a plain composition
  * of the viewer's pieces: an arrangement is a different tree, not a flag.
  */
 const meta = {
@@ -68,34 +88,60 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Tree | Columns | Flow, then Placement, Zoom and the key in the bar. */
+/** Tree | Flow, then Placement, Zoom and the key in the bar. */
 export const ControlsInTheBar: Story = {
   render: () => (
-    <Viewer {...inputs} views={[treeView, columnsView, flowView()]}>
-      <FlowSettings>
+    <FlowSettings>
+      <Viewer {...inputs} views={[treeView, flowView()]}>
         <ViewerBar>
           <DocumentSummary />
           <ViewSwitch />
+          {treeControls}
           <WhenView id="flow">{flowControls}</WhenView>
           {tools}
         </ViewerBar>
         <ViewerMain />
-      </FlowSettings>
-    </Viewer>
+      </Viewer>
+    </FlowSettings>
   ),
 };
 
-/** Only the view switch in the bar; Placement, Zoom and the key beside the journey path. */
+/** Only the view switch in the bar; Placement, Zoom and the key in the canvas header's command plane. */
 export const ControlsOnTheCanvas: Story = {
   render: () => (
     <FlowSettings>
       <Viewer
         {...inputs}
-        views={[treeView, columnsView, flowView({ pathEnd: flowControls })]}
+        views={[treeView, flowView({ commands: flowControls })]}
       >
         <ViewerBar>
           <DocumentSummary />
           <ViewSwitch />
+          {treeControls}
+          {tools}
+        </ViewerBar>
+        <ViewerMain />
+      </Viewer>
+    </FlowSettings>
+  ),
+};
+
+/**
+ * A document with several root journeys, drawn one at a time: Journeys beside Placement and Zoom,
+ * and the first step of the journey path switches between the roots.
+ */
+export const OneJourneyAtATime: Story = {
+  render: () => (
+    <FlowSettings initialRoots="one">
+      <Viewer
+        graph={topologyGraph}
+        initialView="flow"
+        views={[treeView, flowView({ commands: rootControls })]}
+      >
+        <ViewerBar>
+          <DocumentSummary />
+          <ViewSwitch />
+          {treeControls}
           {tools}
         </ViewerBar>
         <ViewerMain />
@@ -107,10 +153,11 @@ export const ControlsOnTheCanvas: Story = {
 /** Only the view switch: median placement at 100%. */
 export const FlowWithDefaults: Story = {
   render: () => (
-    <Viewer {...inputs} views={[treeView, columnsView, flowView()]}>
+    <Viewer {...inputs} views={[treeView, flowView()]}>
       <ViewerBar>
         <DocumentSummary />
         <ViewSwitch />
+        {treeControls}
         {tools}
       </ViewerBar>
       <ViewerMain />
@@ -118,7 +165,7 @@ export const FlowWithDefaults: Story = {
   ),
 };
 
-/** No bar and no Tree or Columns: the canvas, its journey path and the inspector, as if embedded. */
+/** No bar and no Tree: the canvas, its journey path and the inspector, as if embedded. */
 export const FlowOnItsOwn: Story = {
   render: () => (
     <Viewer {...inputs} views={[flowView()]}>
@@ -154,6 +201,7 @@ export const CustomCommand: Story = {
       <ViewerBar>
         <DocumentSummary />
         <ViewSwitch />
+        {treeControls}
         <ToggleMfa />
         {tools}
       </ViewerBar>

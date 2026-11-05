@@ -38,6 +38,7 @@ export const Tones: Story = {
               tone,
               marks: {
                 incoming: tone === "incoming" || tone === "both" ? 1 : 0,
+                selfLoops: tone === "active" ? 20 : 0,
                 outgoing: tone === "outgoing" || tone === "both" ? 2 : 0,
               },
             })}

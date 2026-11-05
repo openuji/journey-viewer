@@ -1,0 +1,20 @@
+/*
+ * In the canvas's bottom-right corner, clear of its scrollbars. Sticky, so that while the canvas
+ * runs past the bottom of the window (a page header above a docked canvas, or a phone's 70dvh
+ * stage) the inset waits at the window's edge instead of below it. Touch drags it, not the page.
+ */
+.inset {
+  grid-area: 1 / 1;
+  align-self: end;
+  justify-self: end;
+  position: sticky;
+  z-index: 1;
+  inset-block-end: var(--jv-space-md);
+  margin: var(--jv-space-md);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.inset:active {
+  cursor: grabbing;
+}

@@ -64,6 +64,7 @@ export { JourneyContractControls } from "@/components/JourneyContractControls/Jo
 export type {
   JourneyContractControlsProps,
   ContractSelection,
+  JourneyExitRouteMark,
 } from "@/components/JourneyContractControls/JourneyContractControls";
 export { JourneyContracts } from "@/components/JourneyContracts/JourneyContracts";
 export type {
@@ -121,6 +122,18 @@ export { JourneyPath } from "@/components/JourneyPath/JourneyPath";
 export type {
   JourneyPathProps,
   JourneyPathItem,
+  JourneyPathChoice,
 } from "@/components/JourneyPath/JourneyPath";
 export { FlowKey } from "@/components/FlowKey/FlowKey";
 export type { FlowKeyProps } from "@/components/FlowKey/FlowKey";
+export { CanvasHeader } from "@/components/CanvasHeader/CanvasHeader";
+export type { CanvasHeaderProps } from "@/components/CanvasHeader/CanvasHeader";
+export { Tooltip } from "@/components/Tooltip/Tooltip";
+export type { TooltipProps } from "@/components/Tooltip/Tooltip";
+export { InsetMap } from "@/components/InsetMap/InsetMap";
+export type {
+  InsetMapProps,
+  InsetMapRect,
+  InsetMapFrame,
+  InsetMapBlock,
+} from "@/components/InsetMap/InsetMap";

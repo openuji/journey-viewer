@@ -43,6 +43,7 @@ function Sample({ theme }: { readonly theme: string }) {
           tone="outgoing"
           marks={{
             incoming: 0,
+            selfLoops: 1,
             outgoing: 2,
             title: "Two routes from the active state",
           }}

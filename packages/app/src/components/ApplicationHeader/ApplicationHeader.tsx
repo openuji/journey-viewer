@@ -1,9 +1,15 @@
 import { useId } from "react";
 import type { ReactNode } from "react";
-import { Button, Heading, Text } from "@journey-viewer/design-system";
+import {
+  Button,
+  Heading,
+  Icon,
+  IconButton,
+  Text,
+  Tooltip,
+} from "@journey-viewer/design-system";
 import { blocksOpening, findingPath } from "@/document-policy";
 import type { ApplicationReport } from "@/report";
-import { CheckGlyph, FileGlyph } from "@/components/Glyphs/Glyphs";
 import styles from "@/components/ApplicationHeader/ApplicationHeader.module.css";
 
 export interface ApplicationHeaderProps {
@@ -16,6 +22,10 @@ export interface ApplicationHeaderProps {
   readonly report: ApplicationReport;
   /** Opens the page's shared file chooser. */
   readonly onOpenFile: () => void;
+  /** Downloads the open document and its presentation assets. Omit to disable download. */
+  readonly onDownloadAssets?: () => void;
+  readonly isDownloading?: boolean;
+  readonly downloadError?: string;
 }
 
 const plural = (count: number, one: string, many: string) =>
@@ -46,7 +56,7 @@ function Status({
         className={styles.ok}
         title={conformance}
       >
-        <CheckGlyph />
+        <Icon name="check" />
         No findings
       </Text>
     );
@@ -136,57 +146,96 @@ function Status({
   );
 }
 
-/** The application's single top bar: brand, open journey, check status and the file action. */
+/** The application's single top bar: brand, open journey, check status and file actions. */
 export function ApplicationHeader({
   brand,
   placeholder,
   document,
   report,
   onOpenFile,
+  onDownloadAssets,
+  isDownloading = false,
+  downloadError,
 }: ApplicationHeaderProps) {
   return (
     <header className={styles.header} data-application-header="">
-      {brand && (
-        <>
-          <div className={styles.brand}>{brand}</div>
-          <Text
-            variant="label"
-            tone="subtle"
-            className={styles.divider}
-            aria-hidden="true"
-          >
-            /
-          </Text>
-        </>
-      )}
-      <div className={styles.document}>
-        <Heading level={1} size="sm" className={styles.title}>
-          {document?.title ?? placeholder}
-        </Heading>
-        {document && (
-          <Text
-            variant="code"
-            tone="subtle"
-            className={styles.identity}
-            title={document.identity}
-          >
-            {document.identity}
+      <div className={styles.bar}>
+        {brand && (
+          <>
+            <div className={styles.brand}>{brand}</div>
+            <Text
+              variant="label"
+              tone="subtle"
+              className={styles.divider}
+              aria-hidden="true"
+            >
+              /
+            </Text>
+          </>
+        )}
+        <div className={styles.document}>
+          <Heading level={1} size="sm" className={styles.title}>
+            {document?.title ?? placeholder}
+          </Heading>
+          {document && (
+            <Text
+              variant="code"
+              tone="subtle"
+              className={styles.identity}
+              title={document.identity}
+            >
+              {document.identity}
+            </Text>
+          )}
+        </div>
+        <div className={styles.status} role="status" aria-live="polite">
+          <Status report={report} document={document} />
+        </div>
+        <div className={styles.actions}>
+          <Tooltip label="Upload UJG">
+            <Button
+              variant="outline"
+              size="sm"
+              className={styles.open}
+              onClick={onOpenFile}
+            >
+              <Icon name="upload" />
+              <span className={styles.openLabel}>Upload UJG</span>
+            </Button>
+          </Tooltip>
+          <Tooltip label="Download UJG assets">
+            <IconButton
+              label="Download UJG assets"
+              icon={<Icon name="download" />}
+              size="sm"
+              onClick={onDownloadAssets}
+              disabled={
+                !document ||
+                !onDownloadAssets ||
+                report.kind === "reading" ||
+                isDownloading
+              }
+              aria-busy={isDownloading || undefined}
+            />
+          </Tooltip>
+        </div>
+      </div>
+      <div
+        className={styles.downloadStatus}
+        aria-live="polite"
+        aria-atomic="true"
+        data-asset-download-status=""
+      >
+        {isDownloading && (
+          <Text variant="caption" tone="subtle">
+            Preparing UJG assets…
           </Text>
         )}
-      </div>
-      <div className={styles.status} role="status" aria-live="polite">
-        <Status report={report} document={document} />
-      </div>
-      <div className={styles.actions}>
-        <Button
-          variant="outline"
-          size="sm"
-          className={styles.open}
-          onClick={onOpenFile}
-        >
-          <FileGlyph />
-          <span className={styles.openLabel}>Open file…</span>
-        </Button>
+        {downloadError && (
+          <Text variant="caption" className={styles.downloadError}>
+            Could not download UJG assets. {downloadError} Try again.
+          </Text>
+        )}
       </div>
     </header>
   );

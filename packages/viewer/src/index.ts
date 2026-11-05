@@ -30,12 +30,15 @@ export { DocumentSummary } from "@/components/DocumentSummary/DocumentSummary";
 export { ViewSwitch } from "@/components/ViewSwitch/ViewSwitch";
 export { WhenView } from "@/components/WhenView/WhenView";
 export type { WhenViewProps } from "@/components/WhenView/WhenView";
+export { WhenTreeLayout } from "@/components/WhenTreeLayout/WhenTreeLayout";
+export type { WhenTreeLayoutProps } from "@/components/WhenTreeLayout/WhenTreeLayout";
 export { ExpandCollapse } from "@/components/ExpandCollapse/ExpandCollapse";
 export { TouchpointFilter } from "@/components/TouchpointFilter/TouchpointFilter";
 export { GraphSearch } from "@/components/GraphSearch/GraphSearch";
 export { ResetView } from "@/components/ResetView/ResetView";
 export { ViewerMain } from "@/components/ViewerMain/ViewerMain";
-export { columnsView, treeView } from "@/components/ExplorerView/ExplorerView";
+export { treeView } from "@/components/ExplorerView/ExplorerView";
+export { TreeLayout } from "@/components/TreeLayout/TreeLayout";
 export { flowView } from "@/components/FlowView/FlowView";
 export type { FlowViewOptions } from "@/components/FlowView/FlowView";
 export {
@@ -47,7 +50,9 @@ export type {
   FlowSettingsValue,
 } from "@/components/FlowSettings/FlowSettings";
 export { FlowPlacement } from "@/components/FlowPlacement/FlowPlacement";
+export { FlowRoots } from "@/components/FlowRoots/FlowRoots";
 export { FlowZoom } from "@/components/FlowZoom/FlowZoom";
+export type { FlowRootScope } from "@/flow/roots";
 export { JourneyFlow } from "@/components/JourneyFlow/JourneyFlow";
 export type {
   JourneyFlowProps,

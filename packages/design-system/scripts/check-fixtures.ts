@@ -57,10 +57,19 @@ import { createConnectorFixture } from "@/components/Connector/Connector.fixture
 import { checkConnectorFixture } from "@/components/Connector/Connector.checks";
 import { createRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.fixtures";
 import { checkRouteOverlayFixture } from "@/components/RouteOverlay/RouteOverlay.checks";
-import { createJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.fixtures";
+import {
+  createJourneyPathFixture,
+  createJourneyPathRootsFixture,
+} from "@/components/JourneyPath/JourneyPath.fixtures";
 import { checkJourneyPathFixture } from "@/components/JourneyPath/JourneyPath.checks";
 import { createFlowKeyFixture } from "@/components/FlowKey/FlowKey.fixtures";
 import { checkFlowKeyFixture } from "@/components/FlowKey/FlowKey.checks";
+import { createCanvasHeaderFixture } from "@/components/CanvasHeader/CanvasHeader.fixtures";
+import { checkCanvasHeaderFixture } from "@/components/CanvasHeader/CanvasHeader.checks";
+import { createTooltipFixture } from "@/components/Tooltip/Tooltip.fixtures";
+import { checkTooltipFixture } from "@/components/Tooltip/Tooltip.checks";
+import { createInsetMapFixture } from "@/components/InsetMap/InsetMap.fixtures";
+import { checkInsetMapFixture } from "@/components/InsetMap/InsetMap.checks";
 const findings = [
   ...checkIconFixture(createIconFixture()).map((finding) => ({
     ...finding,
@@ -183,13 +192,31 @@ const findings = [
     ...finding,
     path: ["JourneyPath", ...finding.path],
   })),
+  ...checkJourneyPathFixture(createJourneyPathRootsFixture()).map(
+    (finding) => ({
+      ...finding,
+      path: ["JourneyPath roots", ...finding.path],
+    }),
+  ),
   ...checkFlowKeyFixture(createFlowKeyFixture()).map((finding) => ({
     ...finding,
     path: ["FlowKey", ...finding.path],
+  })),
+  ...checkCanvasHeaderFixture(createCanvasHeaderFixture()).map((finding) => ({
+    ...finding,
+    path: ["CanvasHeader", ...finding.path],
+  })),
+  ...checkTooltipFixture(createTooltipFixture()).map((finding) => ({
+    ...finding,
+    path: ["Tooltip", ...finding.path],
+  })),
+  ...checkInsetMapFixture(createInsetMapFixture()).map((finding) => ({
+    ...finding,
+    path: ["InsetMap", ...finding.path],
   })),
 ];
 if (findings.length) {
   for (const finding of findings)
     console.error(`${finding.path.join(".")}: ${finding.message}`);
   process.exitCode = 1;
-} else console.log("31 component fixture contracts pass independently.");
+} else console.log("34 component fixture contracts pass independently.");

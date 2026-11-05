@@ -36,7 +36,9 @@
     calc(100vw - 2 * var(--jv-space-lg))
   );
 }
-.frame:not([data-image-status="ready"]) {
+.frame:is([data-fit="width"], [data-fit="height"]):not(
+    [data-image-status="ready"]
+  ) {
   aspect-ratio: 9 / 16;
 }
 .frame[data-fit="height"]:not([data-image-status="ready"]) {
@@ -55,4 +57,56 @@
 .status {
   padding: var(--jv-space-sm);
   text-align: center;
+}
+/* Stage modes never derive their geometry from the image or its loading state. */
+.frame:is([data-fit="contain"], [data-fit="original"]) {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--jv-color-border-strong) transparent;
+}
+.frame[data-fit="contain"] .image {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: min(100%, var(--jv-size-lightbox));
+  border-radius: var(--jv-radius-lg);
+  box-shadow: var(--jv-screen-image-shadow, var(--jv-shadow-screen));
+}
+.frame[data-fit="original"] {
+  overflow: auto;
+}
+.frame[data-fit="original"] .image {
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+}
+.frame:is([data-fit="contain"], [data-fit="original"]):not(
+    [data-image-status="ready"]
+  )
+  .image {
+  inline-size: 0;
+  block-size: 0;
+}
+.frame:is([data-fit="contain"], [data-fit="original"]) .status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--jv-color-surface);
+  border-radius: var(--jv-radius-lg);
+}
+.frame:focus-visible {
+  outline: var(--jv-border-focus) solid var(--jv-color-accent);
+  outline-offset: calc(-1 * var(--jv-border-focus));
 }

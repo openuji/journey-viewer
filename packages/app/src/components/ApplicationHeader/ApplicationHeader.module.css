@@ -1,14 +1,17 @@
 /* Application shell header layout. Typography, controls and colors come from design-system primitives and tokens. */
 .header {
+  min-inline-size: 0;
+  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
+  background: var(--jv-color-surface);
+  color: var(--jv-color-foreground);
+}
+.bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--jv-space-xs) var(--jv-space-sm);
   min-block-size: 3rem;
   padding: var(--jv-space-xs) var(--jv-space-lg);
-  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
-  background: var(--jv-color-surface);
-  color: var(--jv-color-foreground);
 }
 /* The caller's brand content styles itself; the slot only keeps it on the first row. */
 .brand {
@@ -77,6 +80,16 @@
 .open {
   gap: var(--jv-space-xs);
 }
+.downloadStatus {
+  padding: 0 var(--jv-space-lg) var(--jv-space-xs);
+  overflow-wrap: anywhere;
+}
+.downloadStatus:empty {
+  display: none;
+}
+.downloadError {
+  color: var(--jv-color-danger);
+}
 .openLabel {
   position: absolute;
   inline-size: 1px;
@@ -142,7 +155,7 @@
 }
 /* From md: one row with the identity, inline status and visible action labels. */
 @media (min-width: 53.75rem) {
-  .header {
+  .bar {
     flex-wrap: nowrap;
     gap: var(--jv-space-md);
   }

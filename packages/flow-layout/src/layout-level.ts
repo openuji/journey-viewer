@@ -1,5 +1,7 @@
 import { columnsOf, solve, whole } from "@/constraints";
 import type { Anchor, Rules, Spacing } from "@/constraints";
+import { countCrossings, positionsOf, swapGain } from "@/crossings";
+import type { OrderLink } from "@/crossings";
 import { resolveOptions } from "@/options";
 import type { LayoutOptions } from "@/options";
 import { simplify } from "@/polyline";
@@ -254,36 +256,29 @@ export function layoutLevel(
   pinCard();
 
   // 4. Ordering on the vertex-pair graph only, so opening a composite never reorders siblings.
-  const orderLinks: [string, string][] = [];
+  const orderLinks: OrderLink[] = [];
   for (const [key, upper] of upperOf) {
     const [a, b] = key.split("\n") as [string, string];
     const sequence = [upper, ...chains.get(key)!, a === upper ? b : a];
     for (let i = 1; i < sequence.length; i++)
       orderLinks.push([sequence[i - 1]!, sequence[i]!]);
   }
+  // The dummy chains make every link join consecutive layers, except an exit's reversed edge and
+  // two vertices on layer 0; those have no layer pair to cross in.
+  const consecutive = orderLinks.filter(
+    ([u, l]) => vertex(l).layer === vertex(u).layer + 1,
+  );
+  const byLayer = Array.from({ length: Math.max(0, layerCount - 1) }, (_, k) =>
+    consecutive.filter(([u]) => vertex(u).layer === k),
+  );
   const above = new Map<string, string[]>();
   const below = new Map<string, string[]>();
-  for (const [u, l] of orderLinks) {
+  for (const [u, l] of consecutive) {
     above.set(l, [...(above.get(l) ?? []), u]);
     below.set(u, [...(below.get(u) ?? []), l]);
   }
-  const crossings = (order: string[][]) => {
-    const position = new Map<string, number>();
-    order.forEach((layer) => layer.forEach((id, i) => position.set(id, i)));
-    let count = 0;
-    for (let layer = 0; layer < order.length - 1; layer++) {
-      const between = orderLinks.filter(([u]) => vertex(u).layer === layer);
-      for (let i = 0; i < between.length; i++)
-        for (let j = i + 1; j < between.length; j++) {
-          const [u1, l1] = between[i]!;
-          const [u2, l2] = between[j]!;
-          const du = position.get(u1)! - position.get(u2)!;
-          const dl = position.get(l1)! - position.get(l2)!;
-          if (du * dl < 0) count += 1;
-        }
-    }
-    return count;
-  };
+  const crossings = (order: string[][]) =>
+    countCrossings(byLayer, positionsOf(order));
   let useMedian = false;
   const sweep = (
     layer: number,
@@ -330,18 +325,24 @@ export function layoutLevel(
     }
   }
   best.forEach((layer, i) => (layers[i] = layer));
-  // Transpose: swap neighbours while that removes crossings (the card stays first).
+  // Transpose: swap neighbours while that removes crossings (the card stays first). A swap is
+  // judged by its gain and made only when it pays, so no layer is changed and changed back.
+  const position = positionsOf(layers);
   for (let round = 0; round < 4 && bestCrossings > 0; round++) {
     let improved = false;
     for (const layer of layers)
       for (let i = 0; i < layer.length - 1; i++) {
         if (vertex(layer[i]!).kind === "header") continue;
-        [layer[i], layer[i + 1]] = [layer[i + 1]!, layer[i]!];
-        const count = crossings(layers);
-        if (count < bestCrossings) {
-          bestCrossings = count;
+        const left = layer[i]!;
+        const right = layer[i + 1]!;
+        const gain = swapGain(left, right, { above, below }, position);
+        if (gain < 0) {
+          [layer[i], layer[i + 1]] = [right, left];
+          position.set(right, i);
+          position.set(left, i + 1);
+          bestCrossings += gain;
           improved = true;
-        } else [layer[i], layer[i + 1]] = [layer[i + 1]!, layer[i]!];
+        }
       }
     if (!improved) break;
   }

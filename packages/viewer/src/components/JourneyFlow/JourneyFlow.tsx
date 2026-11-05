@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
-import { JourneyPath } from "@journey-viewer/design-system";
+import { CanvasHeader, JourneyPath } from "@journey-viewer/design-system";
 import type { Placement } from "@journey-viewer/flow-layout";
 import { journeyTouchpoints } from "@journey-viewer/ujg-jsonld";
 import type { JourneyGraph } from "@journey-viewer/ujg-jsonld";
@@ -18,11 +18,14 @@ import { blockRects } from "@/flow/blocks";
 import { composeFlow } from "@/flow/compose";
 import { flowLevel } from "@/flow/geometry";
 import { flowHighlight } from "@/flow/highlight";
+import { insetShapes } from "@/flow/inset";
+import { sceneForRoots } from "@/flow/roots";
+import type { FlowRootScope } from "@/flow/roots";
 import { buildFlowScene, frameShows } from "@/flow/scene";
 import type { FlowCard, FlowFrame } from "@/flow/scene";
 import type { TextMeasure } from "@/flow/text";
-import { BrowserFlowViewport } from "@/browser/BrowserFlowViewport";
-import { BrowserTextMeasure } from "@/browser/BrowserTextMeasure";
+import { BrowserFlowViewport } from "@/components/BrowserFlowViewport/BrowserFlowViewport";
+import { BrowserTextMeasure } from "@/components/BrowserTextMeasure/BrowserTextMeasure";
 import { FlowScene } from "@/components/JourneyFlow/FlowScene";
 import styles from "@/components/JourneyFlow/JourneyFlow.module.css";
 
@@ -54,6 +57,11 @@ export interface JourneyFlowProps {
   readonly location: ViewerTarget | null;
   readonly placement?: Placement;
   readonly zoom?: FlowZoomLevel;
+  /**
+   * Every root journey (the default), or one at a time: the root the location starts from, with
+   * the others a choice on the first step of the journey path, and only the shown one laid out.
+   */
+  readonly roots?: FlowRootScope;
   readonly screenshots?: ScreenshotMap;
   readonly touchpoints?: TouchpointPresentation;
   /** The touchpoint filter: blocks of other journeys recede. */
@@ -61,8 +69,8 @@ export interface JourneyFlowProps {
   /** A hovered or focused block, whose routes show without selecting it. */
   readonly active?: ViewerSelection | null;
   readonly view?: FlowView;
-  /** Controls at the end of the journey path's bar. */
-  readonly pathEnd?: ReactNode;
+  /** The canvas header's command plane, beside the journey path. */
+  readonly commands?: ReactNode;
   readonly label?: string;
   readonly className?: string | undefined;
   /** Every selection, screen and disclosure change, with where the screen should stay. */
@@ -76,9 +84,9 @@ const still: FlowView = { anchor: null, reveal: null };
 
 /**
  * Controlled flow chart of a journey document: nested frames for open journeys, contracts on their
- * borders, metro-style connectors and the active step's routes, with the journey path above. The
- * page's fonts size the layout, which reruns only for the document, the expansion and the
- * placement.
+ * borders, metro-style connectors and the active step's routes, under a canvas header that holds
+ * the journey path and the commands. The page's fonts size the layout, which reruns only for the
+ * document, the expansion and the placement.
  */
 export function JourneyFlow(props: JourneyFlowProps) {
   return (
@@ -102,12 +110,13 @@ function FlowCanvas({
   location,
   placement = "median",
   zoom = "actual",
+  roots = "all",
   screenshots = {},
   touchpoints = {},
   touchpointIds = [],
   active = null,
   view = still,
-  pathEnd,
+  commands,
   label = "Journey flow",
   className,
   onAction,
@@ -120,9 +129,14 @@ function FlowCanvas({
     () => buildFlowScene(graph, { expandedJourneys }),
     [graph, expandedJourneys],
   );
+  const startJourneyId = location?.occurrence.startJourneyId;
+  const staged = useMemo(
+    () => sceneForRoots(scene, roots, startJourneyId),
+    [scene, roots, startJourneyId],
+  );
   const layout = useMemo(
-    () => composeFlow(scene, flowLevel(placement), measure),
-    [scene, placement, measure],
+    () => composeFlow(staged, flowLevel(placement), measure),
+    [staged, placement, measure],
   );
   const blocks = useMemo(() => blockRects(layout), [layout]);
   // A target asks for the block that shows it in this layout, which arrives with the request.
@@ -187,6 +201,31 @@ function FlowCanvas({
     if (depth === path.length - 1) onView(next);
     else onAction({ type: "return", frame }, next);
   };
+  // One root at a time: the path's first step also switches roots, to the top of the new canvas.
+  const rootChoices =
+    roots === "one" && scene.frames.length > 1
+      ? scene.frames.map((frame) => ({
+          id: frame.key,
+          title: frame.card.label,
+          onSelect: () =>
+            onAction(
+              { type: "navigate", target: frame.card.target },
+              { anchor: null, reveal: { start: true } },
+            ),
+        }))
+      : undefined;
+  const steps = path.map((frame, depth) => {
+    const touchpoint = touchpointOf(frame.card.touchpointJourneyId);
+    return {
+      id: frame.key,
+      title: frame.card.label,
+      ...(touchpoint ? { touchpoint } : {}),
+      ...(depth === 0 && rootChoices ? { choices: rootChoices } : {}),
+      onSelect: () => returnTo(frame, depth),
+    };
+  });
+  const filtered = (journeyId: string) =>
+    !matchesTouchpoints(graph, journeyId, touchpointIds);
   const toggle = (card: FlowCard) =>
     onAction(
       {
@@ -202,17 +241,9 @@ function FlowCanvas({
       className={[styles.flow, className].filter(Boolean).join(" ")}
       data-placement={placement}
     >
-      <JourneyPath
-        items={path.map((frame, depth) => {
-          const touchpoint = touchpointOf(frame.card.touchpointJourneyId);
-          return {
-            id: frame.key,
-            title: frame.card.label,
-            ...(touchpoint ? { touchpoint } : {}),
-            onSelect: () => returnTo(frame, depth),
-          };
-        })}
-        {...(pathEnd !== undefined ? { end: pathEnd } : {})}
+      <CanvasHeader
+        path={steps.length > 0 ? <JourneyPath items={steps} /> : undefined}
+        commands={commands}
       />
       <BrowserFlowViewport
         blocks={blocks}
@@ -222,6 +253,11 @@ function FlowCanvas({
         anchor={view.anchor}
         reveal={reveal}
         initial={selectedBlock}
+        inset={insetShapes(layout, {
+          selected: chosen.selected,
+          current,
+          receded: filtered,
+        })}
         label={label}
       >
         <FlowScene
@@ -230,9 +266,7 @@ function FlowCanvas({
           current={current}
           location={activeFrame?.key ?? null}
           touchpointOf={touchpointOf}
-          filtered={(journeyId) =>
-            !matchesTouchpoints(graph, journeyId, touchpointIds)
-          }
+          filtered={filtered}
           screenOf={(vertex) => {
             const screen = getNodeScreens(graph, screenshots, vertex.id).find(
               (s) => s.source,

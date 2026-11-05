@@ -31,6 +31,9 @@
     "build:storybook": "pnpm build && pnpm build:consumer && STORYBOOK_DISABLE_TELEMETRY=1 storybook build --disable-telemetry",
     "test:browser": "tsx tests/browser.mjs"
   },
+  "dependencies": {
+    "lucide-react": "catalog:"
+  },
   "peerDependencies": {
     "react": "^19.2.0",
     "@types/react": "^19.2.0"

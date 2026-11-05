@@ -5,7 +5,7 @@ export const JOURNEY_FILE_TYPES =
   ".jsonld,.json,application/ld+json,application/json";
 
 /**
- * One hidden native file input shared by every "Open file…" control on the page.
+ * One hidden native file input shared by every "Upload UJG" control on the page.
  * Choosing the same file again still reports it, because the value is cleared after each choice.
  */
 export function useFilePicker(

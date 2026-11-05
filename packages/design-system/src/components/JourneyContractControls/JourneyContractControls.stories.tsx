@@ -21,6 +21,14 @@ export const Closed: Story = { args: { open: false } };
 export const Selected: Story = {
   args: { selection: { kind: "entry", id: "entry:start" } },
 };
+export const ExitRoutes: Story = {
+  args: {
+    exitRoutes: [
+      { exitId: "exit:success", count: 2, title: "Review → Access granted" },
+      { exitId: "exit:cancel", count: 3, title: "Review → Cancelled" },
+    ],
+  },
+};
 function ControlledExample() {
   const [selection, setSelection] = useState<ContractSelection | null>(null);
   const [open, setOpen] = useState(false);

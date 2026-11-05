@@ -1,12 +1,10 @@
 import { JourneyExplorer } from "@/components/JourneyExplorer/JourneyExplorer";
 import { useViewer } from "@/components/Viewer/Viewer";
-import { setViewMode } from "@/navigation";
-import type { ViewerMode } from "@/navigation";
 import type { ViewerView } from "@/viewer-state";
 import styles from "@/components/ExplorerView/ExplorerView.module.css";
 
 /** The tree or columns over the viewer's snapshot; row tones follow the selection only. */
-function ExplorerView({ mode }: Readonly<{ mode: ViewerMode }>) {
+function ExplorerView() {
   const {
     graph,
     level,
@@ -17,6 +15,7 @@ function ExplorerView({ mode }: Readonly<{ mode: ViewerMode }>) {
     dispatch,
   } = useViewer();
   const { snapshot } = state.disclosure;
+  const { mode } = snapshot.navigation;
   return (
     <div className={mode === "tree" ? styles.tree : styles.columns}>
       <JourneyExplorer
@@ -51,18 +50,9 @@ function ExplorerView({ mode }: Readonly<{ mode: ViewerMode }>) {
   );
 }
 
-/** The nested hierarchy with expandable composites. */
+/** The hierarchy as nested rows or columns along the selection's call path. */
 export const treeView: ViewerView = {
   id: "tree",
   label: "Tree",
-  render: () => <ExplorerView mode="tree" />,
-  enter: (graph, snapshot) => setViewMode(graph, snapshot, "tree"),
-};
-
-/** One column per journey along the selection's call path. */
-export const columnsView: ViewerView = {
-  id: "columns",
-  label: "Columns",
-  render: () => <ExplorerView mode="columns" />,
-  enter: (graph, snapshot) => setViewMode(graph, snapshot, "columns"),
+  render: () => <ExplorerView />,
 };

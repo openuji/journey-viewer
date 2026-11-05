@@ -1,0 +1,33 @@
+@reference "@/styles/tailwind.css";
+
+/* Shrinks to its container, so the path truncates instead of widening it. */
+.header {
+  display: flex;
+  min-inline-size: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-2xs) var(--jv-space-md);
+  padding: var(--jv-space-2xs) var(--jv-space-sm);
+  border-block-end: var(--jv-border-thin) solid var(--jv-color-border);
+  background: var(--jv-color-surface);
+  @variant md {
+    flex-wrap: nowrap;
+  }
+}
+.path {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+/* Never wider than the header: on small screens the sets wrap rather than run off the edge. */
+.commands {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--jv-space-sm);
+  max-inline-size: 100%;
+  margin-inline-start: auto;
+  @variant md {
+    flex-wrap: nowrap;
+  }
+}

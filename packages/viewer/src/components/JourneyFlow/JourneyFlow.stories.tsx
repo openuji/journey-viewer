@@ -15,7 +15,7 @@ import { measureArtifacts } from "@/dev/artifacts";
 import { composeFlow } from "@/flow/compose";
 import { flowLevel } from "@/flow/geometry";
 import { buildFlowScene } from "@/flow/scene";
-import { BrowserTextMeasure } from "@/browser/BrowserTextMeasure";
+import { BrowserTextMeasure } from "@/components/BrowserTextMeasure/BrowserTextMeasure";
 import { JourneyFlow } from "@/components/JourneyFlow/JourneyFlow";
 import type { FlowView } from "@/components/JourneyFlow/JourneyFlow";
 import {

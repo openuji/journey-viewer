@@ -2,8 +2,8 @@
 
 `@journey-viewer/app` is the Journey Viewer application: it reads a User Journey
 Graph JSON-LD document, checks it with the application's policy, reports the
-outcome in its header and shows the document in the viewer's Tree, Columns and
-Flow views. It ships as React components and as a prebuilt static site with a
+outcome in its header and shows the document in the viewer's Tree and Flow
+views. Tree offers Rows and Columns layouts. It ships as React components and as a prebuilt static site with a
 command that puts a document beside it.
 
 ## Generate or run a document
@@ -77,10 +77,31 @@ module scripts and `fetch` read local files; use `run` for a local look.
   presentation maps Touchpoint IDs to an optional `shortLabel` and `color`. A
   copy that still fails removes what it wrote, so a retry can use the same folder.
   The command refuses a folder that is not empty.
-- "Open file…" still replaces the document with a local one, which stays in the
+- "Upload UJG" still replaces the document with a local one, which stays in the
   tab's memory. A rejected file keeps the open journey.
 - The prebuilt site without a `journey/` folder opens on the empty state and reads
   local files only, also on hosts that answer a missing file with the page.
+
+## Upload and download
+
+**Upload UJG** opens a single `.jsonld` or `.json` file locally, replacing the
+current journey after it passes the application's checks. Files stay in the
+browser tab's memory; the action does not send them to a server or import ZIPs.
+
+The adjacent download icon, **Download UJG assets**, saves
+`<document-stem>-ujg-assets.zip`. It contains the original document text as
+`document.jsonld`, `screenshots.json`, `touchpoints.json`, and all mapped images
+under `screens/`. The screenshot map uses relative paths into the archive;
+shared images are included once. Missing presentation inputs become empty maps.
+The extracted files can be passed to `journey-viewer generate` with its existing
+`--screenshots` and `--touchpoints` options.
+
+Screenshots are fetched when download is requested, including remote images
+whose hosts permit browser access. If any image cannot be fetched, no ZIP is
+downloaded: the header identifies the failed image and offers a retry through
+the same button. Selecting another upload cancels preparation. Download is
+disabled while no document is open, a replacement is being read, or an archive
+is being prepared. Export progress and errors do not replace document findings.
 
 ## Components
 
@@ -113,9 +134,12 @@ import "@journey-viewer/app/styles.css";
 
 The viewer arrangement lives in one file,
 `src/components/ApplicationViewer/ApplicationViewer.tsx`: the explorer bar with
-the document's counts, the Tree | Columns | Flow switch, expand and collapse
-(Tree and Flow), the touchpoint filter, search and reset; Flow's placement, zoom
-and key sit beside its journey path. Change the arrangement there.
+the document's counts, the Tree | Flow switch, the touchpoint filter, search and
+reset. The composition places Tree's Rows | Columns icons with tooltips in the bar,
+followed by expand/collapse in Rows; Flow's
+placement, zoom and key sit beside its journey path, with expand/collapse in the
+explorer bar. Switching views preserves the tree layout, selection and expansion.
+Change the arrangement there.
 
 The viewer opens collapsed, like every viewer: the first root journey with its
 states, every composite closed. Expand all, Collapse all and the chevrons open and
@@ -129,7 +153,12 @@ the site's own folder (`./`); the icon is also the page's favicon and ships insi
 
 The pieces are exported for compositions of their own: `ApplicationHeader`,
 `ApplicationEmpty`, `BrandLink`, `useFilePicker`, `readSource`, and the check policy
-`checkDocument`, `blocksOpening` and `findingPath`. The policy first reads the UJG
+`checkDocument`, `blocksOpening` and `findingPath`. `ApplicationHeader` accepts
+optional `onDownloadAssets`, `isDownloading` and `downloadError` props; without
+a download callback its download control is disabled. The existing `onOpenFile`
+callback still opens the shared picker.
+
+The policy first reads the UJG
 version from the document's contexts: a version the app cannot read (anything but the
 Editor's Draft, mixed versions, or no UJG context) blocks opening with one
 `app/ujg-version` finding, and the open document stays. For the Editor's Draft it
@@ -137,3 +166,35 @@ selects the document-shape, unique-ID and reference-target rules; shape errors a
 duplicate IDs block opening, and unresolved references are warnings. A ready check
 carries the `graph` the viewer renders, derived once per load. No findings is not a
 claim of full UJG conformance.
+
+## Storybook
+
+The package owns an internal React Storybook on port **6009**, following the
+viewer catalog's conventions: typed CSF stories colocated with each component,
+shared development fixtures under `.storybook/`, public design-system/viewer
+imports, light/dark theme controls, and accessibility tooling.
+
+```sh
+# From the repository root:
+pnpm storybook:app
+pnpm build:storybook:app
+pnpm test:app:storybook
+```
+
+The `App` catalog contains stories for `Application`, `ApplicationHeader`,
+`ApplicationEmpty` and the internal `ApplicationViewer`. `BrandLink` is used in
+compositions and has no standalone story. The header covers reading, findings,
+read/syntax/version errors, export progress/failure and long document names.
+The full application stories support real local upload and ZIP download using
+the unchanged Solid-OIDC example and its 37 screenshots. Isolated header and
+empty-state callbacks log events in Storybook's Actions panel.
+
+`Application` owns its light theme; the theme toolbar applies to the isolated
+components. Changing its `source` control remounts the application, matching its
+read-on-mount contract. Storybook helpers, stories and dependencies stay outside
+the package's production exports and prebuilt site.
+
+Inside this package, the equivalent commands are `pnpm storybook`,
+`pnpm build:storybook` and `pnpm test:storybook` (the last runs against a built
+catalog). Set `APP_STORYBOOK_URL` to a running development catalog to reuse its
+server during browser checks.

@@ -31,3 +31,19 @@ export const FitHeight: Story = {
     ),
   ],
 };
+
+export const Contain: Story = {
+  args: { fit: "contain" },
+  decorators: [
+    (Story) => (
+      <div style={{ inlineSize: "18rem", blockSize: "20rem" }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+export const Original: Story = { ...Contain, args: { fit: "original" } };
+export const LoadingStage: Story = {
+  ...Contain,
+  args: { fit: "contain", status: "loading" },
+};

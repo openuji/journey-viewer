@@ -257,3 +257,51 @@ test("layout is deterministic and leaves its input untouched", () => {
     assert.deepEqual(first, second);
   }
 });
+
+test("a dense level, where almost every block links to a score of others, still lays out", () => {
+  // 56 blocks in one long chain, each also linked to 18 others: about a thousand connections, so
+  // nearly all of them skip layers and the ordering has some 15,000 dummy vertices to keep track of.
+  const count = 56;
+  const nodes = [
+    { id: "header", kind: "header", width: 168, height: 55 },
+    ...Array.from({ length: count }, (_, i) => ({
+      id: `block-${i}`,
+      kind: "block",
+      width: 160,
+      height: 33,
+    })),
+  ];
+  const pairs = new Set(
+    Array.from({ length: count - 1 }, (_, i) => `${i}>${i + 1}`),
+  );
+  for (let i = 0; i < count; i++)
+    for (let k = 1; k <= 18; k++) {
+      const j = (i * 7 + k * 11) % count;
+      if (j !== i) pairs.add(`${i}>${j}`);
+    }
+  const input = {
+    nodes,
+    edges: [...pairs].map((pair) => {
+      const [from, to] = pair.split(">");
+      return { id: pair, source: `block-${from}`, target: `block-${to}` };
+    }),
+  };
+  const started = performance.now();
+  const layout = layoutLevel(input);
+  // The ordering used to take minutes here; a generous bound keeps this from flaking on slow runners.
+  assert.ok(performance.now() - started < 30_000, "lays out in seconds");
+  assert.equal(layout.positions.size, nodes.length);
+  const report = checkLevel(input, layout, minimumLengths());
+  const { examples, ...counts } = report;
+  assert.deepEqual(
+    counts,
+    {
+      diagonals: 0,
+      kinks: 0,
+      shortArrivals: 0,
+      throughBoxes: 0,
+      alongFrames: 0,
+    },
+    examples.join("; "),
+  );
+});

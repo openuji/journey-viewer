@@ -10,6 +10,20 @@ export const iconNames = Object.freeze([
   "previous",
   "next",
   "close",
+  "check",
+  "file",
+  "upload",
+  "download",
+  "layout-rows",
+  "layout-columns",
+  "align-median",
+  "align-centre",
+  "align-left",
+  "zoom-actual",
+  "zoom-fit",
+  "frames",
+  "frame",
+  "legend",
 ] as const);
 
 export function createIconFixture(

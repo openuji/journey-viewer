@@ -3,17 +3,19 @@ import { FlowKey, Text } from "@journey-viewer/design-system";
 import {
   ExpandCollapse,
   FlowPlacement,
+  FlowRoots,
   FlowSettings,
   FlowZoom,
   GraphSearch,
   ResetView,
   TouchpointFilter,
+  TreeLayout,
   ViewSwitch,
   Viewer,
   ViewerBar,
   ViewerMain,
   WhenView,
-  columnsView,
+  WhenTreeLayout,
   countMappedScreens,
   flowView,
   getViewerSummary,
@@ -32,15 +34,15 @@ export interface ApplicationViewerProps {
   readonly touchpoints: TouchpointPresentation;
 }
 
-/** Flow's own controls sit beside its journey path, so the bar is the same in every view. */
+/** Tree's controls are composed in the bar; Flow's own controls sit in its canvas header. */
 const views = [
   treeView,
-  columnsView,
   flowView({
-    pathEnd: (
+    commands: (
       <>
         <FlowPlacement />
         <FlowZoom />
+        <FlowRoots />
         <FlowKey />
       </>
     ),
@@ -48,7 +50,7 @@ const views = [
 ];
 
 /**
- * The application's arrangement of the viewer: Tree, Columns and Flow under one explorer bar,
+ * The application's arrangement of the viewer: Tree and Flow under one explorer bar,
  * which leads with the document's counts because the header already names it.
  */
 export function ApplicationViewer({
@@ -80,7 +82,13 @@ export function ApplicationViewer({
             {stats}
           </Text>
           <ViewSwitch />
-          <WhenView id={["tree", "flow"]}>
+          <WhenView id="tree">
+            <TreeLayout />
+            <WhenTreeLayout mode="tree">
+              <ExpandCollapse />
+            </WhenTreeLayout>
+          </WhenView>
+          <WhenView id="flow">
             <ExpandCollapse />
           </WhenView>
           <TouchpointFilter />

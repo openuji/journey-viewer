@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  columnsView,
   createViewerSnapshot,
   createViewerState,
   flowView,
@@ -23,7 +22,7 @@ const freeze = (value) => {
   return value;
 };
 const graph = oidcGraph;
-const views = freeze([treeView, columnsView, flowView()]);
+const views = freeze([treeView, flowView()]);
 const inputs = freeze({ graph, screenshots: {}, views });
 const reduce = (state, ...commands) =>
   commands.reduce(
@@ -45,8 +44,9 @@ test("the initial state is the viewer snapshot in the first view, or the named v
   assert.equal(start.disclosure.location, null);
   const prepared = createViewerState({
     ...inputs,
-    initialView: "columns",
+    initialView: "flow",
     initialCommands: [
+      { type: "treeLayout", mode: "columns" },
       { type: "collapseAll" },
       {
         type: "toggle",
@@ -55,7 +55,7 @@ test("the initial state is the viewer snapshot in the first view, or the named v
       },
     ],
   });
-  assert.equal(prepared.view, "columns");
+  assert.equal(prepared.view, "flow");
   assert.equal(prepared.disclosure.snapshot.navigation.mode, "columns");
   assert.deepEqual(prepared.disclosure.snapshot.interaction.expandedJourneys, [
     id("idp-auth-journey"),
@@ -70,8 +70,11 @@ test("the initial state is the viewer snapshot in the first view, or the named v
 test("an initial selection keeps its occurrence, lanes and location, and reset returns to it", () => {
   const initial = freeze({
     ...inputs,
-    initialView: "columns",
-    initialCommands: [{ type: "navigate", target: login }],
+    initialView: "tree",
+    initialCommands: [
+      { type: "treeLayout", mode: "columns" },
+      { type: "navigate", target: login },
+    ],
   });
   const opened = createViewerState(initial);
   const { snapshot } = opened.disclosure;
@@ -98,7 +101,8 @@ test("an initial selection keeps its occurrence, lanes and location, and reset r
   });
   const reset = reduceViewer(initial, elsewhere, { type: "reset" });
   assert.deepEqual(reset.disclosure, opened.disclosure);
-  assert.equal(reset.view, "columns");
+  assert.equal(reset.view, "tree");
+  assert.equal(reset.disclosure.snapshot.navigation.mode, "columns");
 });
 
 test("navigation matches the snapshot transitions; only inspector navigation and picks reveal", () => {
@@ -136,27 +140,50 @@ test("navigation matches the snapshot transitions; only inspector navigation and
   assert.equal(picked.reveal.target, login);
 });
 
-test("views share selection and expansion; entering a view applies its own transition", () => {
+test("Tree layouts and Flow share selection and expansion, and retain the chosen layout", () => {
   const selected = reduce(start, { type: "navigate", target: login });
   const flow = reduce(selected, { type: "view", id: "flow" });
   assert.equal(flow.view, "flow");
   assert.equal(flow.disclosure, selected.disclosure, "Flow has no enter");
   const toggled = reduce(flow, { type: "collapseAll" });
-  const columns = reduce(toggled, { type: "view", id: "columns" });
-  assert.equal(columns.view, "columns");
+  const tree = reduce(toggled, { type: "view", id: "tree" });
+  const columns = reduce(tree, { type: "treeLayout", mode: "columns" });
+  assert.equal(columns.view, "tree");
   assert.deepEqual(
     columns.disclosure.snapshot,
-    setViewMode(graph, toggled.disclosure.snapshot, "columns"),
+    setViewMode(graph, tree.disclosure.snapshot, "columns"),
   );
   assert.equal(
     columns.disclosure.snapshot.interaction,
     toggled.disclosure.snapshot.interaction,
   );
   assert.equal(columns.disclosure.location, login);
-  const tree = reduce(columns, { type: "view", id: "tree" });
-  assert.equal(tree.disclosure.snapshot.navigation.mode, "tree");
-  assert.equal(reduce(tree, { type: "view", id: "tree" }), tree);
-  assert.equal(reduce(tree, { type: "view", id: "missing" }), tree);
+  assert.equal(
+    reduce(columns, { type: "treeLayout", mode: "columns" }),
+    columns,
+  );
+  const returned = reduce(
+    columns,
+    { type: "view", id: "flow" },
+    { type: "navigate", target: searchViewer(graph, "Access denied", [])[0] },
+    { type: "view", id: "tree" },
+  );
+  assert.equal(returned.view, "tree");
+  assert.equal(returned.disclosure.snapshot.navigation.mode, "columns");
+  assert.deepEqual(
+    returned.disclosure.snapshot.navigation.lanes,
+    setViewMode(graph, returned.disclosure.snapshot, "columns").navigation
+      .lanes,
+  );
+  const rows = reduce(returned, { type: "treeLayout", mode: "tree" });
+  assert.equal(rows.disclosure.snapshot.navigation.mode, "tree");
+  assert.equal(
+    rows.disclosure.snapshot.interaction,
+    returned.disclosure.snapshot.interaction,
+  );
+  assert.equal(reduce(rows, { type: "view", id: "tree" }), rows);
+  assert.equal(reduce(rows, { type: "view", id: "missing" }), rows);
+  assert.equal(reduce(rows, { type: "view", id: "columns" }), rows);
 });
 
 test("search, filter, contracts, screens and the preview change only their part", () => {
@@ -207,7 +234,7 @@ test("reset returns to the initial view, expansion and selection and scrolls to 
   const changed = reduce(
     start,
     { type: "navigate", target: login, reveal: true },
-    { type: "view", id: "columns" },
+    { type: "treeLayout", mode: "columns" },
     { type: "query", query: "login" },
     { type: "collapseAll" },
   );

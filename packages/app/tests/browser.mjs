@@ -18,6 +18,7 @@ import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
+import { unzipSync, strFromU8 } from "fflate";
 
 const pkg = fileURLToPath(new URL("../", import.meta.url));
 const example = fileURLToPath(
@@ -176,10 +177,42 @@ try {
   const title = page.getByRole("heading", { level: 1 });
   const status = page.locator('[data-application-header] [role="status"]');
   const viewer = page.locator("[data-application-viewer]");
-  const view = page.getByRole("group", { name: "View" });
+  const view = page.getByRole("group", { name: "View", exact: true });
   const canvas = page.getByRole("region", { name: "Journey flow" });
+  const downloadButton = page.getByRole("button", {
+    name: "Download UJG assets",
+    exact: true,
+  });
+  const downloadStatus = page.locator("[data-asset-download-status]");
+  const downloadFiles = async (keyboard = false) => {
+    const downloading = page.waitForEvent("download");
+    if (keyboard) {
+      await downloadButton.focus();
+      await downloadButton.press("Enter");
+    } else await downloadButton.click();
+    const download = await downloading;
+    assert.equal(await download.failure(), null);
+    return {
+      name: download.suggestedFilename(),
+      files: unzipSync(new Uint8Array(await readFile(await download.path()))),
+    };
+  };
+  await page.addInitScript(() => {
+    window.__assetURLs = new Set();
+    const create = URL.createObjectURL;
+    const revoke = URL.revokeObjectURL;
+    URL.createObjectURL = function (...args) {
+      const url = create.apply(this, args);
+      window.__assetURLs.add(url);
+      return url;
+    };
+    URL.revokeObjectURL = function (url) {
+      window.__assetURLs.delete(url);
+      return revoke.call(this, url);
+    };
+  });
 
-  await test("the served page shows Solid-OIDC in Tree, Columns and Flow under a sub-path", async () => {
+  await test("the served page offers Tree and Flow, with Rows and Columns inside Tree, under a sub-path", async () => {
     await page.goto(origin + mount);
     await viewer.locator("[data-explorer-bar]").waitFor();
     assert.equal(await title.textContent(), "solid-oidc.ujg.jsonld");
@@ -221,22 +254,68 @@ try {
     assert.equal(await viewer.locator("[data-state-ref]").count(), 47);
     await page.screenshot({ path: join(evidence, "tree-1440.png") });
 
-    await view.getByRole("button", { name: "Columns" }).click();
-    await page.locator('[data-view="columns"]').waitFor();
+    assert.deepEqual(await view.getByRole("button").allTextContents(), [
+      "Tree",
+      "Flow",
+    ]);
+    const layout = viewer
+      .locator("[data-explorer-bar]")
+      .getByRole("group", { name: "Tree layout", exact: true });
+    assert.equal(await viewer.locator("[data-canvas-header]").count(), 0);
+    assert.equal(await layout.locator('[data-icon="layout-rows"]').count(), 1);
+    assert.equal(
+      await layout.locator('[data-icon="layout-columns"]').count(),
+      1,
+    );
+    assert.equal(
+      await layout
+        .getByRole("button", { name: "Rows" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    const columns = layout.getByRole("button", { name: "Columns" });
+    await columns.focus();
+    await columns.press("Enter");
+    await viewer.getByRole("group", { name: "Journey columns" }).waitFor();
+    assert.equal(
+      await view
+        .getByRole("button", { name: "Tree" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(
+      await viewer.getByRole("button", { name: "Expand all" }).count(),
+      0,
+    );
     await page.screenshot({ path: join(evidence, "columns-1440.png") });
 
+    await view.getByRole("button", { name: "Flow" }).click();
+    await canvas.waitFor();
+    assert.equal(await layout.count(), 0);
+    await view.getByRole("button", { name: "Tree" }).click();
+    assert.equal(
+      await layout
+        .getByRole("button", { name: "Columns" })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await layout.getByRole("button", { name: "Rows" }).click();
+    assert.equal(
+      await viewer.locator("[data-state-ref]").count(),
+      47,
+      "rows retain the expanded hierarchy",
+    );
     await view.getByRole("button", { name: "Flow" }).click();
     await canvas.waitFor();
     assert.ok(
       (await canvas.locator('[data-flow-key^="state:"]').count()) > 0,
       "the canvas draws the journey's states",
     );
-    // Flow's own controls sit beside its journey path, not in the bar.
-    const path = page
-      .getByRole("navigation", { name: "Journey path" })
-      .locator("..");
-    await path.getByRole("group", { name: "Placement" }).waitFor();
-    await path.getByRole("group", { name: "Zoom" }).waitFor();
+    // Flow's own controls sit in its canvas header, beside the journey path, not in the bar.
+    const header = page.locator("[data-canvas-header]");
+    await header.getByRole("navigation", { name: "Journey path" }).waitFor();
+    await header.getByRole("group", { name: "Placement" }).waitFor();
+    await header.getByRole("group", { name: "Zoom" }).waitFor();
     assert.equal(
       await page
         .locator("[data-explorer-bar]")
@@ -280,7 +359,125 @@ try {
     assert.ok(requests.some((url) => url.endsWith("journey/source.json")));
   });
 
-  await test("Open file replaces the document; a rejected file or UJG version keeps it", async () => {
+  await test("keyboard download saves the original document, settings and all 37 screenshots in a portable ZIP", async () => {
+    await downloadButton.focus();
+    await page
+      .getByText("Download UJG assets", { exact: true })
+      .waitFor({ state: "visible" });
+    const { name, files } = await downloadFiles(true);
+    assert.equal(name, "solid-oidc-ujg-assets.zip");
+    assert.equal(
+      strFromU8(files["document.jsonld"]),
+      await readFile(join(example, "solid-oidc.ujg.jsonld"), "utf8"),
+    );
+    assert.deepEqual(
+      JSON.parse(strFromU8(files["touchpoints.json"])),
+      JSON.parse(await readFile(join(example, "touchpoints.json"), "utf8")),
+    );
+    const original = JSON.parse(
+      await readFile(join(example, "screenshots.json"), "utf8"),
+    );
+    const exported = JSON.parse(strFromU8(files["screenshots.json"]));
+    assert.deepEqual(
+      Object.keys(exported).sort(),
+      Object.keys(original).sort(),
+    );
+    assert.equal(Object.keys(files).length, 40);
+    for (const [ref, path] of Object.entries(exported)) {
+      assert.match(path, /^screens\/[^/]+\.png$/);
+      assert.deepEqual(
+        Buffer.from(files[path]),
+        await readFile(join(example, original[ref])),
+      );
+    }
+    await page.waitForFunction(() => window.__assetURLs.size === 0);
+    assert.equal(await downloadStatus.textContent(), "");
+    assert.equal((await status.textContent()).trim(), "No findings");
+  });
+
+  await test("a missing screenshot stops the download and allows a complete retry", async () => {
+    const downloads = [];
+    const record = (download) => downloads.push(download);
+    page.on("download", record);
+    await page.route("**/journey/screens/**", (route) =>
+      route.fulfill({ status: 404, body: "missing" }),
+    );
+    await page.setViewportSize({ width: 320, height: 900 });
+    await downloadButton.click();
+    await downloadStatus
+      .getByText(
+        /Could not download UJG assets.*Screenshot.*status 404.*Try again/,
+      )
+      .waitFor();
+    assert.equal(downloads.length, 0);
+    assert.equal(await downloadButton.isEnabled(), true);
+    assert.equal((await status.textContent()).trim(), "No findings");
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    await page.screenshot({ path: join(evidence, "assets-error-320.png") });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.unroute("**/journey/screens/**");
+    const { files } = await downloadFiles();
+    assert.equal(Object.keys(files).length, 40);
+    assert.equal(await downloadStatus.textContent(), "");
+    page.off("download", record);
+  });
+
+  await test("preparation prevents duplicate downloads and a new upload cancels the pending export", async () => {
+    const downloads = [];
+    const record = (download) => downloads.push(download);
+    page.on("download", record);
+    let release;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    let started;
+    const requestStarted = new Promise((resolve) => {
+      started = resolve;
+    });
+    await page.route("**/journey/screens/**", async (route) => {
+      started();
+      await gate;
+      await route.continue().catch(() => {});
+    });
+    await downloadButton.evaluate((button) => {
+      button.click();
+      button.click();
+    });
+    await requestStarted;
+    assert.equal(await downloadButton.isDisabled(), true);
+    assert.equal(await downloadButton.getAttribute("aria-busy"), "true");
+    await downloadStatus
+      .getByText("Preparing UJG assets…", { exact: true })
+      .waitFor();
+    // A rejected replacement still cancels the export, retaining the last successful document.
+    await page.locator("#journey-file").setInputFiles({
+      name: "broken.json",
+      mimeType: "application/json",
+      buffer: Buffer.from("{"),
+    });
+    await status
+      .getByRole("button", { name: "Couldn't open broken.json" })
+      .waitFor();
+    release();
+    await page.unroute("**/journey/screens/**", undefined, {
+      behavior: "wait",
+    });
+    assert.equal(await title.textContent(), "solid-oidc.ujg.jsonld");
+    assert.equal(await downloadButton.isEnabled(), true);
+    assert.equal(await downloadStatus.textContent(), "");
+    // A fresh export completes after the cancelled one; there is still only one download.
+    const { files } = await downloadFiles();
+    assert.equal(Object.keys(files).length, 40);
+    assert.equal(downloads.length, 1);
+    page.off("download", record);
+  });
+
+  await test("Upload UJG replaces the document; a rejected file or UJG version keeps it", async () => {
     const input = page.locator("#journey-file");
     // Editor's Draft contexts: they name the version and are never fetched.
     const local = {
@@ -309,7 +506,7 @@ try {
       ],
     };
     await page
-      .getByRole("button", { name: "Open file…", exact: true })
+      .getByRole("button", { name: "Upload UJG", exact: true })
       .waitFor();
     await input.setInputFiles({
       name: "local.jsonld",
@@ -370,9 +567,40 @@ try {
       .getByRole("heading", { name: "Local journey", exact: true })
       .waitFor();
     assert.deepEqual(errors, []);
+    const { name, files } = await downloadFiles();
+    assert.equal(name, "local-ujg-assets.zip");
+    assert.equal(strFromU8(files["document.jsonld"]), JSON.stringify(local));
+    assert.deepEqual(Object.keys(files).sort(), [
+      "document.jsonld",
+      "screenshots.json",
+      "touchpoints.json",
+    ]);
+    assert.deepEqual(JSON.parse(strFromU8(files["screenshots.json"])), {});
+    assert.deepEqual(JSON.parse(strFromU8(files["touchpoints.json"])), {});
   });
 
-  await test("a malformed presentation input is reported and leaves Open file working", async () => {
+  await test("large local documents retain uninterpreted fields through browser-worker compression", async () => {
+    const original = JSON.parse(
+      await readFile(join(example, "solid-oidc.ujg.jsonld"), "utf8"),
+    );
+    const text = JSON.stringify({
+      ...original,
+      vendorPayload: "preserve this field ".repeat(30_000),
+    });
+    await page.locator("#journey-file").setInputFiles({
+      name: "large.jsonld",
+      mimeType: "application/ld+json",
+      buffer: Buffer.from(text),
+    });
+    await page
+      .getByRole("heading", { level: 1, name: "large.jsonld", exact: true })
+      .waitFor();
+    const { files } = await downloadFiles();
+    assert.equal(strFromU8(files["document.jsonld"]), text);
+    assert.deepEqual(errors, []);
+  });
+
+  await test("a malformed presentation input is reported and leaves Upload UJG working", async () => {
     await page.goto(origin + malformed);
     await status
       .getByRole("button", { name: "Couldn't open solid-oidc.ujg.jsonld" })
@@ -385,6 +613,7 @@ try {
     await page
       .getByRole("heading", { name: "Choose a journey file" })
       .waitFor();
+    assert.equal(await downloadButton.isDisabled(), true);
     await page.locator("#journey-file").setInputFiles({
       name: "replacement.jsonld",
       mimeType: "application/ld+json",
@@ -409,25 +638,60 @@ try {
     assert.deepEqual(errors, []);
   });
 
-  await test("no page overflow at 320–1440 in Tree and Flow", async () => {
+  await test("no page overflow at 320–1440 in Tree Rows, Tree Columns and Flow", async () => {
     await page.goto(origin + mount);
     await viewer.locator("[data-explorer-bar]").waitFor();
-    for (const view of ["Tree", "Flow"]) {
+    for (const presentation of ["Rows", "Columns", "Flow"]) {
       for (const width of [320, 375, 859, 860, 1099, 1100, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page
-          .getByRole("group", { name: "View" })
-          .getByRole("button", { name: view })
+          .getByRole("group", { name: "View", exact: true })
+          .getByRole("button", {
+            name: presentation === "Flow" ? "Flow" : "Tree",
+          })
           .click();
+        if (presentation !== "Flow")
+          await viewer
+            .getByRole("group", { name: "Tree layout" })
+            .getByRole("button", { name: presentation })
+            .click();
         const overflow = await page.evaluate(
           () =>
             document.documentElement.scrollWidth -
             document.documentElement.clientWidth,
         );
-        assert.equal(overflow, 0, `${view} at ${width}px`);
+        assert.equal(overflow, 0, `${presentation} at ${width}px`);
+        await page.keyboard.press("Tab");
+        for (const label of ["Upload UJG", "Download UJG assets"]) {
+          const button = page
+            .locator("[data-application-header]")
+            .getByRole("button", { name: label, exact: true });
+          await button.focus();
+          assert.equal(
+            await button.evaluate(
+              (element, min) =>
+                document.activeElement === element &&
+                getComputedStyle(element).outlineStyle !== "none" &&
+                element.getBoundingClientRect().height >= min,
+              width < 860 ? 44 : 30,
+            ),
+            true,
+            `${label} focus and target at ${width}`,
+          );
+        }
+        await page
+          .getByText("Download UJG assets", { exact: true })
+          .waitFor({ state: "visible" });
+        const tip = await page
+          .getByText("Download UJG assets", { exact: true })
+          .boundingBox();
+        assert.ok(
+          tip.x >= 0 && tip.x + tip.width <= width,
+          `download tooltip fits ${width}`,
+        );
         if (width === 375)
           await page.screenshot({
-            path: join(evidence, `${view.toLowerCase()}-375.png`),
+            path: join(evidence, `${presentation.toLowerCase()}-375.png`),
           });
       }
     }

@@ -12,7 +12,7 @@ import "@journey-viewer/design-system/styles.css";
   <JourneyCard title="Account access" count="4 states">
     <StateRow label="Choose a method" selected={selected} onSelect={onSelect} />
   </JourneyCard>
-</section>
+</section>;
 ```
 
 Callers supply selection/expansion snapshots and callbacks. `StateRow` does not
@@ -25,7 +25,8 @@ expansion, filtering, callback, or mode props. `StateRow` is the controlled row
 ported from the original hierarchy: a composite with `onToggle` renders a
 disclosure button, and a composite without it renders a decorative caret that is
 accented while `expanded` (columns use this). `tone` (`active`, `incoming`,
-`outgoing`, `both`, `dim`) and `marks` (`{ incoming, outgoing, title? }`) present
+`outgoing`, `both`, `dim`) and `marks`
+(`{ incoming, selfLoops?, outgoing, title? }`) present
 the caller's relation to the active state, with an accessible explanation of the
 marks; `selected` highlights the whole row. `description` shows faint secondary
 text (hidden below `md`), `crossing` a touchpoint dot, and `actions` caller
@@ -36,17 +37,18 @@ disclosure control is meaningful.
 
 ## Primitive ownership
 
-| Export | Owns |
-| --- | --- |
-| `Button` | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices. |
-| `IconButton` | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`. |
-| `Icon` | Decorative chevron, phone, expand/collapse-all, reset, previous/next and close glyphs; the enclosing control supplies the name. |
-| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Columns. |
-| `SearchField` | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller. |
-| `Heading` | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`). |
-| `Text` | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`. |
-| `Badge` | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips. |
-| `Surface` | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance. |
+| Export             | Owns                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`           | Single native button implementation, explicit variants (`solid`, `outline`, `ghost`, `row`, `bare`, `pill`, `segment`, `chip`, `panel`) and sizes (`xs`, `sm`, `md`), focus, hover, disabled and selected styling, mobile hit areas. Native button attributes pass through; the default type is `button`. Selection styling and ARIA semantics are explicit caller choices.                                                  |
+| `IconButton`       | Accessible icon-only contract and icon layout; composes `Button`. Supply the required `label` and `icon`.                                                                                                                                                                                                                                                                                                                    |
+| `Icon`             | Decorative glyphs named by purpose (chevron, phone, expand/collapse-all, reset, previous/next, close, check, file, and the flow canvas commands `align-median`, `align-centre`, `align-left`, `zoom-actual`, `zoom-fit`, `frames`, `frame`, `legend`), all drawn from one family, [Lucide](https://lucide.dev) (`lucide-react`, a dependency), at a 1.5px stroke whatever the size. The enclosing control supplies the name. |
+| `SegmentedControl` | A labeled group of mutually exclusive pressed `segment` buttons, such as Tree/Flow or Rows/Columns. An option with an `icon` is drawn as that glyph alone, named by its `label` and shown in a `Tooltip`. The pressed option takes the `color.pressed` fill, lighter than the trough in both themes.                                                                                                                         |
+| `Tooltip`          | The visible name of an icon-only control, below it on hover (after a delay) and on keyboard focus. CSS only: hidden from assistive technology, because the trigger carries the same name. Wrap the control: `<Tooltip label="Reset view"><IconButton label="Reset view" … /></Tooltip>`.                                                                                                                                     |
+| `SearchField`      | Visually labeled-by-name native search input with a caller-controlled result popover (`open`, `status`, `SearchResult` children). Enter submits; Escape clears and leaves the field through the caller.                                                                                                                                                                                                                      |
+| `Heading`          | Heading typography. Required `level` (1–6) is independent of visual `size` (`xs`, `sm`, `md`, `lg`).                                                                                                                                                                                                                                                                                                                         |
+| `Text`             | Body, label, caption and code roles; default/muted/subtle/entry/exit/accent tones; optional `weight`. Native `span`, `p`, `strong`, or `code`.                                                                                                                                                                                                                                                                               |
+| `Badge`            | Non-interactive compact labels/counts; composes `Surface` and `Text`. Use `Button` for interactive chips.                                                                                                                                                                                                                                                                                                                    |
+| `Surface`          | Background/border/radius/elevation; explicit native element, default/muted tone, sm/lg/full radius and optional raised appearance.                                                                                                                                                                                                                                                                                           |
 
 Hierarchy compositions are `ExplorerBar` (with `ExplorerBarTitle` and
 `ExplorerBarSpacer`), `TouchpointDot`, `JourneyHead`, `JourneyCard`, `JourneyNest`,
@@ -65,14 +67,19 @@ the toolbar header (sticky from `md`, marked with `data-explorer-bar`).
 `ScreenImage` renders an image at its natural ratio from explicit `source`,
 `label`, `status` (`loading`, `ready`, `unavailable`), `fit` (`width` fills the
 container; `height` is bounded by `--jv-screen-image-height` and the viewport
-width) and required load/error callbacks. The caller owns load status; the
+width; `contain` fits a definite stage without upscaling; `original` scrolls at
+one image pixel per CSS pixel) and required load/error callbacks. An optional
+`imageRef` lets the browser caller check readiness before paint. The caller owns load status; the
 component has no state or effects. `ScreenThumbnail` is the inspector's compact
 screenshot with an “Enlarge” hint; without `onOpen` it is not interactive.
 `ScreenPreview` is the floating, `aria-hidden` hover card (title, context, dot);
 its caller supplies placement through `style` and may pass a `ref` for
-measurement. `ScreenLightbox` owns only modal content: the phone-sized image slot
-and a caption with dot, title, context, position and previous/next/close icon
-buttons. The browser/caller owns the actual dialog lifecycle, keyboard handling
+measurement. `ScreenLightbox` owns only modal content: a stable viewport-bounded
+image stage, a bounded scrollable title/context region and a separate counter/control
+toolbar. Optional controlled `sizingMode` (`fit` or `original`) and
+`onSizingModeChange` props add the Original size / Fit to window toggle. The
+caption is at most 42rem wide; when its width falls below 30rem the counter has its own row.
+The browser/caller owns the actual dialog lifecycle, keyboard handling
 and focus. Its heading is level 2 within the independent dialog; it does not
 inherit a hierarchy heading level. All four have pure
 fixtures, separate checks and stories; no UJG IDs or asset path conventions enter
@@ -103,12 +110,22 @@ tooltip without replacing that accessible explanation.
 ## Flow primitives
 
 `FlowFrame`, `StateNode`, `CompositeCard`, `ContractGlyph`, `Connector`, `RouteOverlay`,
-`JourneyPath` and `FlowKey` draw a flow chart from positions and pre-wrapped text that the
-caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`, `Text` and
-`TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
+`JourneyPath`, `CanvasHeader`, `FlowKey` and `InsetMap` draw a flow chart from positions and pre-wrapped
+text that the caller's layout supplies (Storybook `Flow/*`). They compose `Button`, `IconButton`,
+`Text`, `Tooltip` and `TouchpointDot`, know no UJG and own no state. `flowGeometry` lists the sizes they draw (corner
 radius, arrowheads, route width, contract glyph), so a layout engine can reserve room for them;
 `parallel` offsets an orthogonal polyline to one side of its travel. Resting connectors use the
 `color.connector` token, which keeps at least 3:1 on paper and ground in both themes.
+
+`CanvasHeader` is the slim row above a canvas: a `path` (such as `JourneyPath`) on the left and
+`commands` in a named command plane on the right, on one row from `md`; below it the commands wrap
+onto their own rows. From `md`, `JourneyPath` keeps to one line: earlier steps truncate first and
+the current journey last. `FlowKey` opens its legend from a glyph button with a tooltip.
+
+`InsetMap` draws a whole chart in miniature: frames and blocks from their rectangles, the selection in
+accent, and the `view` the canvas shows, with the chart outside it veiled. It is decorative to
+assistive technology and takes pointer handlers through its spread props, so a browser adapter can
+move the canvas from it.
 
 ## Tokens and themes
 
@@ -189,8 +206,10 @@ and mode properties, and checks both counts independently.
 `JourneyContractControls` is the interactive counterpart to `JourneyContracts`:
 it receives the same readonly items, an explicit `{ kind, id } | null` selection,
 a required `onSelect(kind, id)` callback, and an explicit `open` flag with
-`onToggle`. Closed, it shows only the “1 entry · 2 exits” summary toggle; open, it
-lists entry and exit chips (with a muted “default”). It composes `Button` and `Text`;
+`onToggle`. Optional `exitRoutes` add the active state's aggregate `→n` to the summary
+and the corresponding `→n` to each expanded exit chip. Closed, it shows only the
+“1 entry · 2 exits” summary toggle; open, it lists entry and exit chips (with a muted
+“default”). It composes `Button` and `Text`;
 static contract lists remain noninteractive. Fixture checks reject selections
 that do not name a listed contract of the same kind.
 
