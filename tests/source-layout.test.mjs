@@ -25,10 +25,13 @@ async function files(directory, pattern) {
 test("library sources import through extensionless tsconfig aliases or package names", async () => {
   // "@/*" -> "./src/*" and "~/*" -> package root, declared in each package's tsconfig.json.
   // TypeScript modules are named without .js/.ts; tsc-alias adds ".js" to the built output.
+  // Native .mjs test helpers use fully specified relative .mjs imports for Node ESM.
   const specifier =
     /(?:\bfrom\s*|\bimport\s*\(?\s*|@import\s+|@reference\s+)["']([^"']+)["']/g;
-  const misnamed = (target) =>
-    /^\.\.?\//.test(target) || /^[@~]\/.*\.(?:js|jsx|ts|tsx)$/.test(target);
+  const misnamed = (path, target) =>
+    (/^\.\.?\//.test(target) &&
+      !(path.endsWith(".mjs") && target.endsWith(".mjs"))) ||
+    /^[@~]\/.*\.(?:js|jsx|ts|tsx)$/.test(target);
   const directories = [
     "tests",
     ...packages.flatMap((root) =>
@@ -43,7 +46,7 @@ test("library sources import through extensionless tsconfig aliases or package n
       for (const [, target] of (
         await readFile(join(repository, path), "utf8")
       ).matchAll(specifier)) {
-        if (misnamed(target)) violations.push(`${path}: ${target}`);
+        if (misnamed(path, target)) violations.push(`${path}: ${target}`);
       }
     }
   }

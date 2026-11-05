@@ -27,6 +27,18 @@ the source graph, fetch remote JSON-LD contexts, or upload local files to a serv
 
 [Open Journey Viewer](https://journey-viewer.openuji.org/app/)
 
+## Install
+
+Install the application package and its React peers:
+
+```sh
+pnpm add @journey-viewer/app react react-dom
+pnpm exec journey-viewer --help
+```
+
+The renderer, design system, JSON-LD utilities, lint checks, and flow layout are
+also published separately under the `@journey-viewer` scope.
+
 ## Examples
 
 - [Solid-OIDC](https://journey-viewer.openuji.org/app/examples/solid-oidc/) — an
@@ -64,6 +76,7 @@ pnpm storybook:app      # complete application
 - `@journey-viewer/flow-layout` — dependency-free layered flow layout.
 
 Package-specific usage and APIs are documented in each package directory.
+Maintainer release instructions are in [Publishing](docs/publishing.md).
 
 ## License
 

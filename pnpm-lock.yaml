@@ -75,16 +75,16 @@ importers:
   packages/app:
     dependencies:
       '@journey-viewer/design-system':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../design-system
       '@journey-viewer/lint':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../lint
       '@journey-viewer/ujg-jsonld':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../ujg-jsonld
       '@journey-viewer/viewer':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../viewer
       fflate:
         specifier: 0.8.3
@@ -227,13 +227,13 @@ importers:
   packages/viewer:
     dependencies:
       '@journey-viewer/design-system':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../design-system
       '@journey-viewer/flow-layout':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../flow-layout
       '@journey-viewer/ujg-jsonld':
-        specifier: workspace:*
+        specifier: workspace:^0.1.0
         version: link:../ujg-jsonld
     devDependencies:
       '@storybook/addon-a11y':

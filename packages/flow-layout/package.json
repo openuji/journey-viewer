@@ -1,8 +1,30 @@
 {
   "name": "@journey-viewer/flow-layout",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Dependency-free layered flow layout engine for Journey Viewer.",
+  "license": "MIT",
+  "author": "Open User Journey Initiative",
+  "homepage": "https://journey-viewer.openuji.org/",
+  "bugs": {
+    "url": "https://github.com/openuji/journey-viewer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openuji/journey-viewer.git",
+    "directory": "packages/flow-layout"
+  },
+  "keywords": [
+    "user-journey",
+    "graph",
+    "flow",
+    "layout",
+    "layered-layout"
+  ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -6,6 +6,13 @@ outcome in its header and shows the document in the viewer's Tree and Flow
 views. Tree offers Rows and Columns layouts. It ships as React components and as a prebuilt static site with a
 command that puts a document beside it.
 
+Install the application and its React peers from npm:
+
+```sh
+pnpm add @journey-viewer/app react react-dom
+pnpm exec journey-viewer --help
+```
+
 ## Generate or run a document
 
 ```sh
@@ -26,8 +33,8 @@ journey-viewer generate checkout.jsonld \
 journey-viewer run checkout.jsonld --screenshots screenshots.json
 ```
 
-Until the packages are published, install the packed tarballs (see the root
-README's Distribution) and run the bin with `pnpm exec journey-viewer`.
+An installed copy exposes the command as `journey-viewer`; with pnpm, invoke it
+as `pnpm exec journey-viewer`.
 
 ### Try it with the Solid-OIDC example
 

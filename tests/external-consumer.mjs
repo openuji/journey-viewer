@@ -1,4 +1,4 @@
-// Packs the six libraries, installs the tarballs in a temporary project outside the
+// Packs the six packages, installs the tarballs in a temporary project outside the
 // workspace and uses them there the way an external consumer would. Run after `pnpm build`.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -24,14 +24,23 @@ const names = [
   "flow-layout",
   "app",
 ];
-const run = (command, args, cwd) =>
-  execFileSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-  });
+const repositoryUrl = "git+https://github.com/openuji/journey-viewer.git";
+const registry = "https://registry.npmjs.org/";
+const run = (command, args, cwd) => {
+  try {
+    return execFileSync(command, args, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+  } catch (error) {
+    if (error?.stdout) process.stdout.write(error.stdout);
+    throw error;
+  }
+};
 
 const consumer = await mkdtemp(join(tmpdir(), "journey-viewer-consumer-"));
+const executable = (name) => join(consumer, "node_modules", ".bin", name);
 try {
   await cp(join(repository, "tests", "external-consumer"), consumer, {
     recursive: true,
@@ -43,7 +52,7 @@ try {
   const tarballs = {};
   const manifests = {};
 
-  await test("each tarball holds only its manifest, README and compiled output", () => {
+  await test("each tarball has public metadata and only releasable files", () => {
     for (const name of names) {
       const packed = JSON.parse(
         run(
@@ -55,7 +64,8 @@ try {
       const files = packed.files.map((file) => file.path);
       assert.deepEqual(
         files.filter(
-          (path) => !/^(package\.json|README\.md|dist\/.+)$/.test(path),
+          (path) =>
+            !/^(?:LICENSE|package\.json|README\.md|dist\/.+)$/.test(path),
         ),
         [],
         name,
@@ -69,6 +79,12 @@ try {
         [],
         name,
       );
+      for (const required of ["LICENSE", "README.md", "package.json"])
+        assert.ok(files.includes(required), `${name}: missing ${required}`);
+      assert.ok(
+        files.some((path) => path.startsWith("dist/")),
+        `${name}: missing compiled output`,
+      );
       const manifest = JSON.parse(
         run(
           "tar",
@@ -81,6 +97,50 @@ try {
         /workspace:|catalog:/,
         name,
       );
+      assert.match(manifest.version, /^\d+\.\d+\.\d+$/, name);
+      assert.equal(Object.hasOwn(manifest, "private"), false, name);
+      assert.equal(manifest.license, "MIT", name);
+      assert.equal(manifest.author, "Open User Journey Initiative", name);
+      assert.ok(manifest.description, name);
+      assert.ok(manifest.keywords?.length >= 3, name);
+      assert.equal(
+        manifest.homepage,
+        "https://journey-viewer.openuji.org/",
+        name,
+      );
+      assert.equal(
+        manifest.bugs?.url,
+        "https://github.com/openuji/journey-viewer/issues",
+        name,
+      );
+      assert.deepEqual(
+        manifest.repository,
+        {
+          type: "git",
+          url: repositoryUrl,
+          directory: `packages/${name}`,
+        },
+        name,
+      );
+      assert.deepEqual(
+        manifest.publishConfig,
+        { access: "public", registry },
+        name,
+      );
+      if (name === "app") assert.equal(manifest.engines?.node, ">=22.13.0");
+      assert.equal(
+        Object.keys(manifest.imports ?? {}).some((key) =>
+          key.startsWith("#tests"),
+        ),
+        false,
+        name,
+      );
+      for (const [dependency, range] of Object.entries(
+        manifest.dependencies ?? {},
+      )) {
+        if (!dependency.startsWith("@journey-viewer/")) continue;
+        assert.match(range, /^\^\d+\.\d+\.\d+$/, `${name}: ${dependency}`);
+      }
       tarballs[manifest.name] = `file:./${basename(packed.filename)}`;
       manifests[manifest.name] = manifest;
     }
@@ -104,23 +164,18 @@ try {
         },
       }),
     );
-    // The packed inter-package dependencies are "0.0.0"; point them at the tarballs.
-    await writeFile(
-      join(consumer, "pnpm-workspace.yaml"),
-      `overrides:\n${Object.entries(tarballs)
-        .map(([name, tarball]) => `  "${name}": "${tarball}"\n`)
-        .join("")}`,
+    run(
+      "npm",
+      ["install", "--prefer-offline", "--no-audit", "--no-fund"],
+      consumer,
     );
-    run("pnpm", ["install", "--prefer-offline"], consumer);
   });
 
   await test("declarations type-check with bundler and nodenext resolution and no Vite types", () => {
-    run("pnpm", ["exec", "tsc", "-p", "tsconfig.json"], consumer);
+    run(executable("tsc"), ["-p", "tsconfig.json"], consumer);
     run(
-      "pnpm",
+      executable("tsc"),
       [
-        "exec",
-        "tsc",
         "-p",
         "tsconfig.json",
         "--module",
@@ -139,15 +194,8 @@ try {
   await test("the installed journey-viewer bin generates a self-contained folder", async () => {
     process.stdout.write(
       run(
-        "pnpm",
-        [
-          "exec",
-          "journey-viewer",
-          "generate",
-          "solid-oidc.ujg.jsonld",
-          "--out",
-          "www/maps/solid-oidc",
-        ],
+        executable("journey-viewer"),
+        ["generate", "solid-oidc.ujg.jsonld", "--out", "www/maps/solid-oidc"],
         consumer,
       ),
     );

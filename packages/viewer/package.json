@@ -1,17 +1,36 @@
 {
   "name": "@journey-viewer/viewer",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Interactive React tree and flow views for User Journey Graph documents.",
+  "license": "MIT",
+  "author": "Open User Journey Initiative",
+  "homepage": "https://journey-viewer.openuji.org/",
+  "bugs": {
+    "url": "https://github.com/openuji/journey-viewer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openuji/journey-viewer.git",
+    "directory": "packages/viewer"
+  },
+  "keywords": [
+    "user-journey",
+    "user-journey-graph",
+    "json-ld",
+    "react",
+    "viewer"
+  ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css"
-  },
-  "imports": {
-    "#tests/*": "./tests/*"
   },
   "files": [
     "dist"
@@ -29,9 +48,9 @@
     "test:parity": "node tests/parity.mjs"
   },
   "dependencies": {
-    "@journey-viewer/ujg-jsonld": "workspace:*",
-    "@journey-viewer/design-system": "workspace:*",
-    "@journey-viewer/flow-layout": "workspace:*"
+    "@journey-viewer/ujg-jsonld": "workspace:^0.1.0",
+    "@journey-viewer/design-system": "workspace:^0.1.0",
+    "@journey-viewer/flow-layout": "workspace:^0.1.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",

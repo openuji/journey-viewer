@@ -1,8 +1,33 @@
 {
   "name": "@journey-viewer/app",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Application shell and static-site CLI for viewing User Journey Graph documents.",
+  "license": "MIT",
+  "author": "Open User Journey Initiative",
+  "homepage": "https://journey-viewer.openuji.org/",
+  "bugs": {
+    "url": "https://github.com/openuji/journey-viewer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openuji/journey-viewer.git",
+    "directory": "packages/app"
+  },
+  "keywords": [
+    "user-journey",
+    "user-journey-graph",
+    "json-ld",
+    "viewer",
+    "cli"
+  ],
   "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "bin": {
     "journey-viewer": "./dist/cli/cli.js"
   },
@@ -28,10 +53,10 @@
     "test:storybook": "node tests/storybook.mjs"
   },
   "dependencies": {
-    "@journey-viewer/design-system": "workspace:*",
-    "@journey-viewer/lint": "workspace:*",
-    "@journey-viewer/ujg-jsonld": "workspace:*",
-    "@journey-viewer/viewer": "workspace:*",
+    "@journey-viewer/design-system": "workspace:^0.1.0",
+    "@journey-viewer/lint": "workspace:^0.1.0",
+    "@journey-viewer/ujg-jsonld": "workspace:^0.1.0",
+    "@journey-viewer/viewer": "workspace:^0.1.0",
     "fflate": "0.8.3",
     "vite": "catalog:"
   },

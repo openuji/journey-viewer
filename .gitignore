@@ -4,6 +4,7 @@ dist/
 *.tsbuildinfo
 .DS_Store
 storybook-static/
+release-artifacts/
 packages/design-system/src/styles/generated/
 packages/design-system/.storybook/generated/
 packages/design-system/.test-output/
@@ -18,3 +19,4 @@ PLAN.md
 AGENTS.md
 PRODUCT.md
 DESIGN.md
+docs/publishing.md

@@ -5,7 +5,7 @@ import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
-import { checkLightbox } from "#tests/lightbox-cases.mjs";
+import { checkLightbox } from "./lightbox-cases.mjs";
 
 const root = fileURLToPath(new URL("../storybook-static/", import.meta.url));
 const evidence = fileURLToPath(new URL("../.test-output/", import.meta.url));

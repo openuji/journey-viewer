@@ -139,5 +139,5 @@ pixels, so a straight line is exactly straight when drawn. If no option for a pi
 were allowed, it would be left to the solution and could step short. That has not
 happened in any tested level.
 
-Build with `pnpm --filter @journey-viewer/flow-layout build`. The package is private
-in this repository and ships built ESM and declarations only.
+Build with `pnpm --filter @journey-viewer/flow-layout build`. The published package
+ships built ESM and declarations only.

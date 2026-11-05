@@ -1,8 +1,30 @@
 {
   "name": "@journey-viewer/ujg-jsonld",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Readonly User Journey Graph JSON-LD types, queries, and graph projection.",
+  "license": "MIT",
+  "author": "Open User Journey Initiative",
+  "homepage": "https://journey-viewer.openuji.org/",
+  "bugs": {
+    "url": "https://github.com/openuji/journey-viewer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openuji/journey-viewer.git",
+    "directory": "packages/ujg-jsonld"
+  },
+  "keywords": [
+    "user-journey",
+    "user-journey-graph",
+    "json-ld",
+    "graph",
+    "typescript"
+  ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
