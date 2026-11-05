@@ -12,6 +12,8 @@ const registry = "https://registry.npmjs.org/";
 const repositoryUrl = "git+https://github.com/openuji/journey-viewer.git";
 const homepage = "https://journey-viewer.openuji.org/";
 const bugsUrl = "https://github.com/openuji/journey-viewer/issues";
+const publishVisibilityTimeout = 20 * 60 * 1_000;
+const publishVisibilityPoll = 10_000;
 
 export const packages = [
   "flow-layout",
@@ -342,28 +344,45 @@ const verifyDependencies = async (artifact, availableInRun) => {
 };
 
 const waitForPublishedVersion = async (artifact) => {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  const started = Date.now();
+  let nextUpdate = started;
+  while (Date.now() - started < publishVisibilityTimeout) {
     const published = await registryVersion(
       artifact.manifest.name,
       artifact.manifest.version,
     );
-    if (published?.dist?.shasum === artifact.shasum) return;
-    await new Promise((done) => setTimeout(done, 2_000));
+    if (published) {
+      if (published.dist?.shasum !== artifact.shasum)
+        fail(
+          `${artifact.manifest.name}@${artifact.manifest.version} became visible with a different checksum`,
+        );
+      console.log(
+        `${artifact.manifest.name}@${artifact.manifest.version} is available from npm`,
+      );
+      return;
+    }
+    if (Date.now() >= nextUpdate) {
+      const elapsed = Math.round((Date.now() - started) / 1_000);
+      console.log(
+        `Waiting for npm scanning: ${artifact.manifest.name}@${artifact.manifest.version} (${elapsed}s)`,
+      );
+      nextUpdate = Date.now() + 60_000;
+    }
+    await new Promise((done) => setTimeout(done, publishVisibilityPoll));
   }
   fail(
-    `${artifact.manifest.name}@${artifact.manifest.version} was published but its matching checksum is not visible yet; rerun after registry propagation`,
+    `${artifact.manifest.name}@${artifact.manifest.version} was submitted but is still being processed after 20 minutes; check npm for a review notice, then rerun after it becomes available`,
   );
 };
 
 const publishPackages = async (artifacts, dryRun) => {
   const availableInRun = new Map();
+  const submitted = [];
   for (const artifact of artifacts) {
     await verifyDependencies(artifact, availableInRun);
     if (!dryRun) {
-      const existing = await registryVersion(
-        artifact.manifest.name,
-        artifact.manifest.version,
-      );
+      const document = await registryDocument(artifact.manifest.name);
+      const existing = document?.versions?.[artifact.manifest.version] ?? null;
       if (existing) {
         if (existing.dist?.shasum !== artifact.shasum)
           fail(
@@ -375,6 +394,11 @@ const publishPackages = async (artifacts, dryRun) => {
         availableInRun.set(artifact.manifest.name, artifact.manifest.version);
         continue;
       }
+      const versions = Object.keys(document?.versions ?? {});
+      if (versions.length === 1 && versions[0] === "0.0.0-stage")
+        fail(
+          `${artifact.manifest.name} is still exposing npm's processing placeholder; wait for ${artifact.manifest.version} to become available before rerunning`,
+        );
     }
     const args = [
       "publish",
@@ -384,9 +408,10 @@ const publishPackages = async (artifacts, dryRun) => {
     ];
     if (dryRun) args.push("--dry-run");
     runInteractive("npm", args);
-    if (!dryRun) await waitForPublishedVersion(artifact);
+    if (!dryRun) submitted.push(artifact);
     availableInRun.set(artifact.manifest.name, artifact.manifest.version);
   }
+  if (!dryRun) await Promise.all(submitted.map(waitForPublishedVersion));
 };
 
 export const main = async (values = process.argv.slice(2)) => {
